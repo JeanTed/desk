@@ -15,7 +15,7 @@ import os
 import time
 import urllib.parse
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 OUT = "site"
 T0 = time.time()
@@ -139,17 +139,30 @@ def adjudications_treasurydirect(today):
         if rows and isinstance(rows[0], dict):
             n0 = _norm(rows[0])
             ex = " ex " + "/".join(str(n0.get(k))[:19] for k in ("auctiondate", "securitytype", "securityterm", "announcementdate", "issuedate"))
+            ex += " clés~ " + ",".join(k for k in n0 if ("auction" in k or "date" in k or "bid" in k))[:150]
         notes.append("td/%s: %d lignes%s" % (chemin, len(rows), ex))
         for r in rows:
             if not isinstance(r, dict):
                 continue
             n = _norm(r)
             d = _date(n.get("auctiondate"))
+            est = False
+            if not d:
+                for k, v in n.items():
+                    if "auction" in k and _date(v):
+                        d = _date(v)
+                        break
+            if not d and _date(n.get("issuedate")):
+                # repli : un titre est émis environ 4 jours après son adjudication (date estimée, signalée par « ≈ »)
+                from datetime import date as _d
+                y, mo, da = [int(x) for x in _date(n.get("issuedate")).split("-")]
+                d = (_d(y, mo, da) - timedelta(days=4)).isoformat()
+                est = True
             if not d or d < today:
                 continue
             amt = num(n.get("offeringamount") or n.get("offeringamt") or n.get("offeringamountmillions"), 0)
             res.append({"d": d, "type": str(n.get("securitytype") or "").strip(), "term": str(n.get("securityterm") or "").strip(),
-                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None, "re": str(n.get("reopening") or "").lower() in ("yes", "y", "true")})
+                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None, "re": str(n.get("reopening") or "").lower() in ("yes", "y", "true"), "est": est})
     return res, notes
 
 
@@ -175,7 +188,7 @@ def lire_adjudications():
                 continue
             amt = num(r.get("offering_amt"), 0)
             tmp.append({"d": d, "type": str(r.get("security_type", "")).strip(), "term": str(r.get("security_term", "")).strip(),
-                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None, "re": str(r.get("reopening", "")).lower() in ("yes", "y", "true")})
+                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None, "re": str(r.get("reopening", "")).lower() in ("yes", "y", "true"), "est": False})
         if tmp:
             res = tmp
             break
