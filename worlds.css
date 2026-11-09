@@ -1425,3 +1425,13 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 @media(max-width:600px){.mod[data-mod="ctx"] .ctx-b{grid-template-columns:84px minmax(30px,1fr) 72px 66px;font-size:14px}.mod[data-mod="ctx"] .ctx-lec li,.mod[data-mod="ctx"] .ctx-brief p,.mod[data-mod="ctx"] .ctx-brief ul{font-size:15px}}
 .mod[data-mod="ctx"] .ctx-t b.mono,.mod[data-mod="ctx"] .ctx-t b{font-size:22px!important}
 .mod[data-mod="ctx"] .dw-r{grid-template-columns:minmax(0,1fr) auto 84px}.mod[data-mod="ctx"] .dw-r span:last-child,.mod[data-mod="ctx"] .dw-r b{white-space:nowrap}
+
+/* Agenda éco : une couleur par famille d'annonce */
+.crow{--ty:var(--muted);border-left:4px solid var(--ty);padding-left:10px}
+.crow.ty-inf,.ty-chip.ty-inf{--ty:#FF8A3D}.crow.ty-emp,.ty-chip.ty-emp{--ty:#4DA3FF}.crow.ty-cb,.ty-chip.ty-cb{--ty:#B07CFF}
+.crow.ty-tre,.ty-chip.ty-tre{--ty:#2EC4B6}.crow.ty-ene,.ty-chip.ty-ene{--ty:#C28E5C}.crow.ty-imm,.ty-chip.ty-imm{--ty:#F06292}
+.crow.ty-con,.ty-chip.ty-con{--ty:#6BCB77}.crow.ty-act,.ty-chip.ty-act{--ty:#FFD166}.crow.ty-aut,.ty-chip.ty-aut{--ty:#8A94A6}
+.crow{background:color-mix(in oklab,var(--ty) 7%,transparent)}
+.crow .ty-tag{display:block;font:700 10.5px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ty);margin-bottom:1px}
+.ty-leg{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.ty-chip{--ty:var(--muted);font:600 11.5px var(--font);letter-spacing:.04em;padding:3px 10px;border-radius:999px;color:var(--ty);background:color-mix(in oklab,var(--ty) 14%,transparent);border:1px solid color-mix(in oklab,var(--ty) 40%,transparent)}

@@ -271,6 +271,18 @@ function tvEvents(host){
   c.appendChild(s);host.appendChild(c);
 }
 CK.tvEvents=tvEvents;
+/* Famille d'une annonce (couleur dans l'agenda) : reconnue d'après le titre anglais d'origine */
+var EV_TYPES=[["inf","Inflation",/\b(cpi|ppi|pce|price index|inflation|deflator|import prices|export prices)\b/i],
+  ["emp","Emploi",/employment|payroll|jobless|unemployment|claims|adp|jolts|job openings|nonfarm|non-farm|average hourly|labor|labour|participation rate/i],
+  ["cb","Banques centrales",/fomc|federal funds|fed |powell|waller|williams|jefferson|bowman|barr|cook|logan|musalem|schmid|goolsbee|kashkari|bostic|harker|daly|hammack|collins|barkin|mester|rate decision|interest rate|monetary|minutes|ecb|boe|boj|lagarde|bailey/i],
+  ["tre","Trésor",/auction|treasury|bond |note |bill /i],
+  ["ene","Énergie",/crude|oil|gasoline|distillate|natural gas|eia|rig count|refinery|cushing/i],
+  ["imm","Immobilier",/housing|home sales|building permits|mortgage|nahb|home price|construction spending/i],
+  ["con","Consommation",/retail|consumer|sentiment|confidence|michigan|spending|personal income|expectations/i],
+  ["act","Activité",/gdp|pmi|ism|industrial|durable|factory|production|philadelphia|empire state|manufactur|services|business|trade balance|productivity|capacity|orders|inventories|current account/i]];
+var EV_TNAME={inf:"Inflation",emp:"Emploi",cb:"Banques centrales",tre:"Trésor",ene:"Énergie",imm:"Immobilier",con:"Consommation",act:"Activité",aut:"Autre"};
+function evType(e){var t=String(e&&e.t||"");for(var i=0;i<EV_TYPES.length;i++){if(EV_TYPES[i][2].test(t))return EV_TYPES[i][0];}return "aut";}
+CK.evType=evType;CK.EV_TNAME=EV_TNAME;
 function renderCal(ok){
   var host=$("cal");if(!host)return;
   S.calFail=!ok;
@@ -279,10 +291,13 @@ function renderCal(ok){
   var L=S.cal.filter(function(e){var d=parisDay(new Date(e.ts));return d===today||d===tom;});
   S.nextEv=S.cal.filter(function(e){return e.ts>now&&e.imp==="hi";})[0]||S.cal.filter(function(e){return e.ts>now;})[0]||null;
   $("calMeta").textContent="Annonces US majeures · heure de Paris";
-  var h="",cur="";
+  var h="",cur="",used={};
   L.forEach(function(e){var d=parisDay(new Date(e.ts));if(d!==cur){cur=d;h+='<div class="cday">'+(d===today?"Aujourd'hui":"Demain")+'</div>';}
     var det=[e.a?"Réel "+e.a:"",e.f?"Prév. "+e.f:"",e.p?"Préc. "+e.p:""].filter(Boolean).join(" · ");
-    h+='<div class="crow'+(e.ts<now?" past":"")+'"><span class="t">'+parisTime(e.ts)+'</span><span class="e" title="'+esc(e.t)+'">'+esc(e.fr)+(e.n>1?'<small>'+e.n+' publications à la même heure</small>':'')+(det&&!(e.n>1)?'<small>'+esc(det)+'</small>':'')+'</span><span class="i '+e.imp+'">'+(e.imp==="hi"?"Fort":"Moyen")+'</span></div>';});
+    var ty=evType(e);used[ty]=1;
+    h+='<div class="crow ty-'+ty+(e.ts<now?" past":"")+'"><span class="t">'+parisTime(e.ts)+'</span><span class="e" title="'+esc(e.t)+'">'+'<span class="ty-tag">'+EV_TNAME[ty]+'</span>'+esc(e.fr)+(e.n>1?'<small>'+e.n+' publications à la même heure</small>':'')+(det&&!(e.n>1)?'<small>'+esc(det)+'</small>':'')+'</span><span class="i '+e.imp+'">'+(e.imp==="hi"?"Fort":"Moyen")+'</span></div>';});
+  var lg=Object.keys(EV_TNAME).filter(function(k){return used[k];}).map(function(k){return '<span class="ty-chip ty-'+k+'">'+EV_TNAME[k]+'</span>';}).join("");
+  if(h&&lg)h='<div class="ty-leg">'+lg+'</div>'+h;
   host.innerHTML=h||'<div class="empty">Aucune annonce majeure aujourd\'hui ni demain.</div>';
   tickNext();if(CK.day)CK.day.render();
 }
