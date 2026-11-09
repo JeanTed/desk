@@ -2197,6 +2197,13 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .strip:hover .strip-track,.strip:focus-within .strip-track{animation-play-state:paused}
 @keyframes stripmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.strip{overflow-x:auto}.strip-track{animation:none}.strip-set[aria-hidden="true"]{display:none}}
+
+/* Lecture inter-marchés */
+.ctx-lec{list-style:none;margin:4px 0 8px;padding:0;display:grid;gap:6px}
+.ctx-lec li{padding:8px 10px 8px 12px;border-radius:8px;background:var(--inset);font-size:13.5px;line-height:1.45;border-left:3px solid var(--line-2)}
+.ctx-lec li.up{border-left-color:var(--up)}.ctx-lec li.dn{border-left-color:var(--down)}.ctx-lec li.warn{border-left-color:var(--warn)}
+.ctx-bias{font:600 11.5px var(--font);letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--inset);color:var(--muted)}
+.ctx-bias.up{color:var(--up)}.ctx-bias.dn{color:var(--down)}.ctx-bias.warn{color:var(--warn)}
 </style>
 <script>
 /* ================================================================
@@ -3669,7 +3676,7 @@ function render(){
 }
 
 /* ---------------- 2. Contexte : volatilité, taux, poids lourds ---------------- */
-var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["DJI","Dow Jones","TVC:DJI"],["RUT","Russell 2000","TVC:RUT"],["BRENT","Brent (pétrole, $)","TVC:UKOIL"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
+var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["DJI","Dow Jones","TVC:DJI"],["RUT","Russell 2000","TVC:RUT"],["BRENT","Brent (pétrole, $)","TVC:UKOIL"],["GOLD","Or (once, $)","TVC:GOLD"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
 /* poids lourds de chaque indice : [code, nom, symbole TradingView] */
 var BIGS={
   NDX:[["NVDA","Nvidia","NASDAQ:NVDA"],["MSFT","Microsoft","NASDAQ:MSFT"],["AAPL","Apple","NASDAQ:AAPL"],["AMZN","Amazon","NASDAQ:AMZN"],["META","Meta","NASDAQ:META"],["GOOGL","Alphabet","NASDAQ:GOOGL"],["AVGO","Broadcom","NASDAQ:AVGO"],["TSLA","Tesla","NASDAQ:TSLA"],["COST","Costco","NASDAQ:COST"],["NFLX","Netflix","NASDAQ:NFLX"]],
@@ -3681,6 +3688,42 @@ function loadCtx(){
   return q(u.fetchJSON(TV,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({symbols:{tickers:tk},columns:["close","change"]})},12000)).then(function(j){
     if(!j||!j.data)return;j.data.forEach(function(o){CX.rows[o.s]={c:o.d[0],ch:o.d[1]};});FT.rows=CX.rows;CX.ts=Date.now();render();renderCtx();});
 }
+
+/* Lecture inter-marchés du jour : pétrole, taux, dollar, or, VIX et Nasdaq, lus avec les règles classiques (mécanique, pas une prévision) */
+function lecture(){
+  function ch(sym){var r=CX.rows[sym];return r&&isFinite(r.ch)?r.ch:null;}
+  var nd=ch("NASDAQ:NDX"),oil=ch("TVC:UKOIL"),gold=ch("TVC:GOLD"),dx=ch("TVC:DXY"),vx=ch("TVC:VIX"),r10=CX.rows["TVC:US10Y"],bp=r10&&isFinite(r10.ch)?(r10.c-r10.c/(1+r10.ch/100))*100:null;
+  if(nd==null||oil==null)return null;
+  var L=[],sc=0,n=0;
+  function f(v,d){return (v>0?"+":v<0?"−":"")+nf(Math.abs(v),d)+" %";}
+  if(Math.abs(oil)>=.8){
+    if(oil>0&&nd<0){L.push(["dn","Pétrole "+f(oil,2)+", Nasdaq "+f(nd,2)+" : la relation inverse joue. Un baril plus cher nourrit l'inflation, donc les taux, et pèse sur la valorisation de la tech."]);sc--;n++;}
+    else if(oil>0){L.push(["warn","Pétrole "+f(oil,2)+" mais Nasdaq "+f(nd,2)+" : la tech résiste à l'énergie chère. À surveiller : si le taux 10 ans suit le baril, la pression arrive."]);n++;}
+    else if(nd>0){L.push(["up","Pétrole "+f(oil,2)+", Nasdaq "+f(nd,2)+" : la détente du brut redonne de l'air à la tech."]);sc++;n++;}
+    else{L.push(["warn","Pétrole "+f(oil,2)+" et Nasdaq "+f(nd,2)+" baissent ensemble : plutôt des craintes sur la croissance que sur l'inflation."]);sc--;n++;}
+  }else{L.push(["neu","Pétrole calme ("+f(oil,2)+") : pas de message inflation venu de l'énergie aujourd'hui."]);}
+  if(bp!=null&&Math.abs(bp)>=3){
+    if(bp>0){L.push(["dn","Taux 10 ans "+(bp>0?"+":"")+nf(bp,1)+" pb : des taux qui montent pèsent sur les valeurs de croissance du Nasdaq."]);sc--;}
+    else{L.push(["up","Taux 10 ans "+nf(bp,1).replace("-","−")+" pb : des taux qui baissent soutiennent la tech."]);sc++;}n++;
+  }
+  if(dx!=null&&Math.abs(dx)>=.2){
+    if(dx>0){L.push(["dn","Dollar "+f(dx,2)+" : un dollar fort resserre les conditions financières, défavorable aux actions américaines et à l'or."]);sc--;}
+    else{L.push(["up","Dollar "+f(dx,2)+" : un dollar plus faible détend les conditions financières et soutient l'or."]);sc++;}n++;
+  }
+  if(gold!=null&&Math.abs(gold)>=.3){
+    if(gold>0&&nd<0&&vx!=null&&vx>0)L.push(["warn","Or "+f(gold,2)+" avec Nasdaq en baisse et VIX en hausse : repli vers les valeurs refuges, aversion au risque."]);
+    else if(gold>0&&oil>0)L.push(["warn","Or "+f(gold,2)+" et pétrole "+f(oil,2)+" : le canal inflationniste est actif, les investisseurs se protègent."]);
+    else if(gold<0&&nd>0)L.push(["up","Or "+f(gold,2)+" et Nasdaq "+f(nd,2)+" : appétit pour le risque, l'or est délaissé."]);
+    else if(gold>0&&dx!=null&&dx<0)L.push(["neu","Or "+f(gold,2)+" porté par un dollar plus faible."]);
+    else L.push(["neu","Or "+f(gold,2)+" : pas de lien net avec le Nasdaq aujourd'hui."]);
+  }
+  if(vx!=null&&Math.abs(vx)>=3){
+    if(vx>0){L.push(["dn","VIX "+f(vx,1)+" : la volatilité monte, le marché se couvre."]);sc--;}
+    else{L.push(["up","VIX "+f(vx,1)+" : la volatilité se détend, favorable aux actions."]);sc++;}n++;
+  }
+  var bias=sc<=-2?["dn","prudent"]:sc>=2?["up","porteur"]:sc<0?["warn","plutôt prudent"]:sc>0?["up","plutôt porteur"]:["neu","neutre"];
+  return {L:L,bias:bias,sc:sc,n:n};
+}
 function renderCtx(){
   var host=u.$("ctx");if(!host)return;
   var sg=seg();if(!CX.ts){host.innerHTML=sg+'<div class="empty">Chargement du contexte…</div>';return;}
@@ -3691,6 +3734,7 @@ function renderCtx(){
   var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
   var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div><div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+
+    (function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
     '<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}

@@ -1365,3 +1365,10 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .strip:hover .strip-track,.strip:focus-within .strip-track{animation-play-state:paused}
 @keyframes stripmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.strip{overflow-x:auto}.strip-track{animation:none}.strip-set[aria-hidden="true"]{display:none}}
+
+/* Lecture inter-marchés */
+.ctx-lec{list-style:none;margin:4px 0 8px;padding:0;display:grid;gap:6px}
+.ctx-lec li{padding:8px 10px 8px 12px;border-radius:8px;background:var(--inset);font-size:13.5px;line-height:1.45;border-left:3px solid var(--line-2)}
+.ctx-lec li.up{border-left-color:var(--up)}.ctx-lec li.dn{border-left-color:var(--down)}.ctx-lec li.warn{border-left-color:var(--warn)}
+.ctx-bias{font:600 11.5px var(--font);letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--inset);color:var(--muted)}
+.ctx-bias.up{color:var(--up)}.ctx-bias.dn{color:var(--down)}.ctx-bias.warn{color:var(--warn)}
