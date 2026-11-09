@@ -1408,3 +1408,20 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 /* Plan Futures : Plan du jour et Options côte à côte, même hauteur (pas de trou) ; Contexte de marché dessous */
 .grid.flow[data-w="plan"] .mod[data-mod="plan"],.grid.flow[data-w="plan"] .mod[data-mod="opts"]{align-self:stretch;display:flex;flex-direction:column}
 .grid.flow[data-w="plan"] .mod[data-mod="plan"] .card,.grid.flow[data-w="plan"] .mod[data-mod="opts"] .card{flex:1}
+
+/* Contexte de marché : écriture plus grande pour faciliter la lecture */
+.mod[data-mod="ctx"] .x-k{font-size:12.5px}
+.mod[data-mod="ctx"] .ctx-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.mod[data-mod="ctx"] .ctx-t{padding:12px 14px}.mod[data-mod="ctx"] .ctx-t b{font-size:22px}.mod[data-mod="ctx"] .ctx-t .mono{font-size:15px}
+.mod[data-mod="ctx"] .ctx-lec li{font-size:16px;line-height:1.5;padding:10px 12px 10px 14px}
+.mod[data-mod="ctx"] .ctx-brief b{font-size:19px}.mod[data-mod="ctx"] .ctx-brief p,.mod[data-mod="ctx"] .ctx-brief ul{font-size:16px;line-height:1.55}
+.mod[data-mod="ctx"] .ctx-bias{font-size:13px}
+.mod[data-mod="ctx"] .cc-h,.mod[data-mod="ctx"] .cc-r{font-size:16px}.mod[data-mod="ctx"] .cc-h{font-size:12px}.mod[data-mod="ctx"] .cc-a{font-size:14.5px}
+.mod[data-mod="ctx"] .dw-h b,.mod[data-mod="ctx"] .dw-h span{font-size:18px}.mod[data-mod="ctx"] .dw-r{font-size:15px;padding:3px 0}
+.mod[data-mod="ctx"] .ctx-b{font-size:16px;grid-template-columns:120px minmax(40px,1fr) 90px 80px}
+.mod[data-mod="ctx"] .rs-r{font-size:15.5px;padding:7px 10px}
+.mod[data-mod="ctx"] .x-n{font-size:14px;line-height:1.5}
+.mod[data-mod="ctx"] .seg button{font-size:13px}
+@media(max-width:600px){.mod[data-mod="ctx"] .ctx-b{grid-template-columns:84px minmax(30px,1fr) 72px 66px;font-size:14px}.mod[data-mod="ctx"] .ctx-lec li,.mod[data-mod="ctx"] .ctx-brief p,.mod[data-mod="ctx"] .ctx-brief ul{font-size:15px}}
+.mod[data-mod="ctx"] .ctx-t b.mono,.mod[data-mod="ctx"] .ctx-t b{font-size:22px!important}
+.mod[data-mod="ctx"] .dw-r{grid-template-columns:minmax(0,1fr) auto 84px}.mod[data-mod="ctx"] .dw-r span:last-child,.mod[data-mod="ctx"] .dw-r b{white-space:nowrap}
