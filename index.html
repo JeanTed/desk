@@ -3714,7 +3714,8 @@ CK.extra={boot:function(){
 (function(){
 "use strict";
 var CK=window.CK,u=CK.u,S=CK.S,esc=u.esc,nf=u.nf;
-var OKX="https://www.okx.com",TV="https://scanner.tradingview.com/global/scan",FT=CK.fut,IDX={NDX:{n:"Nasdaq 100",inst:"US100-USDT-SWAP",perp:"US100"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",perp:"SPX"},MNQ:{n:"MNQ",inst:"US100-USDT-SWAP",perp:"US100",base:"NDX"},MES:{n:"MES",inst:"SPX-USDT-SWAP",perp:"SPX",base:"SPX"}},BASES=["NDX","SPX"];
+var OKX="https://www.okx.com",TV="https://scanner.tradingview.com/global/scan",FT=CK.fut,IDX={NDX:{n:"Nasdaq 100",inst:"US100-USDT-SWAP",perp:"US100"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",perp:"SPX"},MNQ:{n:"MNQ",inst:"US100-USDT-SWAP",perp:"US100",base:"NDX"},MES:{n:"MES",inst:"SPX-USDT-SWAP",perp:"SPX",base:"SPX"},YM:{n:"Dow (YM)",y:1},RTY:{n:"Russell (RTY)",y:1}},BASES=["NDX","SPX"],
+  YONLY={YM:{full:"E-mini Dow Jones",pt:5,tick:1,name:"Dow Jones"},RTY:{full:"E-mini Russell 2000",pt:50,tick:.1,name:"Russell 2000"}},BASE4=["NDX","SPX","MNQ","MES"];
 var PL={sym:CK.ls("plSym")||"NDX"};if(!IDX[PL.sym])PL.sym="NDX";
 var PD={};                      /* clôture d'hier (UTC), par indice */
 var CX={rows:{},ts:0};          /* contexte TradingView */
@@ -3742,12 +3743,15 @@ function hm(ms){return new Date(ms).toLocaleTimeString("fr-FR",{timeZone:"Europe
 function parisDay(ms){return new Date(ms).toLocaleDateString("fr-FR",{timeZone:"Europe/Paris"});}
 
 /* ---------------- 1. Plan du jour ---------------- */
-function seg(){return '<div class="seg" role="group" aria-label="Indice">'+Object.keys(IDX).map(function(k){return '<button type="button" data-pl="'+k+'" aria-pressed="'+(k===PL.sym)+'">'+IDX[k].n.toUpperCase()+'</button>';}).join("")+'</div>';}
+function ctxSym(){return YONLY[PL.sym]?"NDX":PL.sym;}
+function seg(withY){var cur=withY?PL.sym:ctxSym();return '<div class="seg" role="group" aria-label="Indice">'+(withY?Object.keys(IDX):BASE4).map(function(k){return '<button type="button" data-pl="'+k+'" aria-pressed="'+(k===cur)+'">'+IDX[k].n.toUpperCase()+'</button>';}).join("")+'</div>';}
 function loadPrev(b){
+  if(IDX[b]&&IDX[b].y)return Promise.resolve();
   return q(u.fetchJSON(OKX+"/api/v5/market/candles?instId="+IDX[b].inst+"&bar=1Dutc&limit=3",null,12000)).then(function(j){
     var D=j&&j.data;if(D&&D[1]&&+D[1][4]>0)PD[b]=+D[1][4];render();});
 }
 function loadPx(b){
+  if(IDX[b]&&IDX[b].y)return Promise.resolve();
   b=FT.base(b);
   return q(u.fetchJSON(OKX+"/api/v5/market/ticker?instId="+IDX[b].inst,null,8000)).then(function(j){
     var t=j&&j.data&&j.data[0];if(t&&+t.last>0&&CK.levels&&CK.levels.px){CK.levels.px[b]=+t.last;render();}});
@@ -3757,9 +3761,40 @@ function levelsOf(){
   if(yl){yl.forEach(function(x){o[x.k]=x.px;});o._y=1;}else if(d)d.L.forEach(function(x){o[x.k]=x.px;});
   return o;
 }
+/* Dow (YM) et Russell 2000 (RTY) : niveaux lus sur le contrat réel par le robot (Yahoo), sans perpétuel OKX ni options */
+function renderY(host){
+  var sym=PL.sym,Y=YONLY[sym],d=FT.fresh(sym),sg=seg(true);
+  if(!d||!d.L||!d.L.length||!(d.last>0)){host.innerHTML=sg+'<div class="empty">Le robot n\'a pas encore publié les niveaux de '+esc(Y.name)+' (Yahoo Finance). Réessaie dans quelques minutes.</div>';return;}
+  var L={};d.L.forEach(function(x){L[x.k]=x.px;});var p=d.last,now=Date.now(),rows=[];
+  function add(tag,name,v){if(v>0)rows.push({tag:tag,n:name,px:v});}
+  add("PDH","Plus haut d'hier",L.PDH);add("PDL","Plus bas d'hier",L.PDL);add("PDC","Clôture d'hier (00 h UTC)",L.PDC);add("DO","Ouverture du jour (UTC)",L.DO);add("WO","Ouverture de la semaine",L.WO);
+  var nh=Math.max(L.TKH||0,L.LDH||0),nl=Math.min(L.TKL||Infinity,L.LDL||Infinity);
+  if(nh>0)add("NUH","Haut de la nuit (Tokyo + Londres)",nh);if(isFinite(nl)&&nl>0)add("NUL","Bas de la nuit (Tokyo + Londres)",nl);
+  rows.sort(function(a,b){return b.px-a.px;});
+  var html="",placed=false;
+  rows.forEach(function(x){var dd=(x.px/p-1)*100,pts=x.px-p;
+    if(!placed&&x.px<p){html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+px(p)+'</b></div>';placed=true;}
+    html+='<div class="lv-r '+(x.px>p?"ab":"be")+(Math.abs(dd)<.35?" near":"")+' lv-fu"><span class="lv-tag">'+x.tag+'</span><span class="lv-n">'+esc(x.n)+'</span><b class="mono">'+px(x.px)+'</b><span class="lv-d mono">'+(pts>0?"+":"−")+nf(Math.abs(pts),2)+' pts</span><span class="lv-d mono">'+(pts>0?"+":"−")+nf(Math.abs(pts)*Y.pt,0)+' $</span><span class="lv-d mono">'+(dd>0?"+":"")+nf(dd,2)+' %</span></div>';});
+  if(!placed)html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+px(p)+'</b></div>';
+  var ch=L.DO>0?(p/L.DO-1)*100:null,us=usSession(now),head='<div class="plan-top"><div><span class="x-k">'+esc(Y.name)+'</span><b class="mono plan-px">'+px(p)+'</b>'+(ch==null?"":'<span class="mono '+u.cls(ch)+'"> '+pct(ch)+' depuis 00 h UTC</span>')+'</div>';
+  if(us)head+='<div class="plan-us"><span class="x-k">'+(us.open?"Séance US ouverte":"Ouverture US")+'</span><b class="mono">'+(us.open?"clôture dans ":"dans ")+dur(us.t-now)+'</b><span class="plan-sub">'+(us.open?"fin à ":"à ")+hm(us.t)+' (Paris)</span></div>';
+  head+='</div>';
+  var rd=[];
+  if(L.DO>0)rd.push(p>=L.DO?"Prix au-dessus de l'ouverture du jour : biais acheteur tant qu'il y reste.":"Prix sous l'ouverture du jour : biais vendeur tant qu'il y reste.");
+  if(L.PDH>0&&p>L.PDH)rd.push("Au-dessus du plus haut d'hier : cassure à confirmer, sinon retour dans la zone d'hier.");
+  else if(L.PDL>0&&p<L.PDL)rd.push("Sous le plus bas d'hier : pression vendeuse, surveiller la reprise du niveau.");
+  else if(L.PDH>0&&L.PDL>0)rd.push("Prix dans la fourchette d'hier : les extrêmes (PDH/PDL) sont les niveaux de décision.");
+  var td=parisDay(now),ev=(S.cal||[]).filter(function(e){return parisDay(e.ts)===td&&(e.imp==="hi"||e.imp==="md");}).slice(0,6);
+  var ag=ev.length?'<div class="plan-ag"><span class="x-k">Annonces du jour (heure de Paris)</span>'+ev.map(function(e){return '<div class="plan-ev'+(e.ts<now?" past":"")+'"><span class="mono">'+hm(e.ts)+'</span><span class="plan-i '+(e.imp==="hi"?"hi":"md")+'" aria-hidden="true"></span><span>'+esc(e.fr||e.t)+'</span></div>';}).join("")+'</div>':'<div class="plan-ag"><span class="x-k">Annonces du jour</span><div class="plan-ev"><span>Aucune annonce américaine importante au programme.</span></div></div>';
+  var spec='<p class="plan-spec"><b>'+sym+'</b> · '+Y.full+' · 1 point = <b>'+Y.pt+' $</b> · tick '+nf(Y.tick,Y.tick<1?1:0)+' pt = '+nf(Y.tick*Y.pt,2)+' $</p>';
+  var out=sg+head+spec+'<div class="lv-hd"><span>Niveau</span><span></span><span>Prix</span><span>Points</span><span>$ / contrat</span><span>%</span></div><div class="lv-list">'+html+'</div>'+(rd.length?'<p class="plan-rd">'+rd.map(esc).join(" ")+'</p>':"")+ag+
+    '<p class="x-n">Niveaux lus sur le contrat réel '+sym+' par le robot (Yahoo Finance, prix différé d\'environ 10 minutes, mis à jour à '+hm(d.ts||now)+' Paris). Pas de murs d\'options pour cet indice. Lecture mécanique des niveaux, pas une prévision.</p>';
+  if(host._h!==out){host.innerHTML=out;host._h=out;}
+}
 function render(){
   var host=u.$("plan");if(!host)return;
-  var B=FT.base(PL.sym),fu=FT.is(PL.sym),M=fu?FT.M[PL.sym]:null,L=levelsOf(),p0=CK.levels&&CK.levels.px&&CK.levels.px[B],now=Date.now(),I=IDX[PL.sym],sg=seg();
+  if(YONLY[PL.sym]){renderY(host);return;}
+  var B=FT.base(PL.sym),fu=FT.is(PL.sym),M=fu?FT.M[PL.sym]:null,L=levelsOf(),p0=CK.levels&&CK.levels.px&&CK.levels.px[B],now=Date.now(),I=IDX[PL.sym],sg=seg(true);
   if(!p0||!Object.keys(L).length){host.innerHTML=sg+'<div class="empty">Calcul du plan…</div>';return;}
   var inf=fu?FT.info(PL.sym,p0):null,off=inf?inf.v:0,p=p0+off;var yl=!!L._y;delete L._y;if(!yl)Object.keys(L).forEach(function(k){L[k]+=off;});
   var rows=[];
@@ -3867,7 +3902,7 @@ function kfmt(v){return (v<0?"−":v>0?"+":"")+nf(Math.abs(v),0);}
 function mkOld(p,h){return !p||!p.ts||Date.now()-p.ts*1000>h*3600000;}
 function cotHTML(){
   var M=FT.mk&&FT.mk.cot;if(!M||!M.rows||!M.rows.length||mkOld(M,24*10))return '';
-  var w={NDX:"209742",SPX:"13874A"},cur=M.rows.filter(function(r){return r.code===w[FT.base(PL.sym)];})[0]||M.rows[0];
+  var w={NDX:"209742",SPX:"13874A",YM:"124603",RTY:"239742"},cur=M.rows.filter(function(r){return r.code===w[YONLY[PL.sym]?PL.sym:FT.base(PL.sym)];})[0]||M.rows[0];
   var rows=["asset","lev","dealer","other"].map(function(k){var g=cur.g[k];if(!g)return '';
     return '<div class="cot-r"><span>'+esc(g.n)+'</span><b class="mono '+u.cls(g.net)+'">'+kfmt(g.net)+'</b><span class="mono '+(g.chg==null?"":u.cls(g.chg))+'">'+(g.chg==null?"—":kfmt(g.chg))+'</span></div>';}).join("");
   return '<div class="ctx-h"><span class="x-k">Positionnement des fonds · '+esc(cur.nom)+'</span><span class="mono ft-d">rapport du '+esc(cur.date.split("-").reverse().join("/"))+'</span></div>'+
@@ -3938,7 +3973,7 @@ function dowHTML(){
 }
 function resHTML(){
   var R=FT.res;if(!R||!R.rows||!R.rows.length)return '';
-  var keep={};BIGS[FT.base(PL.sym)].forEach(function(x){keep[x[0]]=1;});
+  var keep={};BIGS[FT.base(ctxSym())].forEach(function(x){keep[x[0]]=1;});
   var t0=new Date();t0=Date.UTC(t0.getFullYear(),t0.getMonth(),t0.getDate());
   var L=R.rows.filter(function(r){return keep[r.s]&&/^\d{4}-\d{2}-\d{2}$/.test(r.date);}).map(function(r){var p=r.date.split("-"),t=Date.UTC(+p[0],+p[1]-1,+p[2]);return {r:r,t:t,j:Math.round((t-t0)/86400000)};})
     .filter(function(x){return x.j>=0&&x.j<=60;}).sort(function(a,b){return a.t-b.t;});
@@ -3969,12 +4004,12 @@ function renderCtx(){
   function tile(x){var r=CX.rows[x[2]];if(!r)return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">—</b></div>';
     var isY=x[0]==="US10Y"||x[0]==="US05Y",v=isY?nf(r.c,3)+" %":px(r.c),c=isY?(function(){var bp=r.c-r.c/(1+(r.ch||0)/100);return (bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";})():pct(r.ch);
     return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">'+v+'</b><span class="mono '+u.cls(r.ch)+'">'+c+'</span></div>';}
-  var big=BIGS[FT.base(PL.sym)].map(function(x){return {n:x[1],s:x[0],r:CX.rows[x[2]]};}).filter(function(x){return x.r;}).sort(function(a,b){return b.r.ch-a.r.ch;});
+  var big=BIGS[FT.base(ctxSym())].map(function(x){return {n:x[1],s:x[0],r:CX.rows[x[2]]};}).filter(function(x){return x.r;}).sort(function(a,b){return b.r.ch-a.r.ch;});
   var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
-  var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div>'+
+  var it=IDXT[ctxSym()],out=sg+'<div class="ctx-grid">'+tile([ctxSym(),it[1],(CX.rows[it[0]]||!FT.is(ctxSym()))?it[0]:FT.M[ctxSym()].big])+CTX.map(tile).join("")+'</div>'+
     briefHTML()+(function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
-    futHTML()+fngHTML()+sentiHTML()+brdHTML()+curveHTML()+cotHTML()+aucHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+resHTML()+
+    futHTML()+fngHTML()+sentiHTML()+brdHTML()+curveHTML()+cotHTML()+aucHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(ctxSym())][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+resHTML()+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
