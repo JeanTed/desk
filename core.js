@@ -194,9 +194,8 @@ function watch(){return [];}
 CK.watch=watch;
 function buildStrip(){
   var h=watch().map(function(b){return '<button type="button" class="tk" data-chart="OKX:'+esc(b)+'USDT" data-title="'+esc(b)+'"><span class="s">'+esc(b)+'</span><span class="p" data-p="'+esc(b)+'">—</span><span class="c" data-c="'+esc(b)+'"></span></button>';}).join("");
-  h+='<span class="tk sep" aria-hidden="true"></span>';
   h+=MACRO_STRIP.map(function(m){return '<button type="button" class="tk" data-chart="'+TVS[m.k]+'" data-title="'+m.n+'"><span class="s">'+m.n+'</span><span class="p" data-mp="'+m.k+'">—</span><span class="c" data-mc="'+m.k+'"></span></button>';}).join("");
-  $("strip").innerHTML=h;paintTicks();paintMacroStrip();
+  $("strip").innerHTML='<div class="strip-track"><div class="strip-set">'+h+'</div><div class="strip-set" aria-hidden="true">'+h+'</div></div>';paintTicks();paintMacroStrip();
 }
 CK.buildStrip=buildStrip;
 var lastPx={};
@@ -213,9 +212,10 @@ CK.roll=roll;
 var tickQueued=false;
 function queueTicks(){if(tickQueued)return;tickQueued=true;setTimeout(function(){tickQueued=false;paintTicks();if(CK.liqmap)CK.liqmap.price();},300);}
 function paintMacroStrip(){
-  MACRO_STRIP.forEach(function(m){var d=S.mk[m.k];var pe=document.querySelector('[data-mp="'+m.k+'"]'),ce=document.querySelector('[data-mc="'+m.k+'"]');if(!d||!pe)return;
-    if(m.k==="US10Y"||m.k==="US05Y"){pe.textContent=nf(d.c,3)+" %";var bp=d.c-d.c/(1+(d.ch||0)/100);ce.textContent=(bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";ce.className="c "+cls(bp);}
-    else{pe.textContent=px(d.c);ce.textContent=pct(d.ch);ce.className="c "+cls(d.ch);}});
+  MACRO_STRIP.forEach(function(m){var d=S.mk[m.k];var pes=document.querySelectorAll('[data-mp="'+m.k+'"]'),ces=document.querySelectorAll('[data-mc="'+m.k+'"]');if(!d||!pes.length)return;
+    pes.forEach(function(pe,i){var ce=ces[i];if(!ce)return;
+      if(m.k==="US10Y"||m.k==="US05Y"){pe.textContent=nf(d.c,3)+" %";var bp=d.c-d.c/(1+(d.ch||0)/100);ce.textContent=(bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";ce.className="c "+cls(bp);}
+      else{pe.textContent=px(d.c);ce.textContent=pct(d.ch);ce.className="c "+cls(d.ch);}});});
 }
 
 /* ---------------- Macro : scanner TradingView (en direct) ---------------- */

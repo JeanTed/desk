@@ -2189,6 +2189,14 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .plan-spec{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--inset);font-size:12.5px;color:var(--muted);line-height:1.5}
 .plan-spec b{color:var(--text)}
 @media(max-width:560px){.lv-r.lv-fu,.lv-hd{grid-template-columns:36px minmax(0,1fr) auto 78px 64px 52px;gap:4px}.lv-r.lv-fu .lv-d{font-size:11px}.lv-r.lv-fu .lv-n{display:none}}
+
+/* Barre de prix : défilement continu (pause au survol) */
+.strip{overflow:hidden;padding:0}
+.strip-track{display:flex;width:max-content;animation:stripmove 75s linear infinite}
+.strip-set{display:flex;flex:none}
+.strip:hover .strip-track,.strip:focus-within .strip-track{animation-play-state:paused}
+@keyframes stripmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.strip{overflow-x:auto}.strip-track{animation:none}.strip-set[aria-hidden="true"]{display:none}}
 </style>
 <script>
 /* ================================================================
@@ -2387,9 +2395,8 @@ function watch(){return [];}
 CK.watch=watch;
 function buildStrip(){
   var h=watch().map(function(b){return '<button type="button" class="tk" data-chart="OKX:'+esc(b)+'USDT" data-title="'+esc(b)+'"><span class="s">'+esc(b)+'</span><span class="p" data-p="'+esc(b)+'">—</span><span class="c" data-c="'+esc(b)+'"></span></button>';}).join("");
-  h+='<span class="tk sep" aria-hidden="true"></span>';
   h+=MACRO_STRIP.map(function(m){return '<button type="button" class="tk" data-chart="'+TVS[m.k]+'" data-title="'+m.n+'"><span class="s">'+m.n+'</span><span class="p" data-mp="'+m.k+'">—</span><span class="c" data-mc="'+m.k+'"></span></button>';}).join("");
-  $("strip").innerHTML=h;paintTicks();paintMacroStrip();
+  $("strip").innerHTML='<div class="strip-track"><div class="strip-set">'+h+'</div><div class="strip-set" aria-hidden="true">'+h+'</div></div>';paintTicks();paintMacroStrip();
 }
 CK.buildStrip=buildStrip;
 var lastPx={};
@@ -2406,9 +2413,10 @@ CK.roll=roll;
 var tickQueued=false;
 function queueTicks(){if(tickQueued)return;tickQueued=true;setTimeout(function(){tickQueued=false;paintTicks();if(CK.liqmap)CK.liqmap.price();},300);}
 function paintMacroStrip(){
-  MACRO_STRIP.forEach(function(m){var d=S.mk[m.k];var pe=document.querySelector('[data-mp="'+m.k+'"]'),ce=document.querySelector('[data-mc="'+m.k+'"]');if(!d||!pe)return;
-    if(m.k==="US10Y"||m.k==="US05Y"){pe.textContent=nf(d.c,3)+" %";var bp=d.c-d.c/(1+(d.ch||0)/100);ce.textContent=(bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";ce.className="c "+cls(bp);}
-    else{pe.textContent=px(d.c);ce.textContent=pct(d.ch);ce.className="c "+cls(d.ch);}});
+  MACRO_STRIP.forEach(function(m){var d=S.mk[m.k];var pes=document.querySelectorAll('[data-mp="'+m.k+'"]'),ces=document.querySelectorAll('[data-mc="'+m.k+'"]');if(!d||!pes.length)return;
+    pes.forEach(function(pe,i){var ce=ces[i];if(!ce)return;
+      if(m.k==="US10Y"||m.k==="US05Y"){pe.textContent=nf(d.c,3)+" %";var bp=d.c-d.c/(1+(d.ch||0)/100);ce.textContent=(bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";ce.className="c "+cls(bp);}
+      else{pe.textContent=px(d.c);ce.textContent=pct(d.ch);ce.className="c "+cls(d.ch);}});});
 }
 
 /* ---------------- Macro : scanner TradingView (en direct) ---------------- */
