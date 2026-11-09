@@ -104,14 +104,38 @@ def lire_fng():
 
 
 # ---------------------------------------------------------------- Adjudications du Trésor
+def adjudications_treasurydirect(today):
+    """TreasuryDirect : adjudications annoncées ou à venir (source officielle du Trésor)."""
+    res = []
+    for chemin in ("upcoming", "announced"):
+        try:
+            rows = get_json("https://www.treasurydirect.gov/TA_WS/securities/%s?format=json" % chemin, 25)
+        except Exception as e:
+            print("treasurydirect", chemin, ":", type(e).__name__, str(e)[:80])
+            continue
+        if isinstance(rows, dict):
+            rows = rows.get("data") or rows.get("securities") or []
+        for r in rows or []:
+            d = str(r.get("auctionDate") or r.get("auction_date") or "")[:10]
+            if len(d) != 10 or d < today:
+                continue
+            amt = num(r.get("offeringAmount") or r.get("offering_amt"), 0)
+            res.append({"d": d, "type": str(r.get("securityType") or r.get("security_type") or "").strip(),
+                        "term": str(r.get("securityTerm") or r.get("security_term") or "").strip(),
+                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None,
+                        "re": str(r.get("reopening") or "").lower() in ("yes", "y", "true")})
+    return res
+
+
 def lire_adjudications():
     today = date.today().isoformat()
     base = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/"
     essais = [("upcoming_auctions", {"sort": "auction_date", "page[size]": "200"}),
               ("upcoming_auctions", {"page[size]": "200"}),
               ("auctions_query", {"sort": "-auction_date", "page[size]": "100"})]
-    res, notes = [], []
-    for nom, params in essais:
+    res, notes = adjudications_treasurydirect(today), []
+    notes.append("treasurydirect: %d à venir" % len(res))
+    for nom, params in (essais if not res else []):
         try:
             rows = get_json(base + nom + "?" + urllib.parse.urlencode(params), 25).get("data") or []
         except Exception as e:
