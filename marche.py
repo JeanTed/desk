@@ -105,29 +105,34 @@ def lire_fng():
 def lire_adjudications():
     today = date.today().isoformat()
     base = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/"
-    rows = []
-    try:
-        q = urllib.parse.urlencode({"sort": "auction_date", "page[size]": "60", "filter": "auction_date:gte:" + today})
-        rows = get_json(base + "upcoming_auctions?" + q, 25).get("data") or []
-    except Exception as e:
-        print("upcoming_auctions :", type(e).__name__, str(e)[:100])
-    if not rows:
-        q = urllib.parse.urlencode({"sort": "auction_date", "page[size]": "60", "filter": "auction_date:gte:" + today})
-        rows = get_json(base + "auctions_query?" + q, 25).get("data") or []
-    res = []
-    for r in rows:
-        d = str(r.get("auction_date", ""))[:10]
-        if d < today:
+    essais = [("upcoming_auctions", {"sort": "auction_date", "page[size]": "200"}),
+              ("upcoming_auctions", {"page[size]": "200"}),
+              ("auctions_query", {"sort": "-auction_date", "page[size]": "100"})]
+    res, notes = [], []
+    for nom, params in essais:
+        try:
+            rows = get_json(base + nom + "?" + urllib.parse.urlencode(params), 25).get("data") or []
+        except Exception as e:
+            notes.append("%s: %s" % (nom, type(e).__name__))
             continue
-        typ = str(r.get("security_type", "")).strip()
-        amt = num(r.get("offering_amt"), 0)
-        res.append({"d": d, "type": typ, "term": str(r.get("security_term", "")).strip(), "amt": round(amt / 1e9, 1) if amt > 1e6 else None,
-                    "re": str(r.get("reopening", "")).lower() in ("yes", "y", "true")})
+        notes.append("%s: %d lignes" % (nom, len(rows)))
+        tmp = []
+        for r in rows:
+            d = str(r.get("auction_date", ""))[:10]
+            if len(d) != 10 or d < today:
+                continue
+            amt = num(r.get("offering_amt"), 0)
+            tmp.append({"d": d, "type": str(r.get("security_type", "")).strip(), "term": str(r.get("security_term", "")).strip(),
+                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None, "re": str(r.get("reopening", "")).lower() in ("yes", "y", "true")})
+        if tmp:
+            res = tmp
+            break
     # on garde les titres longs (Note, Bond, TIPS, FRN) : les bons à court terme (Bill) n'ont pas d'effet sur le Nasdaq
-    longs = [x for x in res if x["type"].lower() not in ("bill", "cmb")]
+    longs = [x for x in res if x["type"].lower() not in ("bill", "cmb") and "bill" not in x["term"].lower() and not x["term"].lower().endswith("week")]
     longs.sort(key=lambda x: x["d"])
     if not longs:
-        raise RuntimeError("aucune adjudication à venir")
+        types = sorted({x["type"] for x in res})[:5]
+        raise RuntimeError("aucun titre long à venir (%s ; à venir : %d ; types : %s)" % (", ".join(notes), len(res), "/".join(types)))
     return {"rows": longs[:8]}
 
 
