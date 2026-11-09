@@ -106,11 +106,13 @@ def lire_fng():
 # ---------------------------------------------------------------- Adjudications du Trésor
 def adjudications_treasurydirect(today):
     """TreasuryDirect : adjudications annoncées ou à venir (source officielle du Trésor)."""
-    res = []
+    res, notes = [], []
     for chemin in ("upcoming", "announced"):
         try:
             rows = get_json("https://www.treasurydirect.gov/TA_WS/securities/%s?format=json" % chemin, 25)
+            notes.append("td/%s: %d lignes" % (chemin, len(rows or [])))
         except Exception as e:
+            notes.append("td/%s: %s %s" % (chemin, type(e).__name__, str(e)[:40]))
             print("treasurydirect", chemin, ":", type(e).__name__, str(e)[:80])
             continue
         if isinstance(rows, dict):
@@ -124,7 +126,7 @@ def adjudications_treasurydirect(today):
                         "term": str(r.get("securityTerm") or r.get("security_term") or "").strip(),
                         "amt": round(amt / 1e9, 1) if amt > 1e6 else None,
                         "re": str(r.get("reopening") or "").lower() in ("yes", "y", "true")})
-    return res
+    return res, notes
 
 
 def lire_adjudications():
@@ -133,8 +135,8 @@ def lire_adjudications():
     essais = [("upcoming_auctions", {"sort": "auction_date", "page[size]": "200"}),
               ("upcoming_auctions", {"page[size]": "200"}),
               ("auctions_query", {"sort": "-auction_date", "page[size]": "100"})]
-    res, notes = adjudications_treasurydirect(today), []
-    notes.append("treasurydirect: %d à venir" % len(res))
+    res, notes = adjudications_treasurydirect(today)
+    notes.append("td à venir : %d" % len(res))
     for nom, params in (essais if not res else []):
         try:
             rows = get_json(base + nom + "?" + urllib.parse.urlencode(params), 25).get("data") or []
@@ -164,7 +166,7 @@ def lire_adjudications():
             ex = " | clés : " + ",".join(list(r0.keys())[:8]) + " | ex : " + str(r0.get("auction_date")) + "/" + str(r0.get("security_type")) + "/" + str(r0.get("security_term"))
         except Exception:
             pass
-        raise RuntimeError("aucun titre long à venir (à venir : %d ; types : %s)%s" % (len(res), "/".join(types), ex))
+        raise RuntimeError("aucun titre long à venir [%s] (à venir : %d ; types : %s)%s" % (" ; ".join(notes), len(res), "/".join(types), ex))
     return {"rows": longs[:8]}
 
 
@@ -255,7 +257,7 @@ def main():
             etat[cle] = (True, len(d.get("rows") or d.get("comp") or [1]), "")
             print(cle, ": OK")
         except Exception as e:
-            etat[cle] = (False, 0, "%s: %s" % (type(e).__name__, str(e)[:320]))
+            etat[cle] = (False, 0, "%s: %s" % (type(e).__name__, str(e)[:420]))
             print(cle, ": ERREUR", etat[cle][2])
     with open(OUT + "/data/marche.json", "w", encoding="utf-8") as f:
         json.dump(res, f, separators=(",", ":"), ensure_ascii=False)
