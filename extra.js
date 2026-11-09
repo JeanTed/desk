@@ -138,7 +138,7 @@ function renderOptions(){
       '<b class="mono">'+u.px(s.k)+'</b><em>'+u.usd(v*m*px)+' · '+(dd>0?"+":"")+nf(dd,1)+' %</em></span>';}).join("");}
   var out=seg("op",b,OASSETS)+'<div class="op-h"><span>Échéance</span><span>Notionnel</span><span></span><span>Max pain</span><span>Put/call</span></div><div class="op-l">'+rows+'</div>'+
     '<div class="op-ws"><div><span class="x-k">Murs de calls (résistances)</span>'+wall(d.calls,false)+'</div><div><span class="x-k">Murs de puts (supports)</span>'+wall(d.puts,true)+'</div></div>'+
-    (d.idx?'<p class="x-n">Options sur l\'indice '+(b==="NDX"?"Nasdaq 100 (^NDX)":"S&P 500 (^SPX)")+', lues par le robot sur Yahoo Finance : open interest de la veille, prix différé. Notionnel = contrats × 100 × indice. Prix de référence : perpétuel OKX en direct (écart possible avec l\'indice). Ce ne sont pas les options sur futures du CME. Survole une ligne pour son explication.</p>':'<p class="x-n">Options Deribit (environ 85 % du marché des options crypto). Expirations à 8 h UTC. Survole une ligne pour son explication.</p>');
+    (d.idx?'<p class="x-n">Options sur l\'indice '+(b==="NDX"?"Nasdaq 100, lues sur l\'ETF QQQ (très liquide) et converties en points de l\'indice":"S&P 500 (^SPX)")+', par le robot sur Yahoo Finance : open interest de la veille, prix différé. Notionnel en dollars réels. Prix de référence : perpétuel OKX en direct (écart possible avec l\'indice). Ce ne sont pas les options sur futures du CME. Survole une ligne pour son explication.</p>':'<p class="x-n">Options Deribit (environ 85 % du marché des options crypto). Expirations à 8 h UTC. Survole une ligne pour son explication.</p>');
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 

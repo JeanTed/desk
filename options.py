@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Robot des options du Desk : Nasdaq 100 (^NDX) et S&P 500 (^SPX).
+"""Robot des options du Desk : Nasdaq 100 (via l'ETF QQQ) et S&P 500 (^SPX).
 
 Tourne sur GitHub juste après robot.mjs. Il lit les chaînes d'options sur Yahoo Finance
 (bibliothèque yfinance, usage personnel / recherche), calcule pour chaque échéance
@@ -23,7 +23,10 @@ from datetime import datetime, timezone
 
 OUT = "site"
 SITE = os.environ.get("SITE_URL", "").rstrip("/")
-INDICES = {"NDX": "^NDX", "SPX": "^SPX"}   # clé du Desk -> symbole Yahoo
+# clé du Desk -> (symbole dont on lit les options, symbole de l'indice affiché)
+# Nasdaq 100 : la chaîne de ^NDX est trop maigre sur Yahoo, on lit celle de l'ETF QQQ (très liquide)
+# et on convertit les strikes en points de l'indice avec le rapport indice / QQQ.
+INDICES = {"NDX": ("QQQ", "^NDX"), "SPX": ("^SPX", "^SPX")}
 MULT = 100                                   # une option sur indice = 100 x l'indice
 NB_ECHEANCES = 8                             # nombre d'échéances lues par indice
 MAX_AGE_MIN = 25                             # on ne réinterroge Yahoo qu'au-delà
@@ -97,7 +100,7 @@ def clean(rows):
     return out
 
 
-def lire_indice(yf, cle, symbole):
+def prix(yf, symbole):
     t = yf.Ticker(symbole)
     spot = None
     try:
@@ -109,9 +112,19 @@ def lire_indice(yf, cle, symbole):
             spot = None
     if not spot or spot <= 0:
         raise RuntimeError(f"prix de {symbole} introuvable")
+    return t, spot
+
+
+def lire_indice(yf, cle, sym_opt, sym_idx):
+    t, spot_opt = prix(yf, sym_opt)
+    if sym_idx == sym_opt:
+        spot_idx = spot_opt
+    else:
+        _, spot_idx = prix(yf, sym_idx)
+    ratio = spot_idx / spot_opt          # 1 pour ^SPX, environ 40 pour QQQ -> ^NDX
     dates = list(t.options or [])
     if not dates:
-        raise RuntimeError(f"aucune échéance reçue pour {symbole}")
+        raise RuntimeError(f"aucune échéance reçue pour {sym_opt}")
     echeances, murs = [], {}
     for d in dates[:NB_ECHEANCES]:
         time.sleep(PAUSE)
@@ -119,21 +132,25 @@ def lire_indice(yf, cle, symbole):
         calls, puts = clean(ch.calls), clean(ch.puts)
         if not calls and not puts:
             continue
-        s = chain_stats(calls, puts, spot)
+        s = chain_stats(calls, puts, spot_opt)       # notionnel en dollars réels
         for k, (c, p) in s.pop("by").items():
             m = murs.setdefault(k, [0, 0])
             m[0] += c
             m[1] += p
+        if s.get("mp") is not None:
+            s["mp"] = round(s["mp"] * ratio, 2)      # max pain en points de l'indice
         s["date"] = d
         # expiration à 21 h 15 UTC (clôture américaine) : suffisant pour « dans X jours »
         s["ts"] = int(datetime.strptime(d, "%Y-%m-%d").replace(hour=21, minute=15, tzinfo=timezone.utc).timestamp() * 1000)
         echeances.append(s)
     if not echeances:
-        raise RuntimeError(f"chaînes d'options vides pour {symbole}")
-    strikes = [{"k": k, "c": v[0], "p": v[1]} for k, v in murs.items()]
+        raise RuntimeError(f"chaînes d'options vides pour {sym_opt}")
+    strikes = [{"k": round(k * ratio, 2), "c": v[0], "p": v[1]} for k, v in murs.items()]
     return {
-        "spot": spot,
-        "mult": MULT,
+        "spot": spot_idx,
+        "mult": MULT * spot_opt / spot_idx,   # contrats x mult x indice = dollars réels
+        "src": sym_opt,
+        "ratio": round(ratio, 4),
         "exp": echeances,
         "calls": sorted(strikes, key=lambda x: -x["c"])[:4],
         "puts": sorted(strikes, key=lambda x: -x["p"])[:4],
@@ -158,13 +175,13 @@ def main():
 
     result = {"ts": now, "idx": dict(prev.get("idx", {}))}
     etat = {}
-    for cle, sym in INDICES.items():
+    for cle, (sym, sym_idx) in INDICES.items():
         try:
-            data = lire_indice(yf, cle, sym)
+            data = lire_indice(yf, cle, sym, sym_idx)
             data["ts"] = now
             result["idx"][cle] = data
             etat[cle] = (True, len(data["exp"]), None)
-            print(f"{cle} ({sym}) : {len(data['exp'])} échéances, spot {data['spot']:.2f}")
+            print(f"{cle} (options {sym}) : {len(data['exp'])} échéances, indice {data['spot']:.2f}")
         except Exception as e:           # on garde l'ancienne version de cet indice
             etat[cle] = (False, 0, e)
             print(f"{cle} ({sym}) : ERREUR {type(e).__name__}: {str(e)[:160]}")
