@@ -2382,7 +2382,7 @@ function applyIdentity(){
 CK.applyIdentity=applyIdentity;
 
 /* ---------------- Barre de prix ---------------- */
-var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DXY",n:"Dollar"},{k:"US05Y",n:"Taux 5 ans"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"}];
+var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DJI",n:"Dow Jones"},{k:"RUT",n:"Russell 2000"},{k:"DXY",n:"Dollar"},{k:"US05Y",n:"Taux 5 ans"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"},{k:"BRENT",n:"Brent"}];
 function watch(){return [];}
 CK.watch=watch;
 function buildStrip(){
@@ -2412,7 +2412,7 @@ function paintMacroStrip(){
 }
 
 /* ---------------- Macro : scanner TradingView (en direct) ---------------- */
-var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD"};
+var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD",DJI:"TVC:DJI",RUT:"TVC:RUT",BRENT:"TVC:UKOIL"};
 CK.TVS=TVS;
 var TV_COLS=["close","change","SMA20","SMA50","SMA200","Perf.W","Perf.1M","High.3M","Low.3M","ADX"];
 function loadMacro(){
@@ -3661,7 +3661,7 @@ function render(){
 }
 
 /* ---------------- 2. Contexte : volatilité, taux, poids lourds ---------------- */
-var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
+var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["DJI","Dow Jones","TVC:DJI"],["RUT","Russell 2000","TVC:RUT"],["BRENT","Brent (pétrole, $)","TVC:UKOIL"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
 /* poids lourds de chaque indice : [code, nom, symbole TradingView] */
 var BIGS={
   NDX:[["NVDA","Nvidia","NASDAQ:NVDA"],["MSFT","Microsoft","NASDAQ:MSFT"],["AAPL","Apple","NASDAQ:AAPL"],["AMZN","Amazon","NASDAQ:AMZN"],["META","Meta","NASDAQ:META"],["GOOGL","Alphabet","NASDAQ:GOOGL"],["AVGO","Broadcom","NASDAQ:AVGO"],["TSLA","Tesla","NASDAQ:TSLA"],["COST","Costco","NASDAQ:COST"],["NFLX","Netflix","NASDAQ:NFLX"]],
@@ -3864,7 +3864,7 @@ var SRC=[
    ep:["/api/v5/market/ticker (US100, SPX)","/api/v5/market/candles","/api/v5/public/funding-rate","/api/v5/public/open-interest"],
    data:"Prix en direct et bougies des perpétuels Nasdaq 100 et S&P 500 (niveaux du jour, de la semaine, sessions), open interest et funding.",freq:"Prix toutes les 10 s, le reste toutes les 2 min"},
   {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["plan","bandeau"],
-   ep:["scanner.tradingview.com/global/scan"],data:"Dollar, taux 5 et 10 ans, Nasdaq, S&P, VIX, VXN, or, futures NQ et ES, poids lourds des indices.",freq:"Toutes les 2 min"},
+   ep:["scanner.tradingview.com/global/scan"],data:"Dollar, taux 5 et 10 ans, Nasdaq, S&P, Dow Jones, Russell 2000, VIX, VXN, or, Brent, futures NQ et ES, poids lourds des indices.",freq:"Toutes les 2 min"},
   {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news"],
    ep:["embed-widget-events.js","tv.js"],data:"Calendrier économique officiel (secours de l'agenda) et graphiques au clic.",freq:"À l'affichage"},
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},

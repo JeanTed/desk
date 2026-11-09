@@ -22,7 +22,7 @@ var SRC=[
    ep:["/api/v5/market/ticker (US100, SPX)","/api/v5/market/candles","/api/v5/public/funding-rate","/api/v5/public/open-interest"],
    data:"Prix en direct et bougies des perpétuels Nasdaq 100 et S&P 500 (niveaux du jour, de la semaine, sessions), open interest et funding.",freq:"Prix toutes les 10 s, le reste toutes les 2 min"},
   {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["plan","bandeau"],
-   ep:["scanner.tradingview.com/global/scan"],data:"Dollar, taux 5 et 10 ans, Nasdaq, S&P, VIX, VXN, or, futures NQ et ES, poids lourds des indices.",freq:"Toutes les 2 min"},
+   ep:["scanner.tradingview.com/global/scan"],data:"Dollar, taux 5 et 10 ans, Nasdaq, S&P, Dow Jones, Russell 2000, VIX, VXN, or, Brent, futures NQ et ES, poids lourds des indices.",freq:"Toutes les 2 min"},
   {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news"],
    ep:["embed-widget-events.js","tv.js"],data:"Calendrier économique officiel (secours de l'agenda) et graphiques au clic.",freq:"À l'affichage"},
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},

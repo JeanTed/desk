@@ -103,7 +103,7 @@ function render(){
 }
 
 /* ---------------- 2. Contexte : volatilité, taux, poids lourds ---------------- */
-var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
+var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["DJI","Dow Jones","TVC:DJI"],["RUT","Russell 2000","TVC:RUT"],["BRENT","Brent (pétrole, $)","TVC:UKOIL"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
 /* poids lourds de chaque indice : [code, nom, symbole TradingView] */
 var BIGS={
   NDX:[["NVDA","Nvidia","NASDAQ:NVDA"],["MSFT","Microsoft","NASDAQ:MSFT"],["AAPL","Apple","NASDAQ:AAPL"],["AMZN","Amazon","NASDAQ:AMZN"],["META","Meta","NASDAQ:META"],["GOOGL","Alphabet","NASDAQ:GOOGL"],["AVGO","Broadcom","NASDAQ:AVGO"],["TSLA","Tesla","NASDAQ:TSLA"],["COST","Costco","NASDAQ:COST"],["NFLX","Netflix","NASDAQ:NFLX"]],
