@@ -15,10 +15,10 @@
 var CK=window.CK,u=CK.u,S=CK.S;
 var BN="https://fapi.binance.com",BB="https://api.bybit.com",OKX="https://www.okx.com",BG="https://api.bitget.com",HL="https://api.hyperliquid.xyz/info",DB="https://www.deribit.com/api/v2/public",CB="https://api.exchange.coinbase.com";
 var EX=[["binance","Binance"],["bybit","Bybit"],["okx","OKX"],["bitget","Bitget"],["hl","Hyperliquid"]];
-S.pos=S.pos||{};["BTC","ETH","NDX","SPX"].forEach(function(k){S.pos[k]=S.pos[k]||{ex:{}};});
+S.pos=S.pos||{};["NDX","SPX"].forEach(function(k){S.pos[k]=S.pos[k]||{ex:{}};});
 /* Indices actions : perpétuels OKX qui répliquent le Nasdaq 100 et le S&P 500 (mêmes instruments que les corrélations) */
 var IDX={NDX:{n:"NASDAQ 100",inst:"US100-USDT-SWAP",idx:"US100-USDT"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",idx:"SPX-USDT"}};
-var FT=CK.fut,ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["MNQ","MNQ"],["MES","MES"],["BTC","BTC"],["ETH","ETH"]];
+var FT=CK.fut,ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["MNQ","MNQ"],["MES","MES"]];
 var sym=CK.ls("posSym2")||"NDX",lastUp=0;
 if(!S.pos[FT.base(sym)])sym="NDX";
 function J(url,opt){return u.fetchJSON(url,opt,12000);}
@@ -99,7 +99,7 @@ function loadOpt(){
 }
 function cbCalc(b){var P=S.pos[b],tk=S.tick[b+"-USDT"];if(P.cbPx&&tk&&tk.last)P.cb=(P.cbPx/tk.last-1)*100;}
 function aggregate(){
-  ["BTC","ETH"].forEach(function(b){var P=S.pos[b],tot=0,wf=0,wo=0,n=0;
+  [].forEach(function(b){var P=S.pos[b],tot=0,wf=0,wo=0,n=0;
     var of=S.fund&&S.fund[b];if(P.ex.okx&&of){P.ex.okx.f8=of.r*100;P.ex.okx.next=of.next;}
     EX.forEach(function(e){var x=P.ex[e[0]];if(!x||!(x.oiU>0))return;tot+=x.oiU;n++;if(x.f8!=null&&isFinite(x.f8)){wf+=x.f8*x.oiU;wo+=x.oiU;}});
     P.tot=tot;P.nEx=n;P.fw=wo?wf/wo:null;
@@ -109,8 +109,8 @@ function aggregate(){
   lastUp=Date.now();
 }
 function safe(p,n){return p.catch(function(e){if(window.console)console.warn("[pos] "+n,e);});}
-function all(){return Promise.all([safe(loadFast("BTC"),"BTC"),safe(loadFast("ETH"),"ETH"),safe(loadHL(),"HL"),safe(loadIdx("NDX"),"NDX"),safe(loadIdx("SPX"),"SPX")]).then(function(){aggregate();render();if(CK.computeFactors)CK.computeFactors();});}
-function slow(){return Promise.all([safe(loadHist("BTC"),"histBTC"),safe(loadHist("ETH"),"histETH"),safe(loadRatios("BTC"),"ratiosBTC"),safe(loadRatios("ETH"),"ratiosETH"),safe(loadOpt(),"options")]).then(function(){aggregate();render();if(CK.computeFactors)CK.computeFactors();});}
+function all(){return Promise.all([safe(loadIdx("NDX"),"NDX"),safe(loadIdx("SPX"),"SPX")]).then(function(){aggregate();render();});}
+function slow(){return Promise.resolve().then(function(){aggregate();render();});}
 
 /* ---------- Lecture ---------- */
 var nf=u.nf,pct=u.pct,usd=u.usd;
@@ -132,7 +132,7 @@ function spark(arr,mid){if(!arr||arr.length<2)return "";var mn=Math.min.apply(nu
 function tile(k,v,sub,read,extra){return '<div class="pz-t"><span class="pz-k">'+k+'</span><b class="pz-v">'+v+'</b>'+(sub?'<span class="pz-s">'+sub+'</span>':"")+(extra||"")+(read||"")+'</div>';}
 function idxTiles(P){
   var has=P.tot>0,nxt=P.ex.okx&&P.ex.okx.next,dp=P.last&&P.open?(P.last/P.open-1)*100:null,fu=FT.is(sym),M=fu?FT.M[sym]:null,inf=fu&&P.last?FT.info(sym,P.last):null;
-  return (fu?[tile("Prix "+M.n+" (estimé)",P.last?u.px(P.last+inf.v):"—","indice + écart "+(inf.v>=0?"+":"−")+nf(Math.abs(inf.v),2)+" pts ("+inf.src+")",""),tile("Valeur du point",M.pt+" $","tick 0,25 pt = "+nf(.25*M.pt,2)+" $ · 10 pts = "+nf(10*M.pt,0)+" $","")]:[]).concat([
+  return (fu?[tile("Prix "+M.n,P.last?u.px(P.last+inf.v):"—","indice + écart "+(inf.v>=0?"+":"−")+nf(Math.abs(inf.v),2)+" pts ("+inf.src+")",""),tile("Valeur du point",M.pt+" $","tick 0,25 pt = "+nf(.25*M.pt,2)+" $ · 10 pts = "+nf(10*M.pt,0)+" $","")]:[]).concat([
     tile("Prix du perpétuel",P.last?u.px(P.last):"—",dp!=null?'<span class="'+u.cls(dp)+'">'+sgn(dp,2)+' %</span> sur 24 h · OKX':"",""),
     tile("Open interest",has?usd(P.tot):"—","OKX seul · positions ouvertes en $",""),
     tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · OKX":"",readFund(P.fw)),
@@ -171,7 +171,7 @@ CK.pos={
   boot:function(){
     var host=u.$("deriv");if(host){host.classList.add("pz");host.addEventListener("click",function(e){var b=e.target.closest("[data-pz]");if(!b)return;sym=b.getAttribute("data-pz");CK.ls("posSym2",sym);host._h=null;render();});}
     var h2=document.querySelector('.mod[data-mod="deriv"] .mhd h2');if(h2)h2.textContent="Dérivés & positionnement";
-    var meta=document.querySelector('.mod[data-mod="deriv"] .mhd .meta');if(meta)meta.textContent="Binance · Bybit · OKX · Bitget · Hyperliquid";
+    var meta=document.querySelector('.mod[data-mod="deriv"] .mhd .meta');if(meta)meta.textContent="OKX · perpétuels Nasdaq 100 et S&P 500";
     render();all().then(slow);
     setInterval(all,60000);setInterval(slow,300000);setInterval(function(){tick();},1000);setInterval(function(){if(lastUp)render();},15000);
   },

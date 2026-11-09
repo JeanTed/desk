@@ -1,6 +1,6 @@
 name: Robot du Desk
 
-# Toutes les 10 minutes : récupère l'agenda, les news crypto, FinancialJuice et les options NDX/SPX,
+# Toutes les 10 minutes : récupère l'agenda, FinancialJuice, les news futures, les options NDX/SPX et les prix MNQ/MES,
 # puis publie le Desk et ses données sur GitHub Pages.
 on:
   schedule:
@@ -42,6 +42,12 @@ jobs:
         run: |
           pip install --quiet yfinance
           python options.py
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      # Prix et niveaux des contrats micro MNQ / MES (Yahoo Finance). Même règle : une panne ne bloque rien.
+      - name: Futures MNQ et MES
+        continue-on-error: true
+        run: python futpx.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       - uses: actions/configure-pages@v5

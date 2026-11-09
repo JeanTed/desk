@@ -50,19 +50,19 @@ function loadPx(b){
     var t=j&&j.data&&j.data[0];if(t&&+t.last>0&&CK.levels&&CK.levels.px){CK.levels.px[b]=+t.last;render();}});
 }
 function levelsOf(){
-  var d=CK.levels&&CK.levels.data&&CK.levels.data[FT.base(PL.sym)],o={};
-  if(d)d.L.forEach(function(x){o[x.k]=x.px;});
+  var yl=FT.levels(PL.sym),d=CK.levels&&CK.levels.data&&CK.levels.data[FT.base(PL.sym)],o={};
+  if(yl){yl.forEach(function(x){o[x.k]=x.px;});o._y=1;}else if(d)d.L.forEach(function(x){o[x.k]=x.px;});
   return o;
 }
 function render(){
   var host=u.$("plan");if(!host)return;
   var B=FT.base(PL.sym),fu=FT.is(PL.sym),M=fu?FT.M[PL.sym]:null,L=levelsOf(),p0=CK.levels&&CK.levels.px&&CK.levels.px[B],now=Date.now(),I=IDX[PL.sym],sg=seg();
   if(!p0||!Object.keys(L).length){host.innerHTML=sg+'<div class="empty">Calcul du plan…</div>';return;}
-  var inf=fu?FT.info(PL.sym,p0):null,off=inf?inf.v:0,p=p0+off;Object.keys(L).forEach(function(k){L[k]+=off;});
+  var inf=fu?FT.info(PL.sym,p0):null,off=inf?inf.v:0,p=p0+off;var yl=!!L._y;delete L._y;if(!yl)Object.keys(L).forEach(function(k){L[k]+=off;});
   var rows=[];
   function add(tag,name,v,kind,tip){if(v>0)rows.push({tag:tag,n:name,px:v,k:kind,tip:tip||""});}
   add("PDH","Plus haut d'hier",L.PDH,"niv");add("PDL","Plus bas d'hier",L.PDL,"niv");
-  if(PD[B])add("PDC","Clôture d'hier (00 h UTC)",PD[B]+off,"niv");
+  if(L.PDC>0)add("PDC","Clôture d'hier (00 h UTC)",L.PDC,"niv");else if(PD[B])add("PDC","Clôture d'hier (00 h UTC)",PD[B]+off,"niv");
   add("DO","Ouverture du jour (UTC)",L.DO,"niv");add("WO","Ouverture de la semaine",L.WO,"niv");
   var nh=Math.max(L.TKH||0,L.LDH||0),nl=Math.min(L.TKL||Infinity,L.LDL||Infinity);
   if(nh>0)add("NUH","Haut de la nuit (Tokyo + Londres)",nh,"niv");
@@ -96,9 +96,9 @@ function render(){
   /* agenda du jour : annonces américaines importantes */
   var td=parisDay(now),ev=(S.cal||[]).filter(function(e){return parisDay(e.ts)===td&&(e.imp==="hi"||e.imp==="md");}).slice(0,6);
   var ag=ev.length?'<div class="plan-ag"><span class="x-k">Annonces du jour (heure de Paris)</span>'+ev.map(function(e){return '<div class="plan-ev'+(e.ts<now?" past":"")+'"><span class="mono">'+hm(e.ts)+'</span><span class="plan-i '+(e.imp==="hi"?"hi":"md")+'" aria-hidden="true"></span><span>'+esc(e.fr||e.t)+'</span></div>';}).join("")+'</div>':'<div class="plan-ag"><span class="x-k">Annonces du jour</span><div class="plan-ev"><span>Aucune annonce américaine importante au programme.</span></div></div>';
-  var spec=fu?'<p class="plan-spec"><b>'+M.n+'</b> · '+M.full+' · 1 point = <b>'+M.pt+' $</b> · tick 0,25 pt = '+nf(.25*M.pt,2)+' $ · écart contrat/indice <b>'+(off>=0?"+":"−")+nf(Math.abs(off),2)+' pts</b> ('+inf.src+') · échéance trimestrielle dans '+Math.round(inf.days)+' j</p>':'';
+  var spec=fu?'<p class="plan-spec"><b>'+M.n+'</b> · '+M.full+' · 1 point = <b>'+M.pt+' $</b> · tick 0,25 pt = '+nf(.25*M.pt,2)+' $ · écart contrat/référence <b>'+(off>=0?"+":"−")+nf(Math.abs(off),2)+' pts</b> ('+inf.src+') · échéance trimestrielle dans '+Math.round(inf.days)+' j</p>':'';
   var out=sg+head+spec+(fu?'<div class="lv-hd"><span>Niveau</span><span></span><span>Prix</span><span>Points</span><span>$ / contrat</span><span>%</span></div>':'')+'<div class="lv-list">'+html+'</div>'+(rd.length?'<p class="plan-rd">'+rd.map(esc).join(" ")+'</p>':"")+ag+
-    '<p class="x-n">'+(oinfo?esc(oinfo)+" ":"")+'Prix et niveaux : perpétuel '+I.perp+' d\'OKX (journée à 00 h UTC), écart possible avec l\'indice.'+(fu?' Pour '+M.n+', chaque niveau = indice + écart contrat/indice (mesuré avec le future '+(PL.sym==='MNQ'?'NQ':'ES')+' de TradingView, sinon estimé par le coût de portage) : vérifie le prix exact sur ta plateforme.':'')+' Nuit = Tokyo + Londres. Options : open interest de la veille (robot GitHub). Lecture mécanique des niveaux, pas une prévision.</p>';
+    '<p class="x-n">'+(oinfo?esc(oinfo)+" ":"")+'Prix et niveaux : perpétuel '+I.perp+' d\'OKX (journée à 00 h UTC), écart possible avec l\'indice.'+(fu?' Pour '+M.n+', chaque niveau = indice + écart contrat/indice '+(yl?'(niveaux lus sur le contrat réel, Yahoo Finance via le robot, prix différé)':'(écart '+inf.src+' : robot Yahoo, sinon TradingView en séance US, sinon coût de portage)')+' : vérifie le prix exact sur ta plateforme.':'')+' Nuit = Tokyo + Londres. Options : open interest de la veille (robot GitHub). Lecture mécanique des niveaux, pas une prévision.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 
@@ -135,7 +135,7 @@ CK.plan={boot:function(){
   render();renderCtx();
   function lv(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadLevels(k);});}
   function op(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadOptions(k);});}
-  lv();op();BASES.forEach(loadPrev);
+  lv();op();BASES.forEach(loadPrev);FT.load(render);setInterval(function(){FT.load(function(){render();if(CK.xApi&&CK.xApi.renderAll)CK.xApi.renderAll();});},180000);
   setInterval(lv,120000);setInterval(op,600000);setInterval(function(){BASES.forEach(loadPrev);},600000);
   setInterval(function(){if(!document.hidden)loadPx(PL.sym);},10000);
   loadCtx();setInterval(loadCtx,60000);

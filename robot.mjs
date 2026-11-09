@@ -2,7 +2,7 @@
 // Il va chercher ce que le navigateur ne peut pas lire lui-même, le traduit en français
 // et le publie en fichiers JSON à côté du Desk :
 //   data/calendar.json  agenda économique de la semaine (+ la suivante)
-//   data/news.json      news crypto (CoinDesk, The Block, Decrypt, Cointelegraph, Cryptoast, Journal du Coin)
+//   data/futures.json   news des marchés futures (Bloomberg, Investing.com, Trading Economics, Maison Blanche, Fed…)
 //   data/fj.json        news macro FinancialJuice
 //   data/meta.json      état de chaque source (affiché dans l'espace Connexions)
 // Si une source ne répond pas, la dernière version publiée est conservée.
@@ -32,7 +32,7 @@ function note(k, ok, n, err) { meta.sources[k] = { ok, n: n || 0, err: err ? Str
    2) Google (gtx), puis Google (dict), puis MyMemory si un service refuse */
 const MEMO = {}, TRS = { memo: 0, gtx: 0, dict: 0, mymemory: 0, fail: 0, err: "" };
 async function loadMemo() {
-  for (const f of ["news.json", "fj.json"]) {
+  for (const f of ["futures.json", "fj.json"]) {
     const prev = await previous(f);
     (Array.isArray(prev) ? prev : []).forEach(x => { if (x && x.title && x.fr) MEMO[x.title] = x.fr; });
   }
@@ -98,26 +98,6 @@ async function calendar() {
   } catch (e) { note("calendar", false, 0, e); return (await previous("calendar.json")) || []; }
 }
 
-/* ---------- 2. News crypto ---------- */
-const FEEDS = [
-  { src: "CoinDesk", url: "https://www.coindesk.com/arc/outboundfeeds/rss/", lang: "en" },
-  { src: "The Block", url: "https://www.theblock.co/rss.xml", lang: "en" },
-  { src: "Decrypt", url: "https://decrypt.co/feed", lang: "en" },
-  { src: "Cointelegraph", url: "https://cointelegraph.com/rss", lang: "en" },
-  { src: "Cryptoast", url: "https://cryptoast.fr/feed/", lang: "fr" },
-  { src: "Journal du Coin", url: "https://journalducoin.com/feed/", lang: "fr" }
-];
-async function cryptoNews() {
-  const res = await Promise.allSettled(FEEDS.map(f => get(f.url).then(x => rss(x).slice(0, 15).map(i => ({ ...i, src: f.src, lang: f.lang })))));
-  const items = []; res.forEach((r, i) => { if (r.status === "fulfilled") items.push(...r.value); note("news:" + FEEDS[i].src, r.status === "fulfilled", r.status === "fulfilled" ? r.value.length : 0, r.reason); });
-  if (!items.length) return (await previous("news.json")) || [];
-  const seen = new Set(), list = items.filter(x => { const k = x.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
-    .sort((a, b) => b.ts - a.ts).slice(0, 60);
-  const tr = await translate(list.filter(x => x.lang === "en").map(x => x.title));
-  list.forEach(x => { if (tr[x.title]) x.fr = tr[x.title]; });
-  return list;
-}
-
 /* ---------- 3. FinancialJuice ---------- */
 async function financialJuice() {
   try {
@@ -170,11 +150,10 @@ async function futuresNews() {
 /* ---------- Publication ---------- */
 await mkdir(OUT + "/data", { recursive: true });
 await loadMemo();
-const [cal, news, fj] = await Promise.all([calendar(), cryptoNews(), financialJuice()]);
+const [cal, fj] = await Promise.all([calendar(), financialJuice()]);
 const fut = await futuresNews();
 meta.translate = TRS;
 await writeFile(OUT + "/data/calendar.json", JSON.stringify(cal));
-await writeFile(OUT + "/data/news.json", JSON.stringify(news));
 await writeFile(OUT + "/data/fj.json", JSON.stringify(fj));
 await writeFile(OUT + "/data/futures.json", JSON.stringify(fut));
 await writeFile(OUT + "/data/meta.json", JSON.stringify(meta));
@@ -182,5 +161,5 @@ await copyFile("index.html", OUT + "/index.html");
 /* Image d'aperçu quand on partage le lien (X, Discord, Telegram…) */
 for (const f of ["manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) { try { await copyFile(f, OUT + "/" + f); } catch {} }
 try { await writeFile(OUT + "/.nojekyll", ""); } catch {}
-console.log("Agenda", cal.length, "· news crypto", news.length, "· FinancialJuice", fj.length, "· news futures", fut.length);
+console.log("Agenda", cal.length, "· FinancialJuice", fj.length, "· news futures", fut.length);
 console.log(JSON.stringify(meta.sources, null, 1));

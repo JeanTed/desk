@@ -19,11 +19,22 @@ CK.fut=(function(){
     for(var k=0;k<6;k++){var mo=[2,5,8,11][k%4],yy=y+Math.floor(k/4),t=new Date(Date.UTC(yy,mo,1,13,30)),fri=(5-t.getUTCDay()+7)%7;t=new Date(Date.UTC(yy,mo,1+fri+14,13,30));if(t.getTime()>now)return t.getTime();}
     return now;
   };
-  /* écart contrat − indice en points : mesuré (TradingView) si cohérent, sinon estimé par le coût de portage */
+  /* prix réels des contrats lus par le robot (Yahoo Finance) : valables 45 min */
+  F.y=null;
+  F.fresh=function(s){var d=F.y&&F.y.fut&&F.y.fut[s];return d&&d.ts&&Date.now()-d.ts<2700000?d:null;};
+  F.levels=function(s){var d=F.fresh(s);return d&&d.L&&d.L.length?d.L:null;};
+  F.load=function(cb){var url=CK.relay&&CK.relay("/futpx");if(!url)return;
+    CK.u.fetchJSON(url+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.fut){F.y=j;if(cb)cb();}}).catch(function(){});};
+  /* séance des actions américaines ouverte (lun.–ven., 9 h 30–16 h New York) : seul moment où l'indice cash est comparable au future */
+  F.cash=function(){var p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).forEach(function(x){p[x.type]=x.value;});
+    var m=(+p.hour)*60+(+p.minute);return p.weekday!=="Sat"&&p.weekday!=="Sun"&&m>=575&&m<955;};
+  /* écart contrat − prix de référence (perpétuel OKX) en points : robot Yahoo, sinon TradingView en séance US, sinon estimé par le coût de portage */
   F.info=function(s,spot){
     var m=M[s];if(!m||!(spot>0))return {v:0,src:"",days:0};
-    var f=F.rows[m.big],i=F.rows[m.it],days=Math.max(0,(F.expiry()-Date.now())/86400000);
-    if(f&&i&&f.c>0&&i.c>0){var v=f.c-i.c;if(Math.abs(v)<spot*.03)return {v:v,src:"mesuré",days:days};}
+    var days=Math.max(0,(F.expiry()-Date.now())/86400000),y=F.fresh(s);
+    if(y&&y.basis!=null&&isFinite(y.basis)&&Math.abs(y.basis)<spot*.03)return {v:y.basis,src:"Yahoo",days:days};
+    var f=F.rows[m.big],i=F.rows[m.it];
+    if(F.cash()&&f&&i&&f.c>0&&i.c>0){var v=f.c-i.c;if(Math.abs(v)<spot*.03)return {v:v,src:"mesuré",days:days};}
     var r=F.rows["TVC:US05Y"],rate=r&&r.c>0&&r.c<15?r.c/100:.04;
     return {v:spot*(rate-m.div)*days/365,src:"estimé",days:days};
   };
@@ -100,7 +111,7 @@ function fetchText(url,ms,noStore){var ctl=typeof AbortController!=="undefined"?
   return fetch(url,op).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(x){netOk(url,t0);return x;},function(e){netErr(url,e);throw e;}).finally(function(){clearTimeout(tm);});}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 /* Données du robot GitHub (agenda, news crypto, FinancialJuice) : C.data = adresse du site, ex. https://pseudo.github.io/desk */
-var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json"};
+var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json"};
 function relay(path){if(C.data)return String(C.data).replace(/\/$/,"")+(DATA_FILE[path]||path);return C.relay?String(C.relay).replace(/\/$/,"")+path:null;}
 CK.relay=relay;
 function raf2(fn){requestAnimationFrame(function(){requestAnimationFrame(fn);});}
@@ -179,7 +190,7 @@ CK.applyIdentity=applyIdentity;
 
 /* ---------------- Barre de prix ---------------- */
 var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DXY",n:"Dollar"},{k:"US05Y",n:"Taux 5 ans"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"}];
-function watch(){var w=(C.watchlist&&C.watchlist.length?C.watchlist:DEF.watchlist).map(function(x){return String(x).trim().toUpperCase().replace(/[^A-Z0-9]/g,"");}).filter(Boolean);return w.slice(0,12);}
+function watch(){return [];}
 CK.watch=watch;
 function buildStrip(){
   var h=watch().map(function(b){return '<button type="button" class="tk" data-chart="OKX:'+esc(b)+'USDT" data-title="'+esc(b)+'"><span class="s">'+esc(b)+'</span><span class="p" data-p="'+esc(b)+'">—</span><span class="c" data-c="'+esc(b)+'"></span></button>';}).join("");
@@ -207,82 +218,8 @@ function paintMacroStrip(){
     else{pe.textContent=px(d.c);ce.textContent=pct(d.ch);ce.className="c "+cls(d.ch);}});
 }
 
-/* ---------------- Temps réel : OKX (prix + liquidations), Bybit, Binance ---------------- */
-var LIQ_BASES=["BTC","ETH","SOL","XRP","DOGE","SUI","BNB","ADA","LINK","AVAX"];
-var wsUp={OKX:false,Bybit:false,Binance:false};
-function setWsState(){var on=Object.keys(wsUp).filter(function(k){return wsUp[k];});$("wsState").textContent=on.length?"Temps réel · "+on.join(", "):"Connexion au temps réel…";}
-function socket(name,url,onOpen,onMsg,pingMsg){
-  var back=1500,ws,pingT;
-  function go(){
-    try{ws=new WebSocket(url);}catch(e){return;}
-    var nr=netRec(netId(url));
-    ws.onopen=function(){nr.open=true;nr.opens++;nr.openTs=Date.now();back=1500;wsUp[name]=true;setWsState();onOpen(ws);clearInterval(pingT);if(pingMsg)pingT=setInterval(function(){try{ws.send(pingMsg);}catch(e){}},20000);};
-    ws.onmessage=function(e){nr.lastMsg=Date.now();nr.msgs.push(nr.lastMsg);if(nr.msgs.length>600)nr.msgs.splice(0,300);if(e.data==="pong")return;var m;try{m=JSON.parse(e.data);}catch(x){return;}onMsg(m);};
-    ws.onclose=function(){nr.open=false;nr.closes++;nr.lastErr=Date.now();nr.msg="Connexion fermée, reconnexion…";clearInterval(pingT);wsUp[name]=false;setWsState();setTimeout(go,back);back=Math.min(back*2,60000);};
-    ws.onerror=function(){try{ws.close();}catch(e){}};
-  }
-  go();return {send:function(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));}};
-}
-var okx=null,okxSent={};
-function tickerInsts(){var s={};["BTC","ETH","SOL"].concat(watch()).forEach(function(b){s[b+"-USDT"]=1;});(CK.alertInsts?CK.alertInsts():[]).forEach(function(i){s[i]=1;});return Object.keys(s);}
-function okxSub(all){var args=[];if(all){okxSent={};args.push({channel:"liquidation-orders",instType:"SWAP"});}
-  tickerInsts().forEach(function(i){if(!okxSent[i]){okxSent[i]=1;args.push({channel:"tickers",instId:i});}});
-  for(var i=0;i<args.length;i+=20)okx.send({op:"subscribe",args:args.slice(i,i+20)});}
-CK.wsResub=function(){if(okx)okxSub(false);};
-function startSockets(){
-  okx=socket("OKX","wss://ws.okx.com:8443/ws/v5/public",function(){okxSub(true);},function(m){if(!m.arg||!m.data)return;
-    if(m.arg.channel==="tickers")onTickers(m.data);else if(m.arg.channel==="liquidation-orders")onOkxLiq(m.data);},"ping");
-  if(CK.WITH_LIQ)socket("Bybit","wss://stream.bybit.com/v5/public/linear",function(ws){ws.send(JSON.stringify({op:"subscribe",args:LIQ_BASES.map(function(b){return "allLiquidation."+b+"USDT";})}));},function(m){
-    if(!m.topic||!/^allLiquidation/.test(m.topic)||!m.data)return;
-    (Array.isArray(m.data)?m.data:[m.data]).forEach(function(x){var b=String(x.s||"").replace(/USDT$/,""),p=+x.p,amt=+x.v*p;if(!(amt>0))return;
-      addLiqEvent({ex:"Bybit",base:b,usd:amt,long:x.S==="Buy",px:p,ts:+x.T||Date.now()},"bb"+x.T+x.s+x.v);});
-  },JSON.stringify({op:"ping"}));
-  if(CK.WITH_LIQ)socket("Binance","wss://fstream.binance.com/ws/!forceOrder@arr",function(){},function(m){var o=m&&m.o;if(!o||!/USDT$/.test(o.s))return;
-    var b=o.s.replace(/USDT$/,""),p=+o.ap||+o.p,amt=(+o.z||+o.q)*p;if(!(amt>0))return;
-    addLiqEvent({ex:"Binance",base:b,usd:amt,long:o.S==="SELL",px:p,ts:+o.T||Date.now()},"bn"+o.T+o.s+o.q);
-  },null);
-}
-function onTickers(arr){arr.forEach(function(d){S.tick[d.instId]={last:+d.last,open:+d.open24h,high:+d.high24h,low:+d.low24h,ts:+d.ts};if(CK.checkAlerts)CK.checkAlerts(d.instId,+d.last);});queueTicks();}
-function onOkxLiq(arr){arr.forEach(function(d){var meta=S.ct[d.instId];if(!meta)return;var b=d.instId.split("-")[0];
-  (d.details||[]).forEach(function(x){var sz=+x.sz,p=+x.bkPx,amt=meta.ctType==="inverse"?sz*meta.ctVal:sz*meta.ctVal*p;if(!(amt>0))return;
-    addLiqEvent({ex:"OKX",base:b,usd:amt,long:x.posSide==="long"||(x.posSide==="net"&&x.side==="sell"),px:p,ts:+x.ts||Date.now()},d.instId+x.ts+x.sz+x.side);});});}
-/* Instruments OKX : taille des contrats + catégorie (1 = crypto, 3 = actions, 4 = matières premières) */
-function loadInstruments(){S.cat=S.cat||{};return Promise.all([
-  fetchJSON(OKX+"/api/v5/public/instruments?instType=SWAP").then(function(j){(j.data||[]).forEach(function(i){S.ct[i.instId]={ctVal:+i.ctVal,ctType:i.ctType};S.cat[i.instId]=i.instCategory;});}).catch(function(){}),
-  fetchJSON(OKX+"/api/v5/public/instruments?instType=SPOT").then(function(j){(j.data||[]).forEach(function(i){S.cat[i.instId]=i.instCategory;});}).catch(function(){})]);}
-
-/* ---------------- Liquidations : flux + résumé ---------------- */
-var LIQ_WIN=4*3600000;
-function addLiqEvent(it,key,silent){
-  if(S.liqSeen[key])return;S.liqSeen[key]=1;S.liqHist.push(it);
-  if(!silent&&it.usd>=(C.liqMin||0))addLiqRow(it);
-  if(Object.keys(S.liqSeen).length>6000)S.liqSeen={};
-}
-function addLiqRow(it){var host=$("liqFeed");if(!host)return;var em=host.querySelector(".empty");if(em)em.remove();
-  var el=document.createElement("div");el.className="fi new"+(it.usd>=Math.max(250000,(C.liqMin||0)*10)?" big":"");
-  el.innerHTML=logo(it.base)+'<div class="w"><b>'+esc(it.base)+'</b> '+(it.long?'<span class="down">long liquidé</span>':'<span class="up">short liquidé</span>')+'<span class="ex">'+it.ex+'</span><small data-ago="'+it.ts+'">'+ago(it.ts)+'</small></div><span class="amt">'+usd(it.usd)+'</span>';
-  host.insertBefore(el,host.firstChild);raf2(function(){el.classList.remove("new");});while(host.children.length>8)host.removeChild(host.lastChild);}
-function seedLiq(){
-  var U=["BTC","ETH","SOL","XRP","DOGE","SUI","BNB","ADA"],seeded=[];
-  return Promise.all(U.map(function(b){var inst=b+"-USDT-SWAP";return fetchJSON(OKX+"/api/v5/public/liquidation-orders?instType=SWAP&uly="+b+"-USDT&state=filled&limit=100").then(function(j){var meta=S.ct[inst];if(!meta)return;
-    ((j.data&&j.data[0]&&j.data[0].details)||[]).forEach(function(x){var amt=+x.sz*meta.ctVal*(+x.bkPx);if(!(amt>0))return;
-      var it={ex:"OKX",base:b,usd:amt,long:x.posSide==="long"||(x.posSide==="net"&&x.side==="sell"),px:+x.bkPx,ts:+x.ts};addLiqEvent(it,inst+x.ts+x.sz+x.side,true);seeded.push(it);});}).catch(function(){});}))
-  .then(function(){var now=Date.now();seeded.filter(function(x){return x.usd>=(C.liqMin||0)&&now-x.ts<LIQ_WIN;}).sort(function(a,b){return a.ts-b.ts;}).slice(-8).forEach(addLiqRow);renderLiqSum();});
-}
-function renderLiqSum(){
-  var host=$("liqSum");if(!host)return;var now=Date.now();
-  S.liqHist=S.liqHist.filter(function(x){return now-x.ts<LIQ_WIN;});
-  var L=0,Sh=0,top=null;S.liqHist.forEach(function(x){if(x.long)L+=x.usd;else Sh+=x.usd;if(!top||x.usd>top.usd)top=x;});
-  var tot=L+Sh,share=tot?Sh/tot:0.5;
-  host.innerHTML='<div class="lq-row"><span>Longs liquidés</span><b class="down">'+usd(L)+'</b></div><div class="lq-row"><span>Shorts liquidés</span><b class="up">'+usd(Sh)+'</b></div>'+
-    '<div class="lq-bar">'+(tot?'<i class="l" style="flex:'+(1-share).toFixed(3)+'"></i><i class="s" style="flex:'+share.toFixed(3)+'"></i>':'')+'</div>'+
-    '<div class="lq-note">4 dernières heures · OKX, Bybit, Binance'+(top?'<br>Plus grosse : '+esc(top.base)+' '+usd(top.usd)+' ('+top.ex+', '+ago(top.ts)+')':'')+'</div>';
-  S.liqSum={long:L,short:Sh,top:top};
-  var f=$("liqFeed");if(f&&!f.children.length)f.innerHTML='<div class="empty">Marché calme : aucune liquidation au-dessus de '+usd(C.liqMin||0)+' pour le moment. Elles s\'affichent ici en direct.</div>';
-}
-
 /* ---------------- Macro : scanner TradingView (en direct) ---------------- */
-var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD",BTC:"OKX:BTCUSDT",TOTAL2:"CRYPTOCAP:TOTAL2",USDTD:"CRYPTOCAP:USDT.D",BTCD:"CRYPTOCAP:BTC.D"};
+var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD"};
 CK.TVS=TVS;
 var TV_COLS=["close","change","SMA20","SMA50","SMA200","Perf.W","Perf.1M","High.3M","Low.3M","ADX"];
 function loadMacro(){
@@ -290,200 +227,8 @@ function loadMacro(){
   return fetchJSON(TV_SCAN,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({symbols:{tickers:keys.map(function(k){return TVS[k];})},columns:TV_COLS})})
     .then(function(j){var by={};(j.data||[]).forEach(function(o){by[o.s]=o.d;});
       keys.forEach(function(k){var d=by[TVS[k]];if(!d)return;S.mk[k]={c:d[0],ch:d[1],s20:d[2],s50:d[3],s200:d[4],pw:d[5],pm:d[6],h3:d[7],l3:d[8],adx:d[9]};});
-      paintMacroStrip();computeFactors();
-    }).catch(function(){computeFactors();});
-}
-
-/* ---------------- Données crypto ---------------- */
-function loadBTCdaily(){return fetchJSON(OKX+"/api/v5/market/candles?instId=BTC-USDT&bar=1Dutc&limit=200").then(function(j){S.btcD=(j.data||[]).slice().reverse().map(function(c){return {ts:+c[0],o:+c[1],h:+c[2],l:+c[3],c:+c[4]};});}).catch(function(){});}
-function loadFunding(){
-  return Promise.all(["BTC","ETH"].map(function(b){var inst=b+"-USDT-SWAP";return Promise.all([
-    fetchJSON(OKX+"/api/v5/public/funding-rate?instId="+inst).then(function(j){return j.data&&j.data[0];}).catch(function(){return null;}),
-    fetchJSON(OKX+"/api/v5/public/funding-rate-history?instId="+inst+"&limit=90").then(function(j){return (j.data||[]).map(function(x){return +x.realizedRate||+x.fundingRate;});}).catch(function(){return [];})
-  ]).then(function(a){if(a[0])S.fund[b]={r:+a[0].fundingRate,next:+a[0].fundingTime,hist:a[1]};});})).then(renderDeriv);
-}
-function loadOI(){return Promise.all(["BTC","ETH"].map(function(b){return fetchJSON(BFX+"openInterestHist?symbol="+b+"USDT&period=1d&limit=10").then(function(a){return {b:b,d:(a||[]).map(function(x){return {ts:+x.timestamp,coin:+x.sumOpenInterest,usd:+x.sumOpenInterestValue};}).reverse()};}).catch(function(){return {b:b,d:[]};});}))
-  .then(function(a){S.oi={};a.forEach(function(o){S.oi[o.b]=o.d;});renderDeriv();});}
-function loadFG(){return fetchJSON("https://api.alternative.me/fng/?limit=30").then(function(j){var d=j.data||[];if(!d.length)return;var avg=d.reduce(function(s,x){return s+(+x.value);},0)/d.length;S.fg={v:+d[0].value,cls:d[0].value_classification,avg:avg,prev:d[1]?+d[1].value:null};}).catch(function(){});}
-
-/* ---------------- Analyse : structure ---------------- */
-function trend(d){
-  if(!d||d.c==null||d.s20==null||d.s50==null||d.s200==null)return null;
-  var L=(d.c>d.s200&&d.s50>d.s200)?1:(d.c<d.s200&&d.s50<d.s200)?-1:0;
-  var M=(d.c>d.s50&&d.s20>d.s50)?1:(d.c<d.s50&&d.s20<d.s50)?-1:0;
-  var Sh=(d.c>d.s20&&d.pw>0)?1:(d.c<d.s20&&d.pw<0)?-1:0;
-  var dir,str,label;
-  if(L===1){dir=1;if(M>=0&&Sh>=0){str=(M===1&&Sh===1)?3:2;label="Tendance haussière";}else{str=1;label="Haussière, en repli";}}
-  else if(L===-1){dir=-1;if(M<=0&&Sh<=0){str=(M===-1&&Sh===-1)?3:2;label="Tendance baissière";}else{str=1;label="Baissière, en rebond";}}
-  else if(M===1&&Sh===1){dir=1;str=1;label="Retournement haussier en cours";}
-  else if(M===-1&&Sh===-1){dir=-1;str=1;label="Retournement baissier en cours";}
-  else{dir=0;str=0;label="Sans tendance claire";}
-  var pos=(d.h3!=null&&d.l3!=null&&d.h3>d.l3)?(d.c-d.l3)/(d.h3-d.l3):null;
-  return {L:L,M:M,S:Sh,dir:dir,str:str,label:label,pos:pos};
-}
-function invert(d){return {c:-d.c,s20:-d.s20,s50:-d.s50,s200:-d.s200,pw:-d.pw,pm:-d.pm,h3:-d.l3,l3:-d.h3,adx:d.adx,ch:-d.ch};}
-function pivots(c,k){var H=[],L=[];for(var i=k;i<c.length-k;i++){var hi=true,lo=true;for(var j=i-k;j<=i+k;j++){if(j===i)continue;if(c[j].h>c[i].h)hi=false;if(c[j].l<c[i].l)lo=false;}if(hi)H.push(c[i]);if(lo)L.push(c[i]);}return {H:H,L:L};}
-function swingRead(c){if(!c||c.length<40)return null;var p=pivots(c.slice(-140),3);if(p.H.length<2||p.L.length<2)return null;
-  var h1=p.H[p.H.length-2].h,h2=p.H[p.H.length-1].h,l1=p.L[p.L.length-2].l,l2=p.L[p.L.length-1].l;
-  return {txt:(h2>h1?"plus hauts croissants":"plus hauts décroissants")+", "+(l2>l1?"plus bas croissants":"plus bas décroissants")+" ("+px(h1)+" → "+px(h2)+" · "+px(l1)+" → "+px(l2)+")"};}
-function lvl(x){return x===1?"haussier":x===-1?"baissier":"neutre";}
-function adxTxt(a){if(a==null)return null;return nf(a,1)+(a>=25?" · tendance forte":a>=20?" · tendance naissante":" · tendance faible");}
-var STR=["","léger","modéré","fort"];CK.STR=STR;
-
-var FDEF=[
-  {k:"BTC",nm:"Bitcoin",sh:"BTC",type:"trend",rel:1,dec:0,
-    imp:{1:"le marché directeur est porteur : les cassures haussières ont plus de chances de tenir",0:"le marché directeur n'a pas de direction nette : les cassures sont moins fiables","-1":"le marché directeur est baissier : les rebonds restent fragiles"}},
-  {k:"TOTAL2",nm:"Altcoins",sub:"capi. hors BTC",sh:"Altcoins",type:"trend",rel:1,big:true,
-    imp:{1:"les capitaux entrent sur les altcoins",0:"les altcoins n'ont pas de tendance claire","-1":"les capitaux quittent les altcoins"}},
-  {k:"USDTD",nm:"Stablecoins",sub:"dominance USDT",sh:"Stablecoins",type:"trend",rel:-1,dec:2,unit:" %",
-    imp:{1:"la part des stablecoins recule : le cash est redéployé vers le risque",0:"pas de mouvement net vers le cash ou hors du cash","-1":"la part des stablecoins grimpe : le marché se met à l'abri"}},
-  {k:"OI",nm:"Levier",sub:"open interest Binance",sh:"Levier",type:"oi"},
-  {k:"FUND",nm:"Funding",sub:"BTC perp",sh:"Funding",type:"fund"},
-  {k:"FG",nm:"Sentiment",sub:"Fear & Greed",sh:"Sentiment",type:"fg"},
-  {k:"VIX",nm:"Volatilité",sub:"VIX",sh:"VIX",type:"vix"},
-  {k:"US10Y",nm:"Taux US 10 ans",sh:"Taux 10 ans",type:"yield",
-    imp:{1:"des taux qui baissent allègent la pression sur les actifs risqués",0:"les taux n'envoient pas de signal net","-1":"des taux qui montent rendent le cash plus attractif et pèsent sur le risque"}},
-  {k:"DXY",nm:"Dollar",sub:"DXY",sh:"Dollar",type:"trend",rel:-1,dec:2,
-    imp:{1:"un dollar qui faiblit soutient les actifs risqués",0:"le dollar n'envoie pas de signal net","-1":"un dollar fort resserre la liquidité et pèse sur les actifs risqués"}},
-  {k:"NDX",nm:"Nasdaq 100",sh:"Nasdaq",type:"trend",rel:1,dec:0,
-    imp:{1:"l'appétit pour le risque est là sur la tech, très corrélée à la crypto",0:"la tech hésite : pas de signal net pour le risque","-1":"la tech recule : l'aversion au risque déborde souvent sur la crypto"}}
-];
-CK.FDEF=FDEF;
-function base(f){return {k:f.k,nm:f.nm,sub:f.sub,sh:f.sh};}
-function fmtV(d,f){if(f.big)return usd(d);if(f.dec!=null)return nf(d,f.dec)+(f.unit||"");return px(d)+(f.unit||"");}
-function trendProof(d,t,f,extra){
-  var P=[["Cours",fmtV(d.c,f)+" ("+pct(d.ch)+" auj.)"],["MM20 · 50 · 200",[d.s20,d.s50,d.s200].map(function(x){return fmtV(x,f);}).join(" · ")],
-    ["Fond",lvl(t.L)+(t.L===1?" : prix et MM50 au-dessus de la MM200":t.L===-1?" : prix et MM50 sous la MM200":" : signaux mixtes autour de la MM200")],
-    ["Moyen terme",lvl(t.M)+(t.M===1?" : prix et MM20 au-dessus de la MM50":t.M===-1?" : prix et MM20 sous la MM50":" : signaux mixtes autour de la MM50")],
-    ["Court terme",lvl(t.S)+" : "+(d.c>d.s20?"au-dessus":"sous")+" la MM20, "+pct(d.pw,1)+" sur 1 semaine"]];
-  if(t.pos!=null)P.push(["Range 3 mois",nf(t.pos*100,0)+" % (bas "+fmtV(d.l3,f)+" · haut "+fmtV(d.h3,f)+")"]);
-  if(d.adx!=null)P.push(["ADX",adxTxt(d.adx)]);
-  return (extra||[]).concat(P);
-}
-var RULE_TREND="Règle : fond = prix et MM50 vs MM200 · moyen terme = prix et MM20 vs MM50 · court terme = prix vs MM20 et perf. 1 semaine. Les trois alignés = signal fort. Données journalières.";
-function mkTrend(f){
-  var d=S.mk[f.k];var t=trend(d);if(!t)return na(f);
-  var impact=t.dir*f.rel,extra=[],label=t.label;
-  if(f.k==="USDTD")label=label.replace("Tendance haussière","Part en hausse").replace("Tendance baissière","Part en baisse").replace("Haussière, en repli","Part en hausse, en repli").replace("Baissière, en rebond","Part en baisse, en rebond");
-  if(f.k==="BTC"){var sw=swingRead(S.btcD);if(sw)extra.push(["Pivots journaliers",sw.txt]);}
-  var longP=t.L===1?"au-dessus de sa MM200":t.L===-1?"sous sa MM200":"autour de sa MM200";
-  return merge(base(f),{val:fmtV(d.c,f),ch:d.ch,impact:impact,str:impact?t.str:0,label:label,
-    text:"<b>"+label+"</b> : "+longP+", "+pct(d.pw,1)+" sur 1 semaine. → "+f.imp[String(impact)]+".",proof:trendProof(d,t,f,extra),rule:RULE_TREND,chart:TVS[f.k]});
-}
-function mkYield(f){
-  var y=S.mk.US10Y,zn=S.mk.ZN;if(!zn)return na(f);var t=trend(invert(zn));if(!t)return na(f);
-  var label=t.label.replace("Tendance haussière","Taux en hausse").replace("Tendance baissière","Taux en baisse").replace("Haussière, en repli","Hausse, en pause").replace("Baissière, en rebond","Baisse, en pause");
-  var impact=-t.dir;var bp=y?(y.c-y.c/(1+(y.ch||0)/100))*100:null;
-  var P=[["Rendement 10 ans",y?nf(y.c,3)+" % ("+(bp>=0?"+":"−")+nf(Math.abs(bp),1)+" pb auj.)":"—"],["Future ZN",nf(zn.c,3)+" · MM20 "+nf(zn.s20,2)+" · MM50 "+nf(zn.s50,2)+" · MM200 "+nf(zn.s200,2)],
-    ["Fond (taux)",lvl(t.L)],["Moyen terme",lvl(t.M)],["Court terme",lvl(t.S)+", obligations "+pct(zn.pw,1)+" sur 1 semaine"]];
-  if(zn.adx!=null)P.push(["ADX (ZN)",adxTxt(zn.adx)]);
-  return merge(base(f),{val:y?nf(y.c,3)+" %":"—",ch:y?y.ch:null,impact:impact,str:impact?t.str:0,label:label,
-    text:"<b>"+label+"</b> : structure lue sur le future obligataire 10 ans (ZN), "+(t.L===1?"rendements au-dessus de leur tendance de fond":t.L===-1?"rendements sous leur tendance de fond":"rendements sans tendance de fond")+". → "+f.imp[String(impact)]+".",
-    proof:P,rule:"Le prix d'une obligation évolue à l'inverse de son rendement : on lit la structure (MM20/50/200) sur le future ZN, puis on l'inverse. "+RULE_TREND,chart:"CBOT:ZN1!"});
-}
-function mkVix(f){
-  var d=S.mk.VIX;if(!d||d.c==null)return na(f);var c=d.c;
-  var zone=c<15?"calme":c<20?"normale":c<30?"tendue":"de panique";
-  var rising=d.s20!=null&&d.s50!=null&&c>d.s50&&d.s20>d.s50,falling=d.s20!=null&&d.s50!=null&&c<d.s50&&d.s20<d.s50;
-  var imp,str;
-  if(c>=30){imp=-1;str=3;}else if(c>=25){imp=-1;str=2;}else if(c>=20){imp=rising?-1:0;str=rising?1:0;}else if(rising){imp=0;str=0;}else{imp=1;str=c<15?2:1;}
-  var I={1:"marchés calmes : environnement porteur pour les actifs risqués",0:"la volatilité se réveille ou reste dans une zone intermédiaire : vigilance","-1":"stress sur les marchés : les actifs risqués sont vendus en premier"};
-  return merge(base(f),{val:nf(c,2),ch:d.ch,impact:imp,str:str,label:"Volatilité "+zone,
-    text:"<b>Volatilité "+zone+"</b> : VIX à "+nf(c,2)+", "+(rising?"en hausse au-dessus de sa MM50":falling?"sous sa MM50":"autour de sa MM50")+". → "+I[String(imp)]+".",
-    proof:[["VIX",nf(c,2)+" ("+pct(d.ch)+" auj.)"],["MM20 · MM50",nf(d.s20,2)+" · "+nf(d.s50,2)],["Range 3 mois",nf(d.l3,2)+" → "+nf(d.h3,2)],["Perf. 1 semaine",pct(d.pw,1)]],
-    rule:"Règle : VIX < 15 calme, 15–20 normal, 20–30 tendu, > 30 panique. Un VIX au-dessus de sa MM50 (avec MM20 > MM50) signale une volatilité qui remonte.",chart:TVS.VIX});
-}
-function mkFund(f){
-  /* Funding moyen pondéré par l'OI sur 5 plateformes (pos.js), sinon OKX seul */
-  var b=S.fund.BTC,P=S.pos&&S.pos.BTC,agg=P&&P.fw!=null;if(!b&&!agg)return na(f);var r=agg?P.fw:b.r*100,h=((b&&b.hist)||[]).map(function(x){return x*100;});
-  var avg=h.length?h.reduce(function(s,x){return s+x;},0)/h.length:null,mx=h.length?Math.max.apply(null,h):null;
-  var imp,str,label;
-  if(r>0.05){imp=-1;str=3;label="Longs très chargés";}else if(r>0.025){imp=-1;str=1;label="Longs chargés";}
-  else if(r<-0.01){imp=1;str=2;label="Shorts dominants";}else if(r<0){imp=1;str=1;label="Shorts légèrement dominants";}else{imp=0;str=0;label="Positionnement équilibré";}
-  var I={1:"les vendeurs à découvert paient pour rester : carburant pour un rachat forcé (short squeeze)",0:"pas d'excès de levier d'un côté","-1":"les acheteurs à levier paient cher pour rester : risque de purge des longs"};
-  return merge(base(f),{val:nf(r,4)+" %",ch:null,impact:imp,str:str,label:label,
-    text:"<b>"+label+"</b> : funding BTC "+(agg?"moyen sur "+P.nEx+" plateformes ":"")+"à "+nf(r,4)+" % par 8 h"+(avg!=null?", moyenne 30 j OKX "+nf(avg,4)+" %":"")+". → "+I[String(imp)]+".",
-    proof:[["Funding actuel",nf(r,4)+" % / 8 h ("+nf(r*3*365,1)+" % par an)"]].concat(agg?[["Binance","binance"],["Bybit","bybit"],["OKX","okx"],["Bitget","bitget"],["Hyperliquid","hl"]].map(function(e){var x=P.ex[e[1]];return [e[0],x&&x.f8!=null?nf(x.f8,4)+" % · OI "+usd(x.oiU):"—"];}):[])
-      .concat([["Moyenne 30 jours (OKX)",avg!=null?nf(avg,4)+" %":"—"],["Max 30 jours (OKX)",mx!=null?nf(mx,4)+" %":"—"],["ETH",S.pos&&S.pos.ETH&&S.pos.ETH.fw!=null?nf(S.pos.ETH.fw,4)+" %":S.fund.ETH?nf(S.fund.ETH.r*100,4)+" %":"—"]]),
-    rule:"Règle : > 0,025 % par 8 h = longs chargés, > 0,05 % = très chargés, < 0 = shorts dominants. Funding moyen pondéré par l'open interest de Binance, Bybit, OKX, Bitget et Hyperliquid (Hyperliquid ramené de l'heure à 8 h).",chart:"OKX:BTCUSDT.P"});
-}
-function mkOI(f){
-  var o=S.oi&&S.oi.BTC,c=S.btcD;if(!o||o.length<8||!c||c.length<8)return na(f);
-  /* Variation 7 j : Binance + Bybit en coins (pos.js), sinon Binance seul */
-  var P=S.pos&&S.pos.BTC,agg=P&&P.oi7!=null;
-  var now=o[0],ref=o[7],doi=agg?P.oi7:(now.coin/ref.coin-1)*100,dpx=(c[c.length-1].c/c[c.length-8].c-1)*100;
-  var imp=0,str=0,label;
-  if(Math.abs(doi)<5)label="Levier stable";
-  else if(doi>0&&dpx>0){imp=1;str=1;label="Hausse avec nouvelles positions";}
-  else if(doi>0){imp=-1;str=2;label="Baisse avec nouvelles positions";}
-  else if(dpx>0)label="Hausse par rachats de shorts";
-  else label="Purge du levier";
-  var I={"Levier stable":"pas d'accumulation de levier notable","Hausse avec nouvelles positions":"la hausse attire de nouveaux acheteurs : tendance soutenue, mais le levier grimpe",
-    "Baisse avec nouvelles positions":"des vendeurs à découvert ouvrent des positions : pression baissière active","Hausse par rachats de shorts":"la hausse vient surtout de shorts qui se couvrent : moins solide",
-    "Purge du levier":"le levier se vide : souvent en fin de mouvement baissier"};
-  return merge(base(f),{val:agg&&P.tot?usd(P.tot):usd(now.usd),ch:null,impact:imp,str:str,label:label,
-    text:"<b>"+label+"</b> : open interest "+pct(doi,1)+" en 7 jours (en BTC"+(agg?", Binance + Bybit":"")+"), prix "+pct(dpx,1)+". → "+I[label]+".",
-    proof:(agg&&P.tot?[["OI total 5 plateformes",usd(P.tot)],["Variation 24 h",P.oi24!=null?pct(P.oi24,2):"—"]]:[]).concat([["OI Binance aujourd'hui",nf(now.coin,0)+" BTC ("+usd(now.usd)+")"],["OI Binance il y a 7 jours",nf(ref.coin,0)+" BTC"],["Variation OI 7 j",pct(doi,1)],["Prix BTC 7 jours",pct(dpx,1)]]),
-    rule:"Règle : variation sur 7 jours de l'open interest de Binance et Bybit en nombre de BTC (neutralise l'effet prix) croisée avec la variation du prix. Seuil de signal : ±5 %.",chart:"BINANCE:BTCUSDT.P"});
-}
-function mkFG(f){
-  var g=S.fg;if(!g)return na(f);var v=g.v,imp=0,str=0,label;
-  if(v>=75){imp=-1;str=2;label="Euphorie";}else if(v>=60){label="Optimisme";}else if(v<=25){imp=1;str=2;label="Peur extrême";}else if(v<=40){label="Prudence";}else{label="Neutre";}
-  var I={Euphorie:"historiquement une zone où les corrections démarrent","Peur extrême":"historiquement une zone d'accumulation",Optimisme:"le marché est confiant sans excès",Prudence:"le marché doute, sans panique",Neutre:"pas d'excès émotionnel"};
-  return merge(base(f),{val:String(v),ch:null,impact:imp,str:str,label:label,
-    text:"<b>"+label+"</b> : indice à "+v+" (moyenne 30 j : "+nf(g.avg,0)+"). → "+I[label]+".",
-    proof:[["Aujourd'hui",v+" ("+esc(g.cls)+")"],["Hier",g.prev!=null?String(g.prev):"—"],["Moyenne 30 jours",nf(g.avg,0)]],
-    rule:"Règle (contrarienne) : ≥ 75 = euphorie, défavorable · ≤ 25 = peur extrême, favorable · entre les deux = neutre. Source : alternative.me.",chart:null});
-}
-function na(f){return merge(base(f),{val:"—",impact:0,str:0,na:true,label:"Indisponible",text:"Donnée indisponible pour le moment.",proof:[],rule:"",chart:TVS[f.k]||null});}
-function computeFactors(){
-  var out=FDEF.map(function(f){try{switch(f.type){case "trend":return mkTrend(f);case "yield":return mkYield(f);case "vix":return mkVix(f);case "fund":return mkFund(f);case "oi":return mkOI(f);case "fg":return mkFG(f);}}catch(e){return na(f);}return na(f);});
-  var changed=[];
-  out.forEach(function(x){var p=S.prevImpact[x.k];if(!x.na&&p!=null&&p!==x.impact)changed.push({f:x,from:p});if(!x.na)S.prevImpact[x.k]=x.impact;});
-  S.factors=out;
-  var ok=out.filter(function(x){return !x.na;}).length;
-  $("mapMeta").textContent=ok?("Lecture journalière · "+ok+"/"+out.length+" indicateurs · "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})):"Chargement…";
-  if(CK.map)CK.map.update(changed);
-  if(changed.length&&CK.onFactorChange)CK.onFactorChange(changed);
-}
-CK.computeFactors=computeFactors;
-CK.stClass=function(x){return x.na?"na":x.impact>0?"fav":x.impact<0?"def":"neu";};
-CK.stLabel=function(x){return x.na?"—":(x.impact>0?"Favorable":x.impact<0?"Défavorable":"Neutre")+(x.impact&&x.str?" · "+STR[x.str]:"");};
-
-/* ---------------- Dérivés ---------------- */
-function renderDeriv(){
-  if(CK.pos&&CK.pos.render){CK.pos.render();return;}
-  var host=$("deriv");if(!host)return;var b=S.fund.BTC,e=S.fund.ETH,o=S.oi&&S.oi.BTC;
-  function fund(x,n){if(!x)return '<div class="dv"><div class="k">Funding '+n+'</div><div class="v">—</div></div>';var r=x.r*100;
-    return '<div class="dv"><div class="k">Funding '+n+'</div><div class="v '+cls(r)+'">'+nf(r,4)+' %</div><div class="s">'+nf(r*3*365,1)+' % par an</div></div>';}
-  var oiH='<div class="dv"><div class="k">Open interest BTC</div><div class="v">—</div></div>';
-  if(o&&o.length>=8){var d7=(o[0].coin/o[7].coin-1)*100;oiH='<div class="dv"><div class="k">Open interest BTC</div><div class="v">'+usd(o[0].usd)+'</div><div class="s"><span class="'+cls(d7)+'">'+pct(d7,1)+'</span> en 7 j · Binance</div></div>';}
-  host.innerHTML=fund(b,"BTC")+fund(e,"ETH")+'<div class="dv"><div class="k">Prochain funding</div><div class="v" id="fundCd">—</div><div class="s">toutes les 8 h · OKX</div></div>'+oiH;
-  tickFunding();
-}
-function tickFunding(){var el=$("fundCd"),b=S.fund.BTC;if(el&&b&&b.next)el.textContent=clock(b.next-Date.now());}
-
-/* ---------------- Top mouvements ---------------- */
-function normTickers(arr,perp){
-  return (arr||[]).filter(function(t){return perp?/-USDT-SWAP$/.test(t.instId):/-USDT$/.test(t.instId);}).map(function(t){
-    var b=t.instId.split("-")[0],last=+t.last,open=+t.open24h;return {inst:t.instId,base:b,last:last,chg:open?(last/open-1)*100:0,usd:perp?(+t.volCcy24h)*last:+t.volCcy24h};
-  }).filter(function(x){return !STABLES[x.base]&&!/(UP|DOWN|[235]L|[235]S)$/.test(x.base)&&x.last>0;});
-}
-function loadMovers(){
-  return Promise.all([fetchJSON(OKX+"/api/v5/market/tickers?instType=SPOT").catch(function(){return {};}),fetchJSON(OKX+"/api/v5/market/tickers?instType=SWAP").catch(function(){return {};})])
-    .then(function(a){S.uni={spot:normTickers(a[0].data,false),perp:normTickers(a[1].data,true)};
-      ["spot","perp"].forEach(function(m){S.movers[m]=S.uni[m].filter(function(x){return x.usd>=(C.moversMinVolume||0);});});renderMovers();});
-}
-CK.loadMovers=loadMovers;
-function renderMovers(){
-  var host=$("movers");if(!host)return;var m=S.moversMkt||C.moversMarket||"spot",cat=S.cat||{},hc=Object.keys(cat).length>0,L=(S.movers[m]||[]).filter(function(x){return !hc||cat[x.inst]==="1";});
-  document.querySelectorAll("#moversSeg button").forEach(function(b){b.setAttribute("aria-pressed",b.getAttribute("data-m")===m?"true":"false");});
-  if(!L.length){host.innerHTML='<div class="empty">Chargement des marchés OKX…</div>';return;}
-  var up=L.slice().sort(function(a,b){return b.chg-a.chg;}).slice(0,6),dn=L.slice().sort(function(a,b){return a.chg-b.chg;}).slice(0,6);
-  var mx=Math.max(Math.abs(up[0]?up[0].chg:1),Math.abs(dn[0]?dn[0].chg:1))||1;
-  function row(x){var sym="OKX:"+x.base+"USDT"+(m==="perp"?".P":"");return '<div class="mv" data-chart="'+sym+'" data-title="'+esc(x.base)+'">'+logo(x.base)+'<span class="t">'+esc(x.base)+'</span><span class="c '+cls(x.chg)+'">'+pct(x.chg,1)+'</span><i class="bar '+(x.chg>=0?"up":"down")+'" style="transform:scaleX('+Math.min(1,Math.abs(x.chg)/mx).toFixed(3)+')"></i></div>';}
-  host.innerHTML='<div class="mv-col"><h4>Hausses</h4>'+up.map(row).join("")+'</div><div class="mv-col"><h4>Baisses</h4>'+dn.map(row).join("")+'</div>';
-  S.topUp=up;S.topDn=dn;
+      paintMacroStrip();
+    }).catch(function(){});
 }
 
 /* ---------------- Agenda : seulement ce qui fait bouger le marché ---------------- */
@@ -547,7 +292,7 @@ function tickNext(){
 }
 
 /* ---------------- News ---------------- */
-var HOT=/\b(fed|fomc|powell|cpi|ppi|pce|nfp|payrolls|jobs report|rate (cut|hike|decision)|tariff|trump|bitcoin|btc|crypto|ether|sec\b|etf|treasury|yields?|ecb|boj|china|opec|war|strike|missile|sanction)/i;
+var HOT=/\b(fed|fomc|powell|cpi|ppi|pce|nfp|payrolls|jobs report|rate (cut|hike|decision)|tariff|trump|sec\b|etf|treasury|yields?|ecb|boj|china|opec|war|strike|missile|sanction)/i;
 var TR=lsj("tr")||{},trBusy=false,trDead=0;
 CK.trGet=function(t){return TR[t];};CK.trNow=function(L){translate(L);};
 function trSave(){var k=Object.keys(TR);if(k.length>700){var n={};k.slice(-500).forEach(function(x){n[x]=TR[x];});TR=n;}lsj("tr",TR);}
@@ -700,18 +445,17 @@ function newsRich(host,L,lang){
     }
     return '<a class="nr '+C[1]+(neuf?" in":"")+(br?" br":"")+'"'+anim+' href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer"><div class="nr-who"><em class="nr-cat">'+(br?"Breaking":C[0])+'</em><span>'+esc(x.src||"")+'</span><i class="nr-t" data-ts="'+x.ts+'">'+chrono(x.ts)+'</i></div><p class="nr-tx">'+esc(t)+'</p>'+sy+'</a>';
   }).join("");
-  var fx=S.newsTab==="x"?'<div class="nr-f" role="group" aria-label="Filtrer les tweets">'+[["tous","Tous"],["onchain","Onchain"],["macro","Macro"],["news","News"],["trump","Trump"]].map(function(z){return '<button type="button" data-xf="'+z[0]+'" aria-pressed="'+((S.xFiltre||"tous")===z[0])+'">'+z[1]+'</button>';}).join("")+'</div>':'';
+  var fx=S.newsTab==="x"?'<div class="nr-f" role="group" aria-label="Filtrer les tweets">'+[["tous","Tous"],["macro","Macro"],["news","News"],["trump","Trump"]].map(function(z){return '<button type="button" data-xf="'+z[0]+'" aria-pressed="'+((S.xFiltre||"tous")===z[0])+'">'+z[1]+'</button>';}).join("")+'</div>':'';
   host.innerHTML=fx+'<div class="nr-l">'+(html||'<p class="nr-vide">Aucun tweet pour ce filtre dans les dernières heures.</p>')+'</div>';
 }
 /* Les « il y a » des cartes avancent tout seuls */
 setInterval(function(){document.querySelectorAll(".nr-t[data-ts]").forEach(function(e){e.textContent=chrono(+e.getAttribute("data-ts"));});},10000);
-function newsList(){
+var CRYPTO_RE=/\b(bitcoin\w*|btc|ethereum|ether|eth|crypto\w*|solana|xrp|ripple|dogecoin|doge|binance|coinbase|stablecoin\w*|defi|nft\w*|altcoins?|blockchain|tether|usdt|usdc|memecoins?|tokens?|airdrops?|on-?chain|saylor|microstrategy|satoshi|halving|hodl)\b/i;
+function newsList(){return newsBase().filter(function(x){return !CRYPTO_RE.test(x.title||"");});}
+function newsBase(){
   if(S.newsTab==="futures")return S.news.fut;
   if(S.newsTab==="tout")return newsTout();
-  if(S.newsTab==="x"){var xf=S.xFiltre||"tous";return S.news.wire.filter(function(x){return x.kind==="x"&&x.gros&&(xf==="tous"||x.grp===xf);});}
-  if(S.newsTab==="crypto"&&S.news.wire.length)return S.news.wire;
-  if(S.newsTab==="articles"||S.newsTab==="crypto"){if(S.news.crypto.length)return S.news.crypto;
-    return S.news.macro.filter(function(x){return /bitcoin|btc|crypto|ether|stablecoin|coinbase|binance|blackrock|etf|token|blockchain|saylor|strategy/i.test(x.title);});}
+  if(S.newsTab==="x"){var xf=S.xFiltre==="onchain"?"tous":(S.xFiltre||"tous");return S.news.wire.filter(function(x){return x.kind==="x"&&x.gros&&(xf==="tous"||x.grp===xf);});}
   return S.news.macro;
 }
 function renderNews(){
@@ -780,12 +524,11 @@ function wire(){
   wireOverlays();
   document.querySelectorAll("[data-theme-set]").forEach(function(b){b.addEventListener("click",function(){setTheme(b.getAttribute("data-theme-set"),b);});});
   document.addEventListener("click",function(e){var c=e.target.closest("[data-chart]");if(!c||e.target.closest(".star")||document.body.classList.contains("editing"))return;e.preventDefault();openChart(c.getAttribute("data-chart"),c.getAttribute("data-title"));});
-  $("moversSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;S.moversMkt=b.getAttribute("data-m");renderMovers();});
   $("news").addEventListener("click",function(e){var b=e.target.closest("[data-xf]");if(!b)return;e.preventDefault();S.xFiltre=b.getAttribute("data-xf");renderNews();});
   $("newsSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;S.newsTab=b.getAttribute("data-n");try{localStorage.setItem("ck:newsTab",S.newsTab);}catch(x){}renderNews();$("news").scrollTop=0;});
   $("newsLang").addEventListener("click",function(){S.newsLang=(S.newsLang||C.newsLang||"fr")==="fr"?"vo":"fr";renderNews();});
   document.querySelectorAll("[data-help]").forEach(function(b){b.addEventListener("click",function(){var k=b.getAttribute("data-help"),box=document.querySelector('[data-helpbox="'+k+'"]');if(!box)return;box.textContent=HELP[k]||"";box.hidden=!box.hidden;});});
-  document.addEventListener("visibilitychange",function(){if(!document.hidden){paintTicks();renderLiqSum();}});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden){paintTicks();}});
   /* Projecteur : la bordure de la carte s'éclaire sous le curseur */
   var spot=null;document.addEventListener("pointermove",function(e){var c=e.target.closest&&e.target.closest(".card");if(!c)return;if(spot)return;spot=requestAnimationFrame(function(){spot=null;var r=c.getBoundingClientRect();c.style.setProperty("--mx",(e.clientX-r.left)+"px");c.style.setProperty("--my",(e.clientY-r.top)+"px");});},{passive:true});
 }
@@ -796,22 +539,15 @@ CK.boot=function(){
   applyIdentity();syncThemeBtns();buildStrip();wire();
   S.moversMkt=C.moversMarket;S.newsLang=C.newsLang;
   [function(){if(CK.bg)CK.bg.boot();},function(){if(CK.layout)CK.layout.boot();},function(){if(CK.day)CK.day.boot();},function(){if(CK.pos)CK.pos.boot();},function(){if(CK.extra)CK.extra.boot();},function(){if(CK.plan)CK.plan.boot();},function(){if(CK.ui)CK.ui.boot();},function(){if(CK.hub)CK.hub.boot();},function(){if(CK.worlds)CK.worlds.boot();},function(){if(CK.sound)CK.sound.boot();},function(){if(CK.net)CK.net.boot();}].forEach(safe);
-  renderLiqSum();renderNews();
-  loadInstruments().then(function(){startSockets();if(CK.WITH_LIQ)seedLiq();});
+  renderNews();
   loadMacro();
-  Promise.all([loadBTCdaily(),loadFunding(),loadOI(),loadFG()]).then(computeFactors);
   
   loadCalendar();loadFJ();loadFutures();loadWire();
   (function wl(){setTimeout(function(){loadWire().then(wl,wl);},document.hidden?60000:20000);})();
-  loadTG();(function tl(){setTimeout(function(){loadTG().then(tl,tl);},tgDelai());})();
-  document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-(WIRE.tgTs||0)>Math.min(tgDelai(),180000))loadTG();});
   /* On ouvre l'Agent ou les News avec des données de plus de 3 min : on les rafraîchit tout de suite */
-  setInterval(function(){if(!document.hidden&&(agentVisible()||newsVisible())&&Date.now()-(WIRE.tgTs||0)>(window.CK_PUBLIC?180000:60000))loadTG();},15000);
-  setInterval(function(){tickNext();tickFunding();},1000);
-  setInterval(function(){renderLiqSum();document.querySelectorAll("[data-ago]").forEach(function(e){e.textContent=ago(+e.getAttribute("data-ago"));});},2000);
+  setInterval(function(){tickNext();},1000);
+  setInterval(function(){document.querySelectorAll("[data-ago]").forEach(function(e){e.textContent=ago(+e.getAttribute("data-ago"));});},2000);
   setInterval(loadMacro,120000);
-  setInterval(function(){Promise.all([loadBTCdaily(),loadFunding(),loadOI()]).then(computeFactors);},600000);
-  setInterval(function(){loadFG().then(computeFactors);},1800000);
   
   setInterval(loadCalendar,900000);
   (function fj(){setTimeout(function(){loadFJ().then(fj,fj);},document.hidden?180000:60000);})();

@@ -9,7 +9,7 @@
 "use strict";
 var CK=window.CK,u=CK.u,esc=u.esc;
 var DEST=[
-  {id:"bandeau",name:"Bandeau & alertes",sub:"prix, alertes de prix",c:"#C4C8CF"},
+  {id:"bandeau",name:"Bandeau",sub:"indices, taux, dollar, VIX",c:"#C4C8CF"},
   {id:"plan",name:"Plan Futures",sub:"niveaux, contexte, annonces",c:"#B8F36B"},
   {id:"journee",name:"Journée",sub:"sessions, agenda, dérivés",c:"#E9C46A"},
   {id:"opts",name:"Options",sub:"murs, max pain, put/call",c:"#7FA8F0"},
@@ -18,18 +18,16 @@ var DEST=[
 var DN={};DEST.forEach(function(d){DN[d.id]=d;});
 /* kind : ws (temps réel), http (périodique), od (à la demande), fb (secours) ; exp = intervalle attendu en ms */
 var SRC=[
-  {id:"okx",name:"OKX",p:"REST",kind:"http",exp:60000,to:["plan","journee","bandeau"],
-   ep:["/api/v5/market/tickers (SPOT, SWAP)","/api/v5/market/candles","/api/v5/public/funding-rate (+ history)","/api/v5/public/liquidation-orders","/api/v5/public/instruments"],
-   data:"Univers des coins et volumes, bougies du screener, funding, historique des liquidations, tailles de contrats, BTC journalier du relief.",freq:"Tickers toutes les 60 s, le reste toutes les 10 min ou à la demande"},
-  {id:"deribit",name:"Deribit",p:"REST",kind:"http",exp:600000,to:["opts"],ep:["/get_volatility_index_data (DVOL)","/get_book_summary_by_currency (options)"],data:"Volatilité implicite DVOL et ratio put/call des options.",freq:"Toutes les 5 min"},
+  {id:"okx",name:"OKX",p:"REST",kind:"http",exp:60000,to:["plan","journee","opts"],
+   ep:["/api/v5/market/ticker (US100, SPX)","/api/v5/market/candles","/api/v5/public/funding-rate","/api/v5/public/open-interest"],
+   data:"Prix en direct et bougies des perpétuels Nasdaq 100 et S&P 500 (niveaux du jour, de la semaine, sessions), open interest et funding.",freq:"Prix toutes les 10 s, le reste toutes les 2 min"},
   {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["plan","bandeau"],
-   ep:["scanner.tradingview.com/global/scan"],data:"DXY, taux 10 ans, ZN, Nasdaq, S&P, VIX, or, BTC, TOTAL2, dominances : prix, moyennes, performances, ADX.",freq:"Toutes les 2 min"},
+   ep:["scanner.tradingview.com/global/scan"],data:"Dollar, taux 5 et 10 ans, Nasdaq, S&P, VIX, VXN, or, futures NQ et ES, poids lourds des indices.",freq:"Toutes les 2 min"},
   {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news"],
    ep:["embed-widget-events.js","tv.js"],data:"Calendrier économique officiel (secours de l'agenda) et graphiques au clic.",freq:"À l'affichage"},
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},
-  {id:"tree",name:"Tree of Alpha",p:"JSON",kind:"http",exp:120000,to:["news"],ep:["news.treeofalpha.com/api/news"],data:"Fil crypto à la minute : dépêches des comptes d'actu (The Block, CoinDesk, Wu Blockchain, Lookonchain…), annonces des exchanges (listings, delistings), SEC / Maison-Blanche.",freq:"Toutes les 20 s"},
-  {id:"tg",name:"News Telegram (relais)",p:"REST",kind:"http",exp:180000,to:["news"],ep:["…workers.dev/tg"],data:"Walter Bloomberg, Watcher Guru, PhoenixNews, BWEnews, unfolded et Whale Alert (transferts de plus de 50 M$), via le relais Cloudflare du Desk.",freq:"1 fois par minute, onglet visible"},
-  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/futures.json","…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
+  {id:"tree",name:"Tree of Alpha",p:"JSON",kind:"http",exp:120000,to:["news"],ep:["news.treeofalpha.com/api/news"],data:"Fil des gros comptes macro et politiques (Maison-Blanche, Trump, Fed…), sans les sujets crypto.",freq:"Toutes les 20 s"},
+  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/futures.json","…github.io/desk/data/calendar.json","…/data/fj.json","…/data/options.json","…/data/futpx.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news futures traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 et prix des contrats MNQ et MES (Yahoo Finance, lus par options.py et futpx.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
 ];
 CK.NETSRC=SRC;
 

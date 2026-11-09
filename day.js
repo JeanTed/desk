@@ -1,7 +1,7 @@
 /* ================================================================
    COCKPIT — Journée de trading (heure de Paris)
    Ciel jour/nuit réel, sessions Tokyo / Londres / New York,
-   chevauchement, annonces, funding, curseur « maintenant » en direct.
+   chevauchement, annonces, curseur « maintenant » en direct.
    ================================================================ */
 (function(){
 "use strict";
@@ -36,7 +36,7 @@ function render(){
   /* Colonne de gauche : une ligne par élément de la frise */
   h+='<div class="dl">'+ss.map(function(s){var st=s.wk?"week-end":s.open?"ouvert · "+u.dur(s.toClose*3600000):s.toOpen!=null?"ouvre dans "+u.dur(s.toOpen*3600000):"fermé";
     return '<div class="dl-r'+(s.open?" on":"")+'"><b>'+s.n+'</b><span>'+st+'</span></div>';}).join("")+
-    '<div class="dl-r ev"><b>Annonces US</b><span>heure de Paris</span></div><div class="dl-r fu"><b>Funding</b><span>toutes les 8 h</span></div></div>';
+    '<div class="dl-r ev"><b>Annonces US</b><span>heure de Paris</span></div></div>';
   /* Piste horaire */
   h+='<div class="dt" id="dayTrack">';
   h+='<div class="hours">'+Array.from({length:25},function(_,x){return '<span class="'+(x%3===0?"maj":"")+(x%6===0?" h6":"")+'" style="left:'+P(x)+'%">'+(x%3===0&&x<24?(x<10?"0":"")+x+"h":"")+'</span>';}).join("")+'</div>';
@@ -56,9 +56,6 @@ function render(){
     if(isNext)h+='<div class="dguide '+g.imp+'" style="left:'+P(t)+'%"></div>';
     h+='<button type="button" class="dmk '+g.imp+(isNext?" next":"")+(past?" past":"")+(t<1.5?" edge-l":t>22.5?" edge-r":"")+'" style="left:'+P(t)+'%" aria-label="'+n+' annonce'+(n>1?"s":"")+' à '+u.parisTime(g.ts)+'">'+u.parisTime(g.ts)+(n>1?'<b>'+n+'</b>':'')+
       '<span class="dtip">'+g.list.map(function(e){return '<span class="dt-r"><i class="'+e.imp+'"></i><em>'+u.parisTime(e.ts)+'</em>'+esc(e.fr)+'</span>';}).join("")+'</span></button>';});
-  /* Funding : règlement à 00 h, 08 h et 16 h UTC, converti en heure de Paris */
-  [0,8,16].forEach(function(uh){var p=norm(uh+(ph-(new Date().getUTCHours()+new Date().getUTCMinutes()/60)));p=Math.round(p*4)/4;
-    h+='<span class="dfu'+(p<ph?" past":"")+'" style="left:'+P(p)+'%" title="Règlement du funding des contrats perpétuels">'+hm(p)+'</span>';});
   h+='<div class="day-past"></div><div class="now"><b></b></div></div>';
   host.innerHTML=h;track=host.querySelector(".dt");
   nowEl=host.querySelector(".now");pastEl=host.querySelector(".day-past");
@@ -90,7 +87,7 @@ function mountTV(){
 }
 function renderInfo(ss,oa,ob){
   if(!info)return;var parts=[];
-  if(ss.every(function(s){return s.wk;}))parts.push('<span><b>Week-end</b> : marchés actions fermés, la crypto continue</span>');
+  if(ss.every(function(s){return s.wk;}))parts.push('<span><b>Week-end</b> : marchés actions et futures fermés</span>');
   ss.forEach(function(s){if(s.open)parts.push('<span><b>'+s.n+'</b> ouvert · ferme dans <span class="cd">'+u.dur(s.toClose*3600000)+'</span></span>');
     else if(s.toOpen!=null)parts.push('<span><b>'+s.n+'</b> ouvre dans <span class="cd">'+u.dur(s.toOpen*3600000)+'</span></span>');});
   if(ob>oa)parts.push('<span>Chevauchement Londres + New York <b>'+hm(oa)+'–'+hm(ob)+'</b> : le plus de volume</span>');
@@ -112,7 +109,7 @@ function paintAlert(){
   var a=alertInfo(),isl=document.getElementById("island"),da=document.getElementById("dayAlert");
   if(isl){isl.classList.toggle("alert",!!a);if(a){document.getElementById("islLbl").textContent=a.lbl;document.getElementById("islCd").textContent=mmss(a.ms);}
     else{var ss=sessions(),t=ss.filter(function(s){return s.open;}).map(function(s){return s.n+" ouvert";}),nx=ss.filter(function(s){return s.toOpen!=null;}).sort(function(x,y){return x.toOpen-y.toOpen;})[0];
-      if(nx)t.push(nx.n+" dans "+u.dur(nx.toOpen*3600000));document.getElementById("islText").textContent=t.join(" · ")||"Marchés actions fermés · crypto 24/7";}}
+      if(nx)t.push(nx.n+" dans "+u.dur(nx.toOpen*3600000));document.getElementById("islText").textContent=t.join(" · ")||"Marchés actions fermés";}}
   if(da){da.hidden=!a;if(a){document.getElementById("daLbl").textContent=a.lbl;document.getElementById("daCd").textContent=mmss(a.ms);}}
   var key=a?a.lbl:null;if(key&&key!==lastAlert&&CK.toast)CK.toast("<b>"+u.esc(a.lbl)+" "+mmss(a.ms)+"</b>",{ms:5000});lastAlert=key;
 }
