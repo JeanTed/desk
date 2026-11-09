@@ -1344,3 +1344,7 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 @media (max-width:600px){.ctx-b{grid-template-columns:78px minmax(30px,1fr) 66px 62px;gap:6px;font-size:12.5px}}
 .brand.custom .mark:empty{display:none}
 .bsub:empty{display:none}
+.brand.custom .mark{width:54px;height:54px;flex:none}
+.brand.custom .mark img{width:54px;height:54px;object-fit:contain;object-position:center;border-radius:50%}
+.brand.custom .mark .lg-on-light{display:none}
+.brand.custom .mark .lg-on-dark{display:block;opacity:1}
