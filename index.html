@@ -2545,7 +2545,7 @@ function loadFJ(){
 }
 /* Un autre onglet vient de récupérer FinancialJuice : on reprend son résultat */
 window.addEventListener("storage",function(e){if(e.key&&/:fj$/.test(e.key))fjShared();});
-/* News futures : lues par le robot (Bloomberg, Investing.com, Trading Economics, Maison Blanche, Fed…) et déjà traduites */
+/* News futures : lues par le robot (Bloomberg, Investing.com, Maison Blanche, Fed…) et déjà traduites */
 function loadFutures(){
   var u=relay("/futures");if(!u){S.futErr=true;renderNews();return Promise.resolve();}
   return fetchJSON(u+"?t="+Math.floor(Date.now()/60000),null,15000).then(function(a){if(!Array.isArray(a))throw 0;S.news.fut=a.map(function(x){if(x.fr&&x.title)TR[x.title]=x.fr;return {kind:"fut",title:x.title,link:x.link,ts:x.ts,src:x.src,lang:x.lang||"en"};});S.futErr=false;renderNews();})
@@ -2679,7 +2679,7 @@ function newsBase(){
 function renderNews(){
   var host=$("news");if(!host)return;var tab=S.newsTab;
   var src=$("newsSrc");if(!src){var hd=host.closest(".mod")&&host.closest(".mod").querySelector(".mhd");if(hd){src=document.createElement("span");src.className="meta news-src";src.id="newsSrc";hd.appendChild(src);}}
-  if(src){var m=S.news.macro[0],age=m&&m.ts?ago(m.ts):"";src.innerHTML=tab==="futures"?'<i class="ns-rb"></i>Bloomberg · Investing.com · Trading Economics · Maison Blanche · Fed'+(S.news.fut[0]&&S.news.fut[0].ts?" · dernière news "+ago(S.news.fut[0].ts):""):tab==="macro"&&FJ.src?(FJ.src==="direct"?'<i class="ns-live"></i>Direct · dernière news '+age:'<i class="ns-rb"></i>Copie du robot · dernière news '+age):
+  if(src){var m=S.news.macro[0],age=m&&m.ts?ago(m.ts):"";src.innerHTML=tab==="futures"?'<i class="ns-rb"></i>Bloomberg · Investing.com · Maison Blanche · Fed'+(S.news.fut[0]&&S.news.fut[0].ts?" · dernière news "+ago(S.news.fut[0].ts):""):tab==="macro"&&FJ.src?(FJ.src==="direct"?'<i class="ns-live"></i>Direct · dernière news '+age:'<i class="ns-rb"></i>Copie du robot · dernière news '+age):
     (tab==="tout"||tab==="x")&&S.news.wire.length?'<i class="ns-live"></i>'+(tab==="x"?"Comptes X et insiders en direct":"Toutes les sources en direct"):tab==="crypto"&&S.news.wire.length?'<i class="ns-live"></i>Fil en direct · dernière dépêche '+ago(S.news.wire[0].ts):tab==="articles"?"Articles · 6 sites, toutes les 10 min":"";}
   document.querySelectorAll("#newsSeg button").forEach(function(b){b.setAttribute("aria-pressed",b.getAttribute("data-n")===tab?"true":"false");});
   var lang=S.newsLang||C.newsLang||"fr";$("newsLang").textContent=lang==="fr"?"FR":"VO";$("newsLang").setAttribute("aria-pressed",lang==="fr"?"true":"false");

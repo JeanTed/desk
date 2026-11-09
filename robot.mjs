@@ -2,7 +2,7 @@
 // Il va chercher ce que le navigateur ne peut pas lire lui-même, le traduit en français
 // et le publie en fichiers JSON à côté du Desk :
 //   data/calendar.json  agenda économique de la semaine (+ la suivante)
-//   data/futures.json   news des marchés futures (Bloomberg, Investing.com, Trading Economics, Maison Blanche, Fed…)
+//   data/futures.json   news des marchés futures (Bloomberg, Investing.com, Maison Blanche, Fed…)
 //   data/fj.json        news macro FinancialJuice
 //   data/meta.json      état de chaque source (affiché dans l'espace Connexions)
 // Si une source ne répond pas, la dernière version publiée est conservée.
@@ -108,7 +108,7 @@ async function financialJuice() {
   } catch (e) { note("fj", false, 0, e); return (await previous("fj.json")) || []; }
 }
 
-/* ---------- 4. News futures (Bloomberg, Investing.com, Trading Economics, Maison Blanche, Fed, CNBC, MarketWatch) ----------
+/* ---------- 4. News futures (Bloomberg, Investing.com, Maison Blanche, Fed, CNBC, MarketWatch) ----------
    Chaque flux est lu séparément : si un site refuse le robot, les autres continuent. Les titres sont traduits en français.
    « filtre » : flux généralistes dont on ne garde que ce qui touche les marchés. */
 const MACRO_RE = /tariff|trade|econom|tax|\bfed\b|federal reserve|inflation|jobs|employment|china|oil|energy|treasur|sanction|market|stock|\brates?\b|dollar|bank|deficit|debt|budget|price|export|import|manufactur|chip|semiconductor|\bai\b|tech|deal|shutdown|stimulus|powell|bessent|lutnick|greer|nasdaq|s&p|futures|yield|gdp|cpi|opec|crude/i;
@@ -119,7 +119,6 @@ const FUT = [
   { src: "Investing.com", url: "https://www.investing.com/rss/news_25.rss" },
   { src: "Investing.com · Économie", url: "https://www.investing.com/rss/news_14.rss" },
   { src: "Investing.com · Futures", url: "https://www.investing.com/rss/news_11.rss" },
-  { src: "Trading Economics", url: "https://tradingeconomics.com/rss/news.aspx" },
   { src: "Maison Blanche", url: "https://www.whitehouse.gov/presidential-actions/feed/", filtre: true },
   { src: "Maison Blanche", url: "https://www.whitehouse.gov/briefings-statements/feed/", filtre: true },
   { src: "Maison Blanche", url: "https://www.whitehouse.gov/fact-sheets/feed/", filtre: true },
