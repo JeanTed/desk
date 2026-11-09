@@ -1391,3 +1391,11 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 @media(max-width:640px){.dw-g{grid-template-columns:1fr}}
 .sn-b{display:flex;height:8px;border-radius:6px;overflow:hidden;background:var(--inset);margin:4px 0}
 .sn-b i{display:block;height:100%}.sn-b i.up{background:var(--up)}.sn-b i.down{background:var(--down)}.sn-b i.neu{background:var(--muted);opacity:.45}
+
+/* Prochains résultats des poids lourds */
+.rs-g{display:grid;gap:2px;margin:4px 0 6px}
+.rs-r{display:grid;grid-template-columns:minmax(0,1.1fr) 1fr 1fr 1.1fr;gap:8px;padding:5px 8px;border-radius:8px;font-size:13px;align-items:baseline}
+.rs-r span:not(.mono):not(.rs-e){color:var(--muted)}
+.rs-r .rs-e{color:var(--muted);text-align:right}
+.rs-r.rs-w{background:var(--inset);border-left:3px solid var(--accent)}
+@media(max-width:560px){.rs-r{grid-template-columns:1fr 1fr;row-gap:0}}

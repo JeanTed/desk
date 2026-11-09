@@ -26,7 +26,8 @@ CK.fut=(function(){
   F.load=function(cb){var url=CK.relay&&CK.relay("/futpx");if(!url)return;
     CK.u.fetchJSON(url+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.fut){F.y=j;if(cb)cb();}}).catch(function(){});
     var ub=CK.relay&&CK.relay("/briefing");if(ub)CK.u.fetchJSON(ub+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.titre){F.brief=j;if(cb)cb();}}).catch(function(){});
-    var us=CK.relay&&CK.relay("/sentiment");if(us)CK.u.fetchJSON(us+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.ts&&j.n){F.senti=j;if(cb)cb();}}).catch(function(){});};
+    var us=CK.relay&&CK.relay("/sentiment");if(us)CK.u.fetchJSON(us+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.ts&&j.n){F.senti=j;if(cb)cb();}}).catch(function(){});
+    var ur=CK.relay&&CK.relay("/resultats");if(ur)CK.u.fetchJSON(ur+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.rows){F.res=j;if(cb)cb();}}).catch(function(){});};
   /* séance des actions américaines ouverte (lun.–ven., 9 h 30–16 h New York) : seul moment où l'indice cash est comparable au future */
   F.cash=function(){var p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).forEach(function(x){p[x.type]=x.value;});
     var m=(+p.hour)*60+(+p.minute);return p.weekday!=="Sat"&&p.weekday!=="Sun"&&m>=575&&m<955;};
@@ -113,7 +114,7 @@ function fetchText(url,ms,noStore){var ctl=typeof AbortController!=="undefined"?
   return fetch(url,op).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(x){netOk(url,t0);return x;},function(e){netErr(url,e);throw e;}).finally(function(){clearTimeout(tm);});}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 /* Données du robot GitHub (agenda, news crypto, FinancialJuice) : C.data = adresse du site, ex. https://pseudo.github.io/desk */
-var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json","/briefing":"/data/briefing.json","/sentiment":"/data/sentiment.json"};
+var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json","/briefing":"/data/briefing.json","/sentiment":"/data/sentiment.json","/resultats":"/data/resultats.json"};
 function relay(path){if(C.data)return String(C.data).replace(/\/$/,"")+(DATA_FILE[path]||path);return C.relay?String(C.relay).replace(/\/$/,"")+path:null;}
 CK.relay=relay;
 function raf2(fn){requestAnimationFrame(function(){requestAnimationFrame(fn);});}

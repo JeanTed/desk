@@ -167,6 +167,17 @@ function dowHTML(){
   if(!out)return '';
   return '<div class="ctx-h"><span class="x-k">Dow Jones et Russell 2000 · niveaux des contrats</span></div><div class="dw-g">'+out+'</div><p class="x-n">Contrats futures YM et RTY lus par le robot (Yahoo Finance, quelques minutes de retard). Mêmes niveaux que le Nasdaq : veille, semaine, mois, sessions Tokyo, Londres et New York.</p>';
 }
+function resHTML(){
+  var R=FT.res;if(!R||!R.rows||!R.rows.length)return '';
+  var keep={};BIGS[FT.base(PL.sym)].forEach(function(x){keep[x[0]]=1;});
+  var t0=new Date();t0=Date.UTC(t0.getFullYear(),t0.getMonth(),t0.getDate());
+  var L=R.rows.filter(function(r){return keep[r.s]&&/^\d{4}-\d{2}-\d{2}$/.test(r.date);}).map(function(r){var p=r.date.split("-"),t=Date.UTC(+p[0],+p[1]-1,+p[2]);return {r:r,t:t,j:Math.round((t-t0)/86400000)};})
+    .filter(function(x){return x.j>=0&&x.j<=60;}).sort(function(a,b){return a.t-b.t;});
+  if(!L.length)return '';
+  return '<div class="ctx-h"><span class="x-k">Prochains résultats des poids lourds</span></div><div class="rs-g">'+L.map(function(x){
+    var d=new Date(x.t).toLocaleDateString("fr-FR",{timeZone:"UTC",weekday:"short",day:"numeric",month:"short"}),w=x.j<=3?" rs-w":"";
+    return '<div class="rs-r'+w+'"><b>'+esc(x.r.n)+'</b><span>'+esc(d)+'</span><span class="mono">'+(x.j===0?"aujourd'hui":x.j===1?"demain":"dans "+x.j+" j")+'</span>'+(x.r.eps!=null&&isFinite(x.r.eps)?'<span class="mono rs-e">BPA att. '+nf(x.r.eps,2)+'</span>':'<span></span>')+'</div>';}).join("")+'</div><p class="x-n">Dates lues par le robot (Yahoo Finance) : elles peuvent être modifiées par les entreprises. Une publication de résultats d\'un poids lourd fait souvent bouger le Nasdaq après la clôture américaine.</p>';
+}
 function sentiHTML(){
   var s=FT.senti;if(!s||!s.ts||Date.now()-s.ts>8*3600000)return '';
   var cl={"porteur":"up","plutôt porteur":"up","prudent":"dn","plutôt prudent":"warn","neutre":"neu"}[s.label]||"neu",t=Math.max(1,(s.bull||0)+(s.neutral||0)+(s.bear||0));
@@ -194,7 +205,7 @@ function renderCtx(){
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
   var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div>'+
     briefHTML()+(function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
-    sentiHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
+    sentiHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+resHTML()+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }

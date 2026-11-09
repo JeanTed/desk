@@ -50,6 +50,12 @@ jobs:
         run: python futpx.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      # Dates des prochains résultats des poids lourds (Yahoo Finance). Même règle : une panne ne bloque rien.
+      - name: Résultats des poids lourds
+        continue-on-error: true
+        run: python resultats.py
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       # Sentiment des news (Alpha Vantage, clé gratuite dans le secret ALPHAVANTAGE_KEY). Sans clé, rien ne change.
       - name: Sentiment des news
         continue-on-error: true
