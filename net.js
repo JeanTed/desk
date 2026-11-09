@@ -10,7 +10,7 @@
 var CK=window.CK,u=CK.u,esc=u.esc;
 var DEST=[
   {id:"bandeau",name:"Bandeau & alertes",sub:"prix, alertes de prix",c:"#C4C8CF"},
-  {id:"plan",name:"Plan NDX",sub:"niveaux, contexte, annonces",c:"#B8F36B"},
+  {id:"plan",name:"Plan Futures",sub:"niveaux, contexte, annonces",c:"#B8F36B"},
   {id:"journee",name:"Journée",sub:"sessions, agenda, dérivés",c:"#E9C46A"},
   {id:"opts",name:"Options",sub:"murs, max pain, put/call",c:"#7FA8F0"},
   {id:"news",name:"News",sub:"flux macro, agenda",c:"#A99BEA"}
@@ -29,7 +29,7 @@ var SRC=[
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},
   {id:"tree",name:"Tree of Alpha",p:"JSON",kind:"http",exp:120000,to:["news"],ep:["news.treeofalpha.com/api/news"],data:"Fil crypto à la minute : dépêches des comptes d'actu (The Block, CoinDesk, Wu Blockchain, Lookonchain…), annonces des exchanges (listings, delistings), SEC / Maison-Blanche.",freq:"Toutes les 20 s"},
   {id:"tg",name:"News Telegram (relais)",p:"REST",kind:"http",exp:180000,to:["news"],ep:["…workers.dev/tg"],data:"Walter Bloomberg, Watcher Guru, PhoenixNews, BWEnews, unfolded et Whale Alert (transferts de plus de 50 M$), via le relais Cloudflare du Desk.",freq:"1 fois par minute, onglet visible"},
-  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
+  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/futures.json","…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
 ];
 CK.NETSRC=SRC;
 

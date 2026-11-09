@@ -7,7 +7,7 @@ La personne qui te parle ne sait probablement pas coder : réponds en français 
 
 Un tableau de bord de trading des futures **Nasdaq 100** (plan du jour, niveaux, options, contexte de marché, news), en **un seul fichier HTML** (`index.html`), sans serveur ni clé API.
 Toutes les données sont lues directement depuis le navigateur sur des API publiques (OKX, Binance, Bybit, Bitget, Hyperliquid, Deribit, Coinbase, CoinGecko, TradingView, FinancialJuice, Tree of Alpha…).
-Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navigateur ne peut pas lire lui-même : agenda économique, news crypto traduites, copie de FinancialJuice.
+Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navigateur ne peut pas lire lui-même : agenda économique, copie de FinancialJuice, et les **news futures** (liste `FUT` : Bloomberg, Investing.com, Trading Economics, Maison Blanche, Réserve fédérale, CNBC, MarketWatch ; titres traduits en français ; fichier `data/futures.json`, affiché dans l'onglet « Futures » des News via `loadFutures` dans `core.js`). Pour ajouter un site : une ligne dans `FUT` (adresse du flux RSS).
 
 ## Règle d'or
 
@@ -49,7 +49,7 @@ Tout le code partage l'objet global `window.CK`. Chaque fichier est une fonction
 
 ## Espaces actuels et code désactivé
 
-Espaces visibles : Plan NDX, Journée, News, Connexions. Les espaces Signaux, Screener, Liquidations et Agent, ainsi que les blocs crypto (carnet d'ordres, corrélations, top mouvements), ont été retirés de l'affichage (`modules` à `false` dans `config.js`, absents de `VIEWS0`/`DEFAULTS` dans `layout.js`) ; leur code reste dans les fichiers mais n'est plus démarré. La section suivante décrit l'ancien agent : elle ne s'applique plus.
+Espaces visibles : Plan Futures, Journée, News, Connexions. Les espaces Signaux, Screener, Liquidations et Agent, ainsi que les blocs crypto (carnet d'ordres, corrélations, top mouvements), ont été retirés de l'affichage (`modules` à `false` dans `config.js`, absents de `VIEWS0`/`DEFAULTS` dans `layout.js`) ; leur code reste dans les fichiers mais n'est plus démarré. La section suivante décrit l'ancien agent : elle ne s'applique plus.
 
 ## L'ancien agent IA (espace retiré)
 

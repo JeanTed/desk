@@ -128,18 +128,59 @@ async function financialJuice() {
   } catch (e) { note("fj", false, 0, e); return (await previous("fj.json")) || []; }
 }
 
+/* ---------- 4. News futures (Bloomberg, Investing.com, Trading Economics, Maison Blanche, Fed, CNBC, MarketWatch) ----------
+   Chaque flux est lu séparément : si un site refuse le robot, les autres continuent. Les titres sont traduits en français.
+   « filtre » : flux généralistes dont on ne garde que ce qui touche les marchés. */
+const MACRO_RE = /tariff|trade|econom|tax|\bfed\b|federal reserve|inflation|jobs|employment|china|oil|energy|treasur|sanction|market|stock|\brates?\b|dollar|bank|deficit|debt|budget|price|export|import|manufactur|chip|semiconductor|\bai\b|tech|deal|shutdown|stimulus|powell|bessent|lutnick|greer|nasdaq|s&p|futures|yield|gdp|cpi|opec|crude/i;
+const FUT = [
+  { src: "Bloomberg · Marchés", url: "https://www.bloomberg.com/feeds/markets/news.rss" },
+  { src: "Bloomberg · Économie", url: "https://www.bloomberg.com/feeds/economics/news.rss" },
+  { src: "Bloomberg · Politique", url: "https://www.bloomberg.com/feeds/politics/news.rss", filtre: true },
+  { src: "Investing.com", url: "https://www.investing.com/rss/news_25.rss" },
+  { src: "Investing.com · Économie", url: "https://www.investing.com/rss/news_14.rss" },
+  { src: "Investing.com · Futures", url: "https://www.investing.com/rss/news_11.rss" },
+  { src: "Trading Economics", url: "https://tradingeconomics.com/rss/news.aspx" },
+  { src: "Maison Blanche", url: "https://www.whitehouse.gov/presidential-actions/feed/", filtre: true },
+  { src: "Maison Blanche", url: "https://www.whitehouse.gov/briefings-statements/feed/", filtre: true },
+  { src: "Maison Blanche", url: "https://www.whitehouse.gov/fact-sheets/feed/", filtre: true },
+  { src: "Réserve fédérale", url: "https://www.federalreserve.gov/feeds/press_all.xml" },
+  { src: "CNBC · Marchés", url: "https://www.cnbc.com/id/20910258/device/rss/rss.html" },
+  { src: "MarketWatch", url: "https://feeds.content.dowjones.io/public/rss/mw_marketpulse" }
+];
+async function futuresNews() {
+  const res = await Promise.allSettled(FUT.map(f => get(f.url).then(x => {
+    const L = rss(x).slice(0, 25).map((i, n) => ({ title: i.title.replace(/\s+/g, " ").trim(), link: i.link, ts: i.ts || (Date.now() - n * 60000), src: f.src, lang: "en" }));
+    return f.filtre ? L.filter(i => MACRO_RE.test(i.title)) : L;
+  })));
+  const items = [];
+  res.forEach((r, i) => {
+    const k = "fut:" + FUT[i].src + (FUT.filter(f => f.src === FUT[i].src).length > 1 ? ":" + FUT[i].url.split("/").filter(Boolean).slice(-2, -1)[0] : "");
+    if (r.status === "fulfilled") items.push(...r.value);
+    note(k, r.status === "fulfilled", r.status === "fulfilled" ? r.value.length : 0, r.reason);
+  });
+  if (!items.length) return (await previous("futures.json")) || [];
+  const seen = new Set(), maxAge = Date.now() - 3 * 864e5;
+  const list = items.filter(x => { if (x.ts < maxAge) return false; const k = x.title.toLowerCase().slice(0, 70); if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => b.ts - a.ts).slice(0, 100);
+  const tr = await translate(list.map(x => x.title));
+  list.forEach(x => { if (tr[x.title]) x.fr = tr[x.title]; });
+  return list;
+}
+
 /* ---------- Publication ---------- */
 await mkdir(OUT + "/data", { recursive: true });
 await loadMemo();
 const [cal, news, fj] = await Promise.all([calendar(), cryptoNews(), financialJuice()]);
+const fut = await futuresNews();
 meta.translate = TRS;
 await writeFile(OUT + "/data/calendar.json", JSON.stringify(cal));
 await writeFile(OUT + "/data/news.json", JSON.stringify(news));
 await writeFile(OUT + "/data/fj.json", JSON.stringify(fj));
+await writeFile(OUT + "/data/futures.json", JSON.stringify(fut));
 await writeFile(OUT + "/data/meta.json", JSON.stringify(meta));
 await copyFile("index.html", OUT + "/index.html");
 /* Image d'aperçu quand on partage le lien (X, Discord, Telegram…) */
 try { await copyFile("apercu.png", OUT + "/apercu.png"); } catch {}
 try { await writeFile(OUT + "/.nojekyll", ""); } catch {}
-console.log("Agenda", cal.length, "· news crypto", news.length, "· FinancialJuice", fj.length);
+console.log("Agenda", cal.length, "· news crypto", news.length, "· FinancialJuice", fj.length, "· news futures", fut.length);
 console.log(JSON.stringify(meta.sources, null, 1));

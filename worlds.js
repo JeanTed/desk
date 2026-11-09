@@ -11,7 +11,7 @@
 "use strict";
 var CK=window.CK,u=CK.u,esc=u.esc;
 var W0=[
-  {v:"plan",name:"Plan NDX",key:"1",col:"#B8F36B",desc:"Le plan du jour : niveaux, murs d'options, annonces et ouverture US."},
+  {v:"plan",name:"Plan Futures",key:"1",col:"#B8F36B",desc:"Le plan du jour : niveaux, murs d'options, annonces et ouverture US."},
   {v:"journee",name:"Journée",key:"2",col:"#E9C46A",desc:"Sessions, annonces et dérivés : où en est la journée."},
   {v:"news",name:"News",key:"3",col:"#A99BEA",desc:"Toutes les news en direct : tweets, Trump, macro, en français."},
   {v:"net",name:"Connexions",key:"4",col:"#5FD3C6",desc:"L'état de chaque source de données, en direct."}

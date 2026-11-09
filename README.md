@@ -3,7 +3,7 @@
 Tableau de bord de trading des futures **Nasdaq 100** : plan du jour, niveaux clés, options, contexte de marché (VIX, taux, dollar, poids lourds) et news en direct. Un seul fichier `index.html`, sans serveur ni clé API.
 
 ## Espaces
-- **Plan NDX** : niveaux de la veille et de la nuit, murs d'options, max pain, annonces du jour, compte à rebours de l'ouverture US, contexte de marché.
+- **Plan Futures** : niveaux de la veille et de la nuit, murs d'options, max pain, annonces du jour, compte à rebours de l'ouverture US, contexte de marché.
 - **Journée** : sessions, niveaux clés, options, agenda économique, dérivés.
 - **News** : flux macro et tweets en direct.
 - **Connexions** : état de chaque source de données.

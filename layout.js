@@ -12,7 +12,7 @@ var CK=window.CK,u=CK.u;
 var COLS=12,ROW=10,GAP=16;
 var VIEWS0=[
   {id:"home",name:"Accueil",key:"0"},
-  {id:"plan",name:"Plan NDX",key:"1"},
+  {id:"plan",name:"Plan Futures",key:"1"},
   {id:"journee",name:"Journée",key:"2"},
   {id:"news",name:"News",key:"3"},
   {id:"net",name:"Connexions",key:"4"}

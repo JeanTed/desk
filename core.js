@@ -13,7 +13,7 @@ CK.reduce = reduce;
 
 /* ---------------- Config ---------------- */
 var DEF = {
-  id:"damour", name:"DAMOUR GLOBAL", tagline:"Desk Nasdaq 100", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
+  id:"damour", name:"DAMOUR GLOBAL", tagline:"", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
   watchlist:[],
   modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:true,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
   layout:null,
@@ -73,7 +73,7 @@ function fetchText(url,ms,noStore){var ctl=typeof AbortController!=="undefined"?
   return fetch(url,op).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(x){netOk(url,t0);return x;},function(e){netErr(url,e);throw e;}).finally(function(){clearTimeout(tm);});}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 /* Données du robot GitHub (agenda, news crypto, FinancialJuice) : C.data = adresse du site, ex. https://pseudo.github.io/desk */
-var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json"};
+var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json"};
 function relay(path){if(C.data)return String(C.data).replace(/\/$/,"")+(DATA_FILE[path]||path);return C.relay?String(C.relay).replace(/\/$/,"")+path:null;}
 CK.relay=relay;
 function raf2(fn){requestAnimationFrame(function(){requestAnimationFrame(fn);});}
@@ -87,7 +87,7 @@ CK.u={$:$,safeUrl:safeUrl,nf:nf,px:px,pct:pct,usd:usd,cls:cls,esc:esc,ago:ago,du
 var S = CK.S = {
   tick:{}, ct:{}, mk:{}, factors:[], prevImpact:{},
   liqHist:[], liqSeen:{}, movers:{spot:[],perp:[]},
-  news:{macro:[],crypto:[],wire:[]}, newsTab:(function(){var t="";try{t=localStorage.getItem("ck:newsTab")||"";}catch(e){}return /^(tout|x|macro|crypto|articles)$/.test(t)?t:"tout";})(), cal:[], nextEv:null,
+  news:{macro:[],crypto:[],wire:[],fut:[]}, newsTab:(function(){var t="";try{t=localStorage.getItem("ck:newsTab")||"";}catch(e){}return /^(futures|tout|x|macro)$/.test(t)?t:"futures";})(), cal:[], nextEv:null,
   fund:{}, oi:null, fg:null, btcD:[], since:Date.now()
 };
 
@@ -133,11 +133,11 @@ var LOGO={dark:"",light:"",fav:""};
 CK.LOGO=LOGO;
 function applyIdentity(){
   root.style.setProperty("--accent",C.accent||DEF.accent);
-  var nm=C.name&&!/^(CAPTAIN|COCKPIT|DESK)$/i.test(C.name)?C.name:"DAMOUR GLOBAL",tg=(C.tagline==null||/^(cockpit|Trading · Desk|Crypto · Macro)$/.test(C.tagline))?"Desk Nasdaq 100":C.tagline;
+  var nm=C.name&&!/^(CAPTAIN|COCKPIT|DESK)$/i.test(C.name)?C.name:"DAMOUR GLOBAL",tg=(C.tagline==null||/^(cockpit|Trading · Desk|Crypto · Macro|Desk Nasdaq 100)$/.test(C.tagline))?"":C.tagline;
   C.name=nm;C.tagline=tg;
   $("bName").textContent=nm;$("bSub").textContent=tg;
-  document.title=nm+" · "+tg;
-  $("footBrand").textContent=nm+" · "+tg;
+  document.title=tg?nm+" · "+tg:nm;
+  $("footBrand").textContent=tg?nm+" · "+tg:nm;
   var mk=$("brandMark");if(!mk.firstChild&&LOGO.dark)mk.innerHTML='<img class="lg-on-dark" src="'+LOGO.dark+'" alt="'+esc(nm)+'"><img class="lg-on-light" src="'+(LOGO.light||LOGO.dark)+'" alt="">';
   /* avec un logo image, le texte du nom est masqué ; sans logo, le nom s'affiche en texte */
   document.querySelector(".brand").classList.toggle("custom",!LOGO.dark);
@@ -151,7 +151,7 @@ function applyIdentity(){
 CK.applyIdentity=applyIdentity;
 
 /* ---------------- Barre de prix ---------------- */
-var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DXY",n:"Dollar"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"}];
+var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DXY",n:"Dollar"},{k:"US05Y",n:"Taux 5 ans"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"}];
 function watch(){var w=(C.watchlist&&C.watchlist.length?C.watchlist:DEF.watchlist).map(function(x){return String(x).trim().toUpperCase().replace(/[^A-Z0-9]/g,"");}).filter(Boolean);return w.slice(0,12);}
 CK.watch=watch;
 function buildStrip(){
@@ -176,7 +176,7 @@ var tickQueued=false;
 function queueTicks(){if(tickQueued)return;tickQueued=true;setTimeout(function(){tickQueued=false;paintTicks();if(CK.liqmap)CK.liqmap.price();},300);}
 function paintMacroStrip(){
   MACRO_STRIP.forEach(function(m){var d=S.mk[m.k];var pe=document.querySelector('[data-mp="'+m.k+'"]'),ce=document.querySelector('[data-mc="'+m.k+'"]');if(!d||!pe)return;
-    if(m.k==="US10Y"){pe.textContent=nf(d.c,3)+" %";var bp=d.c-d.c/(1+(d.ch||0)/100);ce.textContent=(bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";ce.className="c "+cls(bp);}
+    if(m.k==="US10Y"||m.k==="US05Y"){pe.textContent=nf(d.c,3)+" %";var bp=d.c-d.c/(1+(d.ch||0)/100);ce.textContent=(bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";ce.className="c "+cls(bp);}
     else{pe.textContent=px(d.c);ce.textContent=pct(d.ch);ce.className="c "+cls(d.ch);}});
 }
 
@@ -255,7 +255,7 @@ function renderLiqSum(){
 }
 
 /* ---------------- Macro : scanner TradingView (en direct) ---------------- */
-var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD",BTC:"OKX:BTCUSDT",TOTAL2:"CRYPTOCAP:TOTAL2",USDTD:"CRYPTOCAP:USDT.D",BTCD:"CRYPTOCAP:BTC.D"};
+var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD",BTC:"OKX:BTCUSDT",TOTAL2:"CRYPTOCAP:TOTAL2",USDTD:"CRYPTOCAP:USDT.D",BTCD:"CRYPTOCAP:BTC.D"};
 CK.TVS=TVS;
 var TV_COLS=["close","change","SMA20","SMA50","SMA200","Perf.W","Perf.1M","High.3M","Low.3M","ADX"];
 function loadMacro(){
@@ -555,6 +555,12 @@ function loadFJ(){
 }
 /* Un autre onglet vient de récupérer FinancialJuice : on reprend son résultat */
 window.addEventListener("storage",function(e){if(e.key&&/:fj$/.test(e.key))fjShared();});
+/* News futures : lues par le robot (Bloomberg, Investing.com, Trading Economics, Maison Blanche, Fed…) et déjà traduites */
+function loadFutures(){
+  var u=relay("/futures");if(!u){S.futErr=true;renderNews();return Promise.resolve();}
+  return fetchJSON(u+"?t="+Math.floor(Date.now()/60000),null,15000).then(function(a){if(!Array.isArray(a))throw 0;S.news.fut=a.map(function(x){if(x.fr&&x.title)TR[x.title]=x.fr;return {kind:"fut",title:x.title,link:x.link,ts:x.ts,src:x.src,lang:x.lang||"en"};});S.futErr=false;renderNews();})
+    .catch(function(){S.futErr=true;renderNews();});
+}
 function loadCryptoNews(){
   var u=relay("/news");if(!u){S.cryptoErr=true;renderNews();return Promise.resolve();}
   return fetchJSON(u,null,15000).then(function(a){if(!Array.isArray(a)||!a.length)throw 0;S.news.crypto=a.map(function(x){if(x.fr&&x.title)TR[x.title]=x.fr;return {title:x.title,link:x.link,ts:x.ts,src:x.src,lang:x.lang||"en"};});S.cryptoErr=false;renderNews();})
@@ -643,12 +649,12 @@ CK.loadWire=loadWire;
 /* ---------- Fil « Tout » et fil « X » : toutes les sources réunies, une couleur par catégorie ----------
    X = tweets des gros comptes (via Tree of Alpha, avec photo et image) · Macro = FinancialJuice · Crypto = dépêches et chaînes Telegram
    Exchange = annonces de listing · Article = sites crypto. Les nouveautés arrivent avec une courte animation. */
-var NCAT={x:["X","nx"],macro:["Macro","nm"],tree:["Crypto","nc"],tg:["Crypto","nc"],gov:["Gouv. US","ng"],ex:["Exchange","ne"],art:["Article","na"]};
+var NCAT={fut:["Futures","nm"],x:["X","nx"],macro:["Macro","nm"],tree:["Crypto","nc"],tg:["Crypto","nc"],gov:["Gouv. US","ng"],ex:["Exchange","ne"],art:["Article","na"]};
 var NSEEN=null;
 function newsTout(){var seen={},L=[];
   S.news.macro.forEach(function(x){L.push(Object.assign({kind:"macro"},x));});
-  S.news.wire.forEach(function(x){if(x.kind==="x"&&!x.gros)return;L.push(Object.assign({kind:x.kind||"tree"},x));});
-  S.news.crypto.forEach(function(x){L.push(Object.assign({kind:"art"},x));});
+  S.news.fut.forEach(function(x){L.push(Object.assign({kind:"fut"},x));});
+  S.news.wire.forEach(function(x){if(x.kind!=="x"||!x.gros)return;L.push(Object.assign({},x));});
   return L.filter(function(x){if(!x||!x.title||!x.ts)return false;var k=x.title.slice(0,60).toLowerCase().replace(/[^a-z0-9]/g,"");if(seen[k])return false;seen[k]=1;return true;}).sort(function(a,b){return b.ts-a.ts;}).slice(0,70);}
 function initiales(n){var p=String(n||"?").replace(/[^A-Za-zÀ-ÿ0-9 ]/g,"").trim().split(/\s+/);return ((p[0]||"?")[0]+((p[1]||"")[0]||"")).toUpperCase();}
 function chrono(ts){var s=Math.max(0,Math.round((Date.now()-ts)/1000));return s<60?s+" s":s<3600?Math.floor(s/60)+" min":s<86400?Math.floor(s/3600)+" h":Math.floor(s/86400)+" j";}
@@ -673,6 +679,7 @@ function newsRich(host,L,lang){
 /* Les « il y a » des cartes avancent tout seuls */
 setInterval(function(){document.querySelectorAll(".nr-t[data-ts]").forEach(function(e){e.textContent=chrono(+e.getAttribute("data-ts"));});},10000);
 function newsList(){
+  if(S.newsTab==="futures")return S.news.fut;
   if(S.newsTab==="tout")return newsTout();
   if(S.newsTab==="x"){var xf=S.xFiltre||"tous";return S.news.wire.filter(function(x){return x.kind==="x"&&x.gros&&(xf==="tous"||x.grp===xf);});}
   if(S.newsTab==="crypto"&&S.news.wire.length)return S.news.wire;
@@ -683,13 +690,13 @@ function newsList(){
 function renderNews(){
   var host=$("news");if(!host)return;var tab=S.newsTab;
   var src=$("newsSrc");if(!src){var hd=host.closest(".mod")&&host.closest(".mod").querySelector(".mhd");if(hd){src=document.createElement("span");src.className="meta news-src";src.id="newsSrc";hd.appendChild(src);}}
-  if(src){var m=S.news.macro[0],age=m&&m.ts?ago(m.ts):"";src.innerHTML=tab==="macro"&&FJ.src?(FJ.src==="direct"?'<i class="ns-live"></i>Direct · dernière news '+age:'<i class="ns-rb"></i>Copie du robot · dernière news '+age):
+  if(src){var m=S.news.macro[0],age=m&&m.ts?ago(m.ts):"";src.innerHTML=tab==="futures"?'<i class="ns-rb"></i>Bloomberg · Investing.com · Trading Economics · Maison Blanche · Fed'+(S.news.fut[0]&&S.news.fut[0].ts?" · dernière news "+ago(S.news.fut[0].ts):""):tab==="macro"&&FJ.src?(FJ.src==="direct"?'<i class="ns-live"></i>Direct · dernière news '+age:'<i class="ns-rb"></i>Copie du robot · dernière news '+age):
     (tab==="tout"||tab==="x")&&S.news.wire.length?'<i class="ns-live"></i>'+(tab==="x"?"Comptes X et insiders en direct":"Toutes les sources en direct"):tab==="crypto"&&S.news.wire.length?'<i class="ns-live"></i>Fil en direct · dernière dépêche '+ago(S.news.wire[0].ts):tab==="articles"?"Articles · 6 sites, toutes les 10 min":"";}
   document.querySelectorAll("#newsSeg button").forEach(function(b){b.setAttribute("aria-pressed",b.getAttribute("data-n")===tab?"true":"false");});
   var lang=S.newsLang||C.newsLang||"fr";$("newsLang").textContent=lang==="fr"?"FR":"VO";$("newsLang").setAttribute("aria-pressed",lang==="fr"?"true":"false");
   var L=newsList().slice(0,tab==="x"?120:tab==="tout"?80:40);
-  if(!L.length){host.innerHTML='<div class="empty">'+(tab==="macro"?(S.fjErr?"FinancialJuice ne répond pas pour le moment, nouvel essai dans quelques minutes.":"Connexion à FinancialJuice…"):(tab==="x"?"Connexion au fil des tweets…":"Chargement des news…"))+'</div>';return;}
-  if(tab==="tout"||tab==="x"){newsRich(host,L,lang);if(lang==="fr")translate(L);return;}
+  if(!L.length){host.innerHTML='<div class="empty">'+(tab==="futures"?(S.futErr?"Les news futures ne sont pas encore publiées par le robot (voir Connexions). Nouvel essai dans quelques minutes.":"Chargement des news futures…"):tab==="macro"?(S.fjErr?"FinancialJuice ne répond pas pour le moment, nouvel essai dans quelques minutes.":"Connexion à FinancialJuice…"):(tab==="x"?"Connexion au fil des tweets…":"Chargement des news…"))+'</div>';return;}
+  if(tab==="futures"||tab==="tout"||tab==="x"){newsRich(host,L,lang);if(lang==="fr")translate(L);return;}
   var note=tab==="crypto"&&!S.news.wire.length&&S.news.crypto.length?'<div class="lq-note" style="margin-bottom:6px">Fil en direct indisponible : derniers articles en attendant.</div>':tab==="articles"&&S.cryptoErr?'<div class="lq-note" style="margin-bottom:6px">Articles crypto indisponibles pour le moment : headlines crypto de FinancialJuice en attendant.</div>':"";
   host.innerHTML=note+L.map(function(x){var t=(lang==="fr"&&x.lang!=="fr"&&TR[x.title])?TR[x.title]:x.title;
     var sy=x.sym&&x.sym.length?' · '+x.sym.map(function(c){return '<b class="nw-s">'+esc(c)+'</b>';}).join(""):"";
@@ -767,7 +774,7 @@ CK.boot=function(){
   loadMacro();
   Promise.all([loadBTCdaily(),loadFunding(),loadOI(),loadFG()]).then(computeFactors);
   
-  loadCalendar();loadFJ();loadCryptoNews();loadWire();
+  loadCalendar();loadFJ();loadFutures();loadWire();
   (function wl(){setTimeout(function(){loadWire().then(wl,wl);},document.hidden?60000:20000);})();
   loadTG();(function tl(){setTimeout(function(){loadTG().then(tl,tl);},tgDelai());})();
   document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-(WIRE.tgTs||0)>Math.min(tgDelai(),180000))loadTG();});
@@ -782,7 +789,7 @@ CK.boot=function(){
   setInterval(loadCalendar,900000);
   (function fj(){setTimeout(function(){loadFJ().then(fj,fj);},document.hidden?180000:60000);})();
   document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-FJ.ts>60000)loadFJ();});
-  setInterval(loadCryptoNews,180000);
+  setInterval(loadFutures,180000);
   setInterval(function(){if(!document.hidden)renderNewsSoft();},60000);
 };
 window.Cockpit={boot:function(){CK.boot();}};
