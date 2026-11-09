@@ -1,5 +1,5 @@
 /**
- * Captain Trading · Desk — Relais et AGENT IA (Cloudflare Worker, offre gratuite)
+ * Desk — Relais et AGENT IA (Cloudflare Worker, offre gratuite)
  *
  * Un seul relais, un seul agent, pour tous les utilisateurs du Desk.
  *  1. News : lit les chaînes Telegram publiques ci-dessous (route /tg).
@@ -49,7 +49,7 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
     if (request.method !== "GET") return new Response("Méthode non autorisée", { status: 405, headers: CORS });
     const url = new URL(request.url);
-    if (url.pathname === "/") return texte("Relais et agent IA du Desk Captain Trading. Route : /tg");
+    if (url.pathname === "/") return texte("Relais et agent IA du Desk. Route : /tg");
     if (url.pathname === "/diag") { let d = null; try { d = env.DESK ? await env.DESK.get("diag") : null; } catch (e) {} return new Response(JSON.stringify({ maintenant: Date.now(), kv: !!env.DESK, ia: !!env.AI, gemini: !!env.GEMINI_KEY, groq: !!env.GROQ_KEY, openrouter: !!env.OPENROUTER_KEY, derniere_erreur: d ? JSON.parse(d) : "aucune", dernier_tour: await (async () => { try { const p = env.DESK ? JSON.parse(await env.DESK.get("public") || "{}") : {}; return p.maj ? { il_y_a_s: Math.round((Date.now() - p.maj) / 1000), messages: (p.feed || []).length, appels_ia: p.ia ? p.ia.n : 0, diag: p.diag || null } : "aucun"; } catch (e) { return "illisible"; } })() }), { headers: { ...CORS, "content-type": "application/json; charset=utf-8" } }); }
     if (url.pathname === "/point") return new Response(JSON.stringify(await pointMaintenant(env)), { headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
     if (url.pathname !== "/tg") return new Response("Introuvable", { status: 404, headers: CORS });
@@ -310,7 +310,7 @@ function prixActuel(b) { const k = (H["1m" + b] || {}).k || []; return k.length 
 /* ====================== L'IA ====================== */
 let MANUEL_COURANT = "";
 let REFLEX = "minimal";               // niveau de réflexion demandé à l'IA (« low » pour les lectures)
-const MANUEL = `Tu es l'agent IA du Desk Captain Trading : un trader expérimenté qui surveille BTC, ETH, SOL et la macro pour l'utilisateur.
+const MANUEL = `Tu es l'agent IA du Desk : un trader expérimenté qui surveille BTC, ETH, SOL et la macro pour l'utilisateur.
 Le Desk a mesuré lui-même tous les chiffres fournis : ils sont exacts. Ton travail : dire ce qu'ils veulent dire et ce qui compte pour la suite.
 Règles absolues :
 1. N'invente aucun chiffre. Tout prix cité doit figurer dans les données (niveaux, prix). Écris les prix entre crochets : [82 430].
@@ -482,7 +482,7 @@ function photo(now) {
    ce qui invaliderait tout. Le Desk suit ensuite chaque scénario (déclenché ? cible atteinte ?). */
 const SCN = { dmin: 0.2, tmin: 0.4 };   // % : distance minimale prix → déclencheur, déclencheur → objectif
 const LECTURE = { evtPause: 30 * 6e4, evtFort: 15 * 6e4, evtJour: 14, garde: 48, publiees: 10, suivi: 4 * 36e5 };
-const MANUEL_ANALYSTE = `Tu es l'analyste du Desk Captain Trading : un trader crypto expérimenté qui explique le marché à un autre trader (BTC, ETH, SOL, dollar et macro).
+const MANUEL_ANALYSTE = `Tu es l'analyste du Desk : un trader crypto expérimenté qui explique le marché à un autre trader (BTC, ETH, SOL, dollar et macro).
 Le Desk a mesuré tous les chiffres fournis : ils sont exacts. Ton travail est d'INTERPRÉTER, pas de décrire.
 Ce qu'on attend de toi :
 - Relier les faits entre eux. Un mouvement a une cause : news, dollar, taux, pétrole, actions, levier qui monte ou qui se purge, liquidations, cassure d'un niveau suivi par tout le monde. Dis laquelle, chiffre à l'appui. Si aucune cause n'est visible, dis-le (mouvement technique, marché sans acheteurs…).

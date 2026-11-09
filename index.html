@@ -3,20 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Captain Trading · Desk</title>
-<meta name="description" content="Le desk crypto gratuit : prix et liquidations en direct, news X, Trump et onchain, et un agent IA qui lit le marché toutes les 30 min.">
+<title>DAMOUR GLOBAL · Desk Nasdaq 100</title>
+<meta name="description" content="Desk de trading des futures Nasdaq 100 : plan du jour, niveaux clés, options, contexte de marché et news en direct.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Captain Trading">
-<meta property="og:title" content="Captain Trading · Desk">
-<meta property="og:description" content="Le desk crypto gratuit : prix et liquidations en direct, news X, Trump et onchain, et un agent IA qui lit le marché toutes les 30 min.">
-<meta property="og:url" content="https://captaincryptotrading21.github.io/desk/">
-<meta property="og:image" content="https://captaincryptotrading21.github.io/desk/apercu.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="DAMOUR GLOBAL">
+<meta property="og:title" content="DAMOUR GLOBAL · Desk Nasdaq 100">
+<meta property="og:description" content="Plan du jour, niveaux clés, options et contexte de marché pour le Nasdaq 100.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Captain Trading · Desk">
-<meta name="twitter:description" content="Le desk crypto gratuit : prix et liquidations en direct, news X, Trump et onchain, et un agent IA qui lit le marché toutes les 30 min.">
-<meta name="twitter:image" content="https://captaincryptotrading21.github.io/desk/apercu.png">
+<meta name="twitter:title" content="DAMOUR GLOBAL · Desk Nasdaq 100">
+<meta name="twitter:description" content="Plan du jour, niveaux clés, options et contexte de marché pour le Nasdaq 100.">
 <!--@public--><script>window.CK_PUBLIC=1;</script><!--/@public-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,16 +23,17 @@
    Tu peux aussi les modifier ici à la main (garde les guillemets et virgules).
    ================================================================ */
 window.COCKPIT_CONFIG = {
-  id: "captain",                 // identifiant interne (sauvegardes du navigateur)
-  name: "captain",            // nom affiché en haut à gauche (« captain » = logo Captain Trading)
-  tagline: "Trading · Desk",   // sous-titre sous le nom
+  id: "damour",                  // identifiant interne (sauvegardes du navigateur)
+  name: "DAMOUR GLOBAL",       // nom affiché en haut à gauche (texte tant qu'il n'y a pas de logo image)
+  tagline: "Desk Nasdaq 100",   // sous-titre sous le nom
   accent: "#FF8A3D",             // couleur d'accent (toute l'interface suit)
   theme: "dark",                 // affichage au premier lancement : "dark" ou "light"
   beginner: false,               // true = boutons « ? » qui expliquent chaque module
-  watchlist: ["BTC", "ETH", "SOL"], // cryptos suivies dans la barre du haut
+  watchlist: [],                 // cryptos suivies dans la barre du haut (vide : indices et macro seulement)
   modules: {                     // false = module masqué
-    day: true, map: true, events: true, deriv: true, liq: true, movers: true, screener: true, news: true,
-    levels: true, opts: true, book: true, corr: true, net: true, veille: true
+    plan: true, ctx: true, day: true, events: true, deriv: true, news: true,
+    levels: true, opts: true, net: true,
+    map: false, liq: false, movers: false, screener: false, book: false, corr: false, veille: false
   },
   layout: null,                  // disposition des blocs (réglée avec le bouton « Disposition »)
   moversMarket: "spot",          // top mouvements par défaut : "spot" ou "perp"
@@ -51,7 +47,7 @@ window.COCKPIT_CONFIG = {
 </script>
 <script>
 /* Applique le thème avant l'affichage (évite un flash) */
-(function(){try{var c=window.COCKPIT_CONFIG||{},k="cockpit:"+(c.id||"captain")+":",t=localStorage.getItem(k+"theme")||c.theme||"dark";if(t!=="light")t="dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+(function(){try{var c=window.COCKPIT_CONFIG||{},k="cockpit:"+(c.id||"damour")+":",t=localStorage.getItem(k+"theme")||c.theme||"dark";if(t!=="light")t="dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
 </script>
 <style>
 /* ================================================================
@@ -1184,7 +1180,7 @@ html{overflow-x:clip}
 /* ================= Rendu pro : en-tête et marque ================= */
 .top{padding:12px var(--pad);gap:20px}
 .brand{gap:12px;cursor:pointer;border-radius:10px;outline-offset:6px}
-/* Marque Captain Trading : tête + ailes, mot-symbole « captain » en minuscules épaisses, « TRADING » espacé */
+/* Marque : zone du logo dans l'en-tête */
 .mark{width:128px;height:40px;position:relative}
 .brand:not(.custom) .bt{display:none}
 .brand.custom .mark{width:40px;overflow:hidden}
@@ -2159,6 +2155,25 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 
 /* Flash news sur téléphone : en bas, compactes, sans le texte original */
 @media (max-width:600px){.flash-wrap{top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));right:12px;width:calc(100vw - 24px)}.flash{padding:10px 40px 12px 14px;gap:4px}.flash b{font-size:14.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.fl-o{display:none}}
+
+/* Plan du jour Nasdaq 100 et contexte de marché */
+.plan-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 10px}
+.plan-px{display:block;font-size:26px;letter-spacing:-.01em}
+.plan-us{text-align:right}.plan-us b{display:block;font-size:18px}
+.plan-sub{font:500 12px var(--font);color:var(--muted)}
+.plan .plan-opt .lv-tag{color:var(--accent)}
+.plan-rd{margin:12px 2px 4px;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.plan-ag{margin:12px 0 0}.plan-ev{display:flex;align-items:center;gap:10px;padding:5px 2px;font-size:14px;border-bottom:1px solid var(--line)}
+.plan-ev.past{opacity:.5}.plan-i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--warn)}.plan-i.hi{background:var(--down)}
+.ctx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.ctx-t{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--neu-bg)}
+.ctx-t b{font-size:18px}.ctx-t .mono{font-size:12.5px}
+.ctx-h{display:flex;justify-content:space-between;align-items:center;margin:16px 2px 6px}
+.ctx-b{display:grid;grid-template-columns:96px minmax(40px,1fr) 78px 70px;align-items:center;gap:10px;padding:5px 2px;font-size:13.5px;border-bottom:1px solid var(--line)}
+.ctx-bar{height:6px;border-radius:3px;background:var(--neu-bg);overflow:hidden}.ctx-bar i{display:block;height:100%;border-radius:3px;background:var(--up)}.ctx-bar i.down{background:var(--down)}
+.ctx-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:600px){.ctx-b{grid-template-columns:78px minmax(30px,1fr) 66px 62px;gap:6px;font-size:12.5px}}
+.brand.custom .mark:empty{display:none}
 </style>
 <script>
 /* ================================================================
@@ -2176,11 +2191,11 @@ CK.reduce = reduce;
 
 /* ---------------- Config ---------------- */
 var DEF = {
-  id:"captain", name:"captain", tagline:"Trading · Desk", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
-  watchlist:["BTC","ETH","SOL"],
-  modules:{day:true,map:true,events:true,deriv:true,liq:true,movers:true,screener:true,news:true,levels:true,opts:true,book:true,corr:true,net:true,veille:true},
+  id:"damour", name:"DAMOUR GLOBAL", tagline:"Desk Nasdaq 100", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
+  watchlist:[],
+  modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:true,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
   layout:null,
-  espaces:{journee:true,macro:true,screener:true,liq:true,news:true,veille:true,net:true},   // false = espace masqué (accueil, navigation, raccourcis)
+  espaces:{plan:true,journee:true,news:true,net:true},   // false = espace masqué (accueil, navigation, raccourcis)
   moversMarket:"spot", moversMinVolume:2000000, liqMin:25000,
   screenerPreset:"compression", screenerMax:150, newsLang:"fr"
 };
@@ -2190,7 +2205,7 @@ function merge(a,b){var o={};Object.keys(a||{}).forEach(function(k){o[k]=clone(a
   Object.keys(b||{}).forEach(function(k){o[k]=isObj(b[k])&&isObj(o[k])?merge(o[k],b[k]):clone(b[k]);});return o;}
 var BAKED = merge(DEF, window.COCKPIT_CONFIG||{});
 if(BAKED.theme!=="light")BAKED.theme="dark";
-var NS = "cockpit:"+(BAKED.id||"captain")+":";
+var NS = "cockpit:"+(BAKED.id||"damour")+":";
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(NS+k);if(v===null)localStorage.removeItem(NS+k);else localStorage.setItem(NS+k,v);}catch(e){return null;}}
 function lsj(k,v){if(v===undefined){try{return JSON.parse(ls(k));}catch(e){return null;}}ls(k,v===null?null:JSON.stringify(v));}
 var C = merge(BAKED, lsj("cfg")||{});
@@ -2290,32 +2305,31 @@ function setTheme(t,btn){
   else apply();
 }
 CK.setTheme=setTheme;
-/* Logo Captain Trading (fichier de la marque) : version fond sombre (mot-symbole blanc) et version fond clair (mot-symbole marine) */
-var LOGO={dark:"data:image/png;base64,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",light:"data:image/png;base64,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",fav:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA3CAYAAAC2EuL1AAAFFElEQVR42t2bzW7TWBTH/Qh9hEjzAuYFwKs0CyQqdcdikt0gZkHSqt3WiC2oZceKRAIJiSTK7ACnklkhdhZCYsOMvBikEhYTviSk2Rz4O/eUm9t77WsnTh2OdCTLdWz/fM49X3YdZ0VCRC0iColoSjPBdtP5FYSIagAKX74i7+o+bbjb5PzWSLbjd+8ZtrbugLF/92ECplP8DcesJSgDtvbvGAFZW3t31g80D+Bagtq4qEnbt+5VH5SINogoKgKorNEI56oqZLgIoApaRcBubzA23rh7+Tp1h8Gc1i42jcfjXDhnlQAPojd/p1oHkMiVyI3Tz1+TbexL+w2OIaLDSgDixjnJZ2lvMLOizbEbF7YJDw/XOE/AGwBMc7tFIKE4t6iMDs4DsGkLeOPWPfLvPjgDKe+3BG2uEtDFurK1IPLf9NPXxKWxDTjsj/99bwXJoLgmEXmrSvZT9/Kf1i6HtQVLjIIXSbCpXfqduoOA8ro6rvnfpy/oYtxKlWsal0sE23ke1MrKv6LlmqxosYrAacq/sJSmFy62aDWzLBU5tLlsyBBWqArk1rWbgPxr6a6KgJGyTkqR1t5tYwW19PoWlrzyx00jJI83lqk4pwlSPNilW9Iz1adsyQPLnGejOFeaJZFjSykOiGh0eH+U6q7IhbZ1rDanuttJDk1zV/EAumWlEDTFsWoxdU3iKedJ8j/Tyx5byAgpAONcTfWkvnMw2dyJ7XQ3+vLgiYeLtEVplhZ4YBEbWBwj+sfUwNPcv50A+q/fes5gHDn949hKIR82d8PJ5g5Zavx/GLm4GC6qg0RFhH1c4SCAoEaFpaCIjFvX/KSGFfkuORbBRkwFzkDidzjs8bsPbgKIBt1G+8EsAk+99sak3onsQXejb6/feqgjccMypFoRceQVxfWcYB/WMHKeZipwCpnUrB8/z2rWwfEoB2DsPHrys/w7abRrwi1tLTpCxEV3wZEwaz3K6w3bpiIc55QfmvjdljMcHxYGnAOdWdRujTY6Pu4D/SG7HbtnUUj5PEhZR/fxLOnIGQYt6zXYH0dawIVq2mEgjyoWsiTWJa9RnMefeYm/9FQxqXeaCEY2ypC6dkoNICqk6CbOiNxnnkIOg64zGIeZ2n/atga1jbgyZBoojlEhZdeUg5HsCaeQcEObSNod2edP24irQsoupxYIKqQu4jaV5G8NaQo0WWITcXWQagCxFV3AsoIsCmgLqoNE/amzZpbAimrdmwm5KGCe6CrfGBI81hXLczE5VwXRmCMyBIBqp1NadDWt0ZN6x1dVB4n1hpvlNcfvPXTvQmS35u5Db8lx2+k/8+e0DAueNDq+jbvKAQYQatmmK/tksXJXQJYlKqgJElbMMxPCg2DLZ0MGR6W77qTe6WVBFhl6cbBKhzwerexVAQp0E2Ta6B/BJW1ycNQdmSHzJvulBKLGrqeDRPvFvaOqWH8ISqa/qx4AaCJqO/2xt1JA9eVP9OYf08uZXILfqNN1pKMf2eZKFT6GmKoumPSFnEIGQeJ2OpUbZF0UFuc4/69BsGbSpngIRLp1iH2cbnTvWEqdyhWd4vHMR/2Sw/Quk91aB8gznUp908Ov9XSgaRM73d/mZjoV/MzF5eFW0eFy0o/yTKfCX2Ulw60iw2UJsO1UXZA7807RpSDkO+siuNk8oKLlWh9AGRQ3n/UCSLRYPWddhUFNFhWAobPuwq7L443ZeGSPXbRX2c8+i6QXzX8TrCRNfAds6b0FLfmS0gAAAABJRU5ErkJggg=="};
+/* Logo : images de la marque (vides pour l'instant) */
+/* Logo : à remplir avec les images de ta marque (data:image/png;base64,…). Vide = le nom s'affiche en texte. */
+var LOGO={dark:"",light:"",fav:""};
 CK.LOGO=LOGO;
 function applyIdentity(){
   root.style.setProperty("--accent",C.accent||DEF.accent);
-  /* Anciennes configs « CAPTAIN / cockpit » → nouvelle marque */
-  /* Anciennes configs (CAPTAIN, COCKPIT, DESK) → marque Captain Trading */
-  var old=!C.name||/^(CAPTAIN|COCKPIT|DESK)$/.test(C.name),nm=old?"captain":C.name,tg=(old&&(C.tagline==null||C.tagline==="cockpit"||C.tagline==="Crypto · Macro"))?"Trading · Desk":C.tagline;
+  var nm=C.name&&!/^(CAPTAIN|COCKPIT|DESK)$/i.test(C.name)?C.name:"DAMOUR GLOBAL",tg=(C.tagline==null||/^(cockpit|Trading · Desk|Crypto · Macro)$/.test(C.tagline))?"Desk Nasdaq 100":C.tagline;
   C.name=nm;C.tagline=tg;
   $("bName").textContent=nm;$("bSub").textContent=tg;
-  document.title=nm==="captain"?"Captain Trading · Desk":nm+" · Desk";
-  $("footBrand").textContent=nm==="captain"?"Captain Trading · Desk":nm+" · Desk";
-  var mk=$("brandMark");if(!mk.firstChild)mk.innerHTML='<img class="lg-on-dark" src="'+LOGO.dark+'" alt="Captain Trading"><img class="lg-on-light" src="'+LOGO.light+'" alt="">';
-  /* le logo contient déjà « captain TRADING » : le texte ne s'affiche que pour un nom personnalisé */
-  document.querySelector(".brand").classList.toggle("custom",nm!=="captain");
-  var fav=document.querySelector('link[rel="icon"]');if(!fav){fav=document.createElement("link");fav.rel="icon";fav.type="image/png";fav.href=LOGO.fav;document.head.appendChild(fav);}
+  document.title=nm+" · "+tg;
+  $("footBrand").textContent=nm+" · "+tg;
+  var mk=$("brandMark");if(!mk.firstChild&&LOGO.dark)mk.innerHTML='<img class="lg-on-dark" src="'+LOGO.dark+'" alt="'+esc(nm)+'"><img class="lg-on-light" src="'+(LOGO.light||LOGO.dark)+'" alt="">';
+  /* avec un logo image, le texte du nom est masqué ; sans logo, le nom s'affiche en texte */
+  document.querySelector(".brand").classList.toggle("custom",!LOGO.dark);
+  if(LOGO.fav){var fav=document.querySelector('link[rel="icon"]');if(!fav){fav=document.createElement("link");fav.rel="icon";fav.type="image/png";fav.href=LOGO.fav;document.head.appendChild(fav);}}
   document.body.classList.toggle("beginner",!!C.beginner);
   /* Un bloc disparaît aussi si son espace est décoché dans le Studio (ex. Screener) */
-  var ESPM={day:"journee",events:"journee",map:"macro",screener:"screener",liq:"liq",deriv:"liq",movers:"liq",news:"news",veille:"veille",net:"net"},E=C.espaces||{};
+  var ESPM={plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news",net:"net"},E=C.espaces||{};
   Object.keys(DEF.modules).forEach(function(k){var on=(!C.modules||C.modules[k]!==false)&&!(ESPM[k]&&E[ESPM[k]]===false);document.querySelectorAll('[data-mod="'+k+'"]').forEach(function(el){el.hidden=!on;});});
   if(CK.layout)CK.layout.refresh();
 }
 CK.applyIdentity=applyIdentity;
 
 /* ---------------- Barre de prix ---------------- */
-var MACRO_STRIP=[{k:"SPX",n:"S&P 500"},{k:"NDX",n:"Nasdaq"},{k:"DXY",n:"Dollar"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"}];
+var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DXY",n:"Dollar"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"}];
 function watch(){var w=(C.watchlist&&C.watchlist.length?C.watchlist:DEF.watchlist).map(function(x){return String(x).trim().toUpperCase().replace(/[^A-Z0-9]/g,"");}).filter(Boolean);return w.slice(0,12);}
 CK.watch=watch;
 function buildStrip(){
@@ -2369,12 +2383,12 @@ CK.wsResub=function(){if(okx)okxSub(false);};
 function startSockets(){
   okx=socket("OKX","wss://ws.okx.com:8443/ws/v5/public",function(){okxSub(true);},function(m){if(!m.arg||!m.data)return;
     if(m.arg.channel==="tickers")onTickers(m.data);else if(m.arg.channel==="liquidation-orders")onOkxLiq(m.data);},"ping");
-  socket("Bybit","wss://stream.bybit.com/v5/public/linear",function(ws){ws.send(JSON.stringify({op:"subscribe",args:LIQ_BASES.map(function(b){return "allLiquidation."+b+"USDT";})}));},function(m){
+  if(CK.WITH_LIQ)socket("Bybit","wss://stream.bybit.com/v5/public/linear",function(ws){ws.send(JSON.stringify({op:"subscribe",args:LIQ_BASES.map(function(b){return "allLiquidation."+b+"USDT";})}));},function(m){
     if(!m.topic||!/^allLiquidation/.test(m.topic)||!m.data)return;
     (Array.isArray(m.data)?m.data:[m.data]).forEach(function(x){var b=String(x.s||"").replace(/USDT$/,""),p=+x.p,amt=+x.v*p;if(!(amt>0))return;
       addLiqEvent({ex:"Bybit",base:b,usd:amt,long:x.S==="Buy",px:p,ts:+x.T||Date.now()},"bb"+x.T+x.s+x.v);});
   },JSON.stringify({op:"ping"}));
-  socket("Binance","wss://fstream.binance.com/ws/!forceOrder@arr",function(){},function(m){var o=m&&m.o;if(!o||!/USDT$/.test(o.s))return;
+  if(CK.WITH_LIQ)socket("Binance","wss://fstream.binance.com/ws/!forceOrder@arr",function(){},function(m){var o=m&&m.o;if(!o||!/USDT$/.test(o.s))return;
     var b=o.s.replace(/USDT$/,""),p=+o.ap||+o.p,amt=(+o.z||+o.q)*p;if(!(amt>0))return;
     addLiqEvent({ex:"Binance",base:b,usd:amt,long:o.S==="SELL",px:p,ts:+o.T||Date.now()},"bn"+o.T+o.s+o.q);
   },null);
@@ -2925,12 +2939,12 @@ function safe(fn){try{fn();}catch(e){if(window.console)console.error("[cockpit]"
 CK.boot=function(){
   applyIdentity();syncThemeBtns();buildStrip();wire();
   S.moversMkt=C.moversMarket;S.newsLang=C.newsLang;
-  [function(){if(CK.bg)CK.bg.boot();},function(){if(CK.layout)CK.layout.boot();},function(){if(CK.day)CK.day.boot();},function(){if(CK.map)CK.map.boot();},function(){if(CK.liqmap)CK.liqmap.boot();},function(){if(CK.pos)CK.pos.boot();},function(){if(CK.extra)CK.extra.boot();},function(){if(CK.veille)CK.veille.boot();},function(){if(CK.screener)CK.screener.boot();},function(){if(CK.ui)CK.ui.boot();},function(){if(CK.hub)CK.hub.boot();},function(){if(CK.worlds)CK.worlds.boot();},function(){if(CK.sound)CK.sound.boot();},function(){if(CK.net)CK.net.boot();}].forEach(safe);
+  [function(){if(CK.bg)CK.bg.boot();},function(){if(CK.layout)CK.layout.boot();},function(){if(CK.day)CK.day.boot();},function(){if(CK.pos)CK.pos.boot();},function(){if(CK.extra)CK.extra.boot();},function(){if(CK.plan)CK.plan.boot();},function(){if(CK.ui)CK.ui.boot();},function(){if(CK.hub)CK.hub.boot();},function(){if(CK.worlds)CK.worlds.boot();},function(){if(CK.sound)CK.sound.boot();},function(){if(CK.net)CK.net.boot();}].forEach(safe);
   renderLiqSum();renderNews();
-  loadInstruments().then(function(){startSockets();seedLiq();});
+  loadInstruments().then(function(){startSockets();if(CK.WITH_LIQ)seedLiq();});
   loadMacro();
   Promise.all([loadBTCdaily(),loadFunding(),loadOI(),loadFG()]).then(computeFactors);
-  loadMovers().then(function(){if(CK.screener)CK.screener.start();});
+  
   loadCalendar();loadFJ();loadCryptoNews();loadWire();
   (function wl(){setTimeout(function(){loadWire().then(wl,wl);},document.hidden?60000:20000);})();
   loadTG();(function tl(){setTimeout(function(){loadTG().then(tl,tl);},tgDelai());})();
@@ -2942,7 +2956,7 @@ CK.boot=function(){
   setInterval(loadMacro,120000);
   setInterval(function(){Promise.all([loadBTCdaily(),loadFunding(),loadOI()]).then(computeFactors);},600000);
   setInterval(function(){loadFG().then(computeFactors);},1800000);
-  setInterval(loadMovers,60000);
+  
   setInterval(loadCalendar,900000);
   (function fj(){setTimeout(function(){loadFJ().then(fj,fj);},document.hidden?180000:60000);})();
   document.addEventListener("visibilitychange",function(){if(!document.hidden&&Date.now()-FJ.ts>60000)loadFJ();});
@@ -3020,13 +3034,10 @@ var CK=window.CK,u=CK.u;
 var COLS=12,ROW=10,GAP=16;
 var VIEWS0=[
   {id:"home",name:"Accueil",key:"0"},
-  {id:"journee",name:"Journée",key:"1"},
-  {id:"macro",name:"Signaux",key:"2"},
-  {id:"screener",name:"Screener",key:"3"},
-  {id:"liq",name:"Liquidations",key:"4"},
-  {id:"news",name:"News",key:"5"},
-  {id:"veille",name:"Agent",key:"6"},
-  {id:"net",name:"Connexions",key:"7"}
+  {id:"plan",name:"Plan NDX",key:"1"},
+  {id:"journee",name:"Journée",key:"2"},
+  {id:"news",name:"News",key:"3"},
+  {id:"net",name:"Connexions",key:"4"}
 ];
 /* Espaces décochés dans le Studio : retirés de la navigation */
 var VIEWS=VIEWS0.filter(function(v){var e=(CK.cfg&&CK.cfg().espaces)||{};return v.id==="home"||e[v.id]!==false;});VIEWS.forEach(function(v,i){if(v.id!=="home")v.key=String(i);});
@@ -3034,19 +3045,16 @@ function viewOn(id){return VIEWS.some(function(v){return v.id===id;});}
 /* « Mondes » = l'écran de sélection (aucun bloc) ; chaque monde a sa grille */
 var DEFAULTS={
   home:[],
+  plan:[{id:"plan",x:0,y:0,w:6,h:70},{id:"ctx",x:6,y:0,w:6,h:70},{id:"opts",x:0,y:70,w:12,h:50}],
   journee:[{id:"day",x:0,y:0,w:12,h:33},{id:"levels",x:0,y:33,w:5,h:50},{id:"opts",x:5,y:33,w:7,h:50},{id:"events",x:0,y:83,w:7,h:50},{id:"deriv",x:7,y:83,w:5,h:34}],
-  macro:[{id:"map",x:0,y:0,w:12,h:82},{id:"corr",x:0,y:82,w:12,h:40}],
-  screener:[{id:"screener",x:0,y:0,w:12,h:84},{id:"movers",x:0,y:84,w:12,h:40}],
-  liq:[{id:"liq",x:0,y:0,w:8,h:84},{id:"book",x:8,y:0,w:4,h:84},{id:"deriv",x:0,y:84,w:12,h:50}],
   news:[{id:"news",x:0,y:0,w:8,h:84},{id:"events",x:8,y:0,w:4,h:84}],
-  net:[{id:"net",x:0,y:0,w:12,h:84}],
-  veille:[{id:"veille",x:0,y:0,w:12,h:90}]
+  net:[{id:"net",x:0,y:0,w:12,h:84}]
 };
 /* Où mène « Ouvrir » depuis un bloc */
-var DOOR={day:"journee",map:"macro",events:"journee",screener:"screener",liq:"liq",deriv:"liq",movers:"liq",news:"news"};
-var LAYV="9";
-var MIN={veille:[6,40],corr:[3,30],levels:[3,30],opts:[3,30],book:[3,30],net:[6,40],day:[6,28],map:[3,36],events:[2,24],deriv:[3,16],movers:[3,26],liq:[3,40],news:[3,24],screener:[3,36]};
-var NAMES={veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
+var DOOR={plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news"};
+var LAYV="12";
+var MIN={plan:[4,40],ctx:[4,40],veille:[6,40],corr:[3,30],levels:[3,30],opts:[3,30],book:[3,30],net:[6,40],day:[6,28],map:[3,36],events:[2,24],deriv:[3,16],movers:[3,26],liq:[3,40],news:[3,24],screener:[3,36]};
+var NAMES={plan:"Plan du jour NDX",ctx:"Contexte de marché",veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
 var grid,all={},view="home",lay=[],editing=false,stacked=false,ph=null;
 var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -3928,7 +3936,7 @@ function loadOptionsIdx(b){
     var I=j&&j.idx&&j.idx[b];
     if(!I||!I.exp||!I.exp.length){OP.data[b]={err:j?"Le robot n'a pas encore de données pour cet indice.":"Fichier options.json introuvable sur le robot."};renderOptions();return;}
     var list=I.exp.map(function(e){return {ts:e.ts,code:e.date,c:e.c,p:e.p,oi:e.c+e.p,usd:e.usd,pcr:e.pcr,mp:e.mp};}).filter(function(e){return e.ts>Date.now()-86400000;}).sort(function(x,y){return x.ts-y.ts;});
-    OP.data[b]={list:list,calls:I.calls||[],puts:I.puts||[],px:I.spot,mult:I.mult||100,idx:true,ts:Date.now(),src:j.ts||I.ts};
+    OP.data[b]={list:list,calls:(I.calls||[]).slice(0,4),puts:(I.puts||[]).slice(0,4),wc:I.calls||[],wp:I.puts||[],px:I.spot,mult:I.mult||100,idx:true,ts:Date.now(),src:j.ts||I.ts};
     CK.options=OP;renderOptions();
   });
 }
@@ -4106,6 +4114,8 @@ function renderCorr(){
 }
 
 /* ================= Démarrage ================= */
+/* utilisé par le Plan du jour (plan.js) */
+CK.opData=OP;CK.xApi={loadLevels:loadLevels,loadOptions:loadOptions};
 CK.extra={boot:function(){
   xtip();
   [["levels","lv",LV,"lvSym2",renderLevels,loadLevels],["opts","op",OP,"opSym2",renderOptions,loadOptions],["book","bk",BK,"bkSym",renderBook,loadBook]].forEach(function(m){
@@ -4120,6 +4130,135 @@ CK.extra={boot:function(){
   function bk(){var v=view();if(v==="liq"||!CK.FLOW)loadBook(BK.sym);}bk();setInterval(bk,20000);
   /* À l'ouverture de l'espace Liquidations : lecture immédiate, sans attendre le prochain cycle */
   var bkV=view();setInterval(function(){var v=view();if(v!==bkV){bkV=v;if(v==="liq"&&!BK.data[BK.sym])bk();}},800);setInterval(function(){if(BK.data[BK.sym])renderBook();},5000);
+}};
+})();
+
+/* ================================================================
+   DESK — Plan du jour Nasdaq 100 et contexte de marché
+   · Plan : niveaux de la veille, de la nuit, de la journée, murs
+     d'options et agenda, rangés du plus haut au plus bas autour du prix.
+     Données : bougies OKX (perpétuel US100), robot options (options.py),
+     agenda économique du Desk.
+   · Contexte : volatilité (VIX, VXN), taux 10 ans, dollar, futures NQ/ES
+     et poids lourds du Nasdaq, via le scanner public de TradingView.
+   Aucune clé API. Lecture mécanique des niveaux, pas une prévision.
+   ================================================================ */
+(function(){
+"use strict";
+var CK=window.CK,u=CK.u,S=CK.S,esc=u.esc,nf=u.nf;
+var OKX="https://www.okx.com",TV="https://scanner.tradingview.com/global/scan",INST="US100-USDT-SWAP";
+var PD={close:null};            /* clôture d'hier (UTC) */
+var CX={rows:{},ts:0};          /* contexte TradingView */
+
+function q(p){return p.catch(function(){return null;});}
+function px(v){return u.px(v);}
+function pct(v){return (v>0?"+":v<0?"−":"")+nf(Math.abs(v),2)+" %";}
+function tzp(tz,ms){var o={};new Intl.DateTimeFormat("en-US",{timeZone:tz,hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short"}).formatToParts(new Date(ms)).forEach(function(p){o[p.type]=p.value;});return o;}
+/* Heure de New York (9 h 30 – 16 h) convertie en instant réel : suit les changements d'heure */
+function nyAt(dayShift,h,m,now){
+  var base=now+dayShift*864e5,p=tzp("America/New_York",base),g=Date.UTC(+p.year,+p.month-1,+p.day,h+5,m);
+  var q2=tzp("America/New_York",g);g+=((h*60+m)-(+q2.hour*60+ +q2.minute))*60000;return g;
+}
+function usSession(now){
+  for(var d=0;d<6;d++){
+    var o=nyAt(d,9,30,now),c=nyAt(d,16,0,now),wd=tzp("America/New_York",o).weekday;
+    if(wd==="Sat"||wd==="Sun")continue;
+    if(now>=o&&now<c)return {open:true,t:c,o:o};
+    if(now<o)return {open:false,t:o,o:o};
+  }
+  return null;
+}
+function dur(ms){var m=Math.max(0,Math.round(ms/60000)),d=Math.floor(m/1440),h=Math.floor((m%1440)/60);m=m%60;return (d?d+" j ":"")+(h?h+" h ":"")+(m<10&&(h||d)?"0":"")+m+(h||d?"":" min");}
+function hm(ms){return new Date(ms).toLocaleTimeString("fr-FR",{timeZone:"Europe/Paris",hour:"2-digit",minute:"2-digit"});}
+function parisDay(ms){return new Date(ms).toLocaleDateString("fr-FR",{timeZone:"Europe/Paris"});}
+
+/* ---------------- 1. Plan du jour ---------------- */
+function loadPrev(){
+  return q(u.fetchJSON(OKX+"/api/v5/market/candles?instId="+INST+"&bar=1Dutc&limit=3",null,12000)).then(function(j){
+    var D=j&&j.data;if(D&&D[1]&&+D[1][4]>0)PD.close=+D[1][4];render();});
+}
+function levelsOf(){
+  var d=CK.levels&&CK.levels.data&&CK.levels.data.NDX,o={};
+  if(d)d.L.forEach(function(x){o[x.k]=x.px;});
+  return o;
+}
+function render(){
+  var host=u.$("plan");if(!host)return;
+  var L=levelsOf(),p=CK.levels&&CK.levels.px&&CK.levels.px.NDX,now=Date.now();
+  if(!p||!Object.keys(L).length){host.innerHTML='<div class="empty">Calcul du plan…</div>';return;}
+  var rows=[];
+  function add(tag,name,v,kind,tip){if(v>0)rows.push({tag:tag,n:name,px:v,k:kind,tip:tip||""});}
+  add("PDH","Plus haut d'hier",L.PDH,"niv");add("PDL","Plus bas d'hier",L.PDL,"niv");
+  if(PD.close)add("PDC","Clôture d'hier (00 h UTC)",PD.close,"niv");
+  add("DO","Ouverture du jour (UTC)",L.DO,"niv");add("WO","Ouverture de la semaine",L.WO,"niv");
+  var nh=Math.max(L.TKH||0,L.LDH||0),nl=Math.min(L.TKL||Infinity,L.LDL||Infinity);
+  if(nh>0)add("NUH","Haut de la nuit (Tokyo + Londres)",nh,"niv");
+  if(isFinite(nl)&&nl>0)add("NUL","Bas de la nuit (Tokyo + Londres)",nl,"niv");
+  var O=CK.opData&&CK.opData.data&&CK.opData.data.NDX,oinfo="";
+  if(O&&O.list){
+    var nx=O.list.filter(function(e){return e.ts>now;}).sort(function(a,b){return a.ts-b.ts;})[0];
+    if(nx&&nx.mp>0)add("MP","Max pain, échéance la plus proche",nx.mp,"opt","Prix d'exercice où les vendeurs d'options paient le moins à l'échéance du "+new Date(nx.ts).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+". L'indice y est souvent attiré en fin de vie des options.");
+    var wc=(O.wc||O.calls||[]).filter(function(w){return w.k>p;}),wp=(O.wp||O.puts||[]).filter(function(w){return w.k<p;});
+    if(wc.length)add("MC","Mur de calls au-dessus",wc[0].k,"opt",nf(wc[0].c,0)+" contrats calls : résistance possible (les vendeurs de calls couvrent en vendant).");
+    if(wp.length)add("MS","Mur de puts en dessous",wp[0].k,"opt",nf(wp[0].p,0)+" contrats puts : support possible.");
+  }else if(O&&O.err)oinfo=O.err;
+  rows.sort(function(a,b){return b.px-a.px;});
+  var html="",placed=false;
+  rows.forEach(function(x){
+    var dd=(x.px/p-1)*100;
+    if(!placed&&x.px<p){html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+px(p)+'</b></div>';placed=true;}
+    html+='<div class="lv-r '+(x.px>p?"ab":"be")+(Math.abs(dd)<.35?" near":"")+(x.k==="opt"?" plan-opt":"")+'"'+(x.tip?' data-x="'+esc('<b>'+x.n+'</b><span>'+x.tip+'</span>')+'"':"")+'><span class="lv-tag">'+x.tag+'</span><span class="lv-n">'+esc(x.n)+'</span><b class="mono">'+px(x.px)+'</b><span class="lv-d mono">'+(dd>0?"+":"")+nf(dd,2)+' %</span></div>';
+  });
+  if(!placed)html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+px(p)+'</b></div>';
+  /* en-tête : prix, variation depuis l'ouverture du jour, compte à rebours US */
+  var ch=L.DO>0?(p/L.DO-1)*100:null,us=usSession(now),head='<div class="plan-top"><div><span class="x-k">Nasdaq 100</span><b class="mono plan-px">'+px(p)+'</b>'+(ch==null?"":'<span class="mono '+u.cls(ch)+'"> '+pct(ch)+' depuis 00 h UTC</span>')+'</div>';
+  if(us)head+='<div class="plan-us"><span class="x-k">'+(us.open?"Séance US ouverte":"Ouverture US")+'</span><b class="mono">'+(us.open?"clôture dans ":"dans ")+dur(us.t-now)+'</b><span class="plan-sub">'+(us.open?"fin à ":"à ")+hm(us.t)+' (Paris)</span></div>';
+  head+='</div>';
+  /* lecture mécanique */
+  var rd=[];
+  if(L.DO>0)rd.push(p>=L.DO?"Prix au-dessus de l'ouverture du jour : biais acheteur tant qu'il y reste.":"Prix sous l'ouverture du jour : biais vendeur tant qu'il y reste.");
+  if(L.PDH>0&&p>L.PDH)rd.push("Au-dessus du plus haut d'hier : cassure à confirmer, sinon retour dans la zone d'hier.");
+  else if(L.PDL>0&&p<L.PDL)rd.push("Sous le plus bas d'hier : pression vendeuse, surveiller la reprise du niveau.");
+  else if(L.PDH>0&&L.PDL>0)rd.push("Prix dans la fourchette d'hier : les extrêmes (PDH/PDL) sont les niveaux de décision.");
+  /* agenda du jour : annonces américaines importantes */
+  var td=parisDay(now),ev=(S.cal||[]).filter(function(e){return parisDay(e.ts)===td&&(e.imp==="hi"||e.imp==="md");}).slice(0,6);
+  var ag=ev.length?'<div class="plan-ag"><span class="x-k">Annonces du jour (heure de Paris)</span>'+ev.map(function(e){return '<div class="plan-ev'+(e.ts<now?" past":"")+'"><span class="mono">'+hm(e.ts)+'</span><span class="plan-i '+(e.imp==="hi"?"hi":"md")+'" aria-hidden="true"></span><span>'+esc(e.fr||e.t)+'</span></div>';}).join("")+'</div>':'<div class="plan-ag"><span class="x-k">Annonces du jour</span><div class="plan-ev"><span>Aucune annonce américaine importante au programme.</span></div></div>';
+  var out=head+'<div class="lv-list">'+html+'</div>'+(rd.length?'<p class="plan-rd">'+rd.map(esc).join(" ")+'</p>':"")+ag+
+    '<p class="x-n">'+(oinfo?esc(oinfo)+" ":"")+'Prix et niveaux : perpétuel US100 d\'OKX (journée à 00 h UTC), écart possible avec l\'indice. Nuit = Tokyo + Londres. Options : open interest de la veille (robot GitHub). Lecture mécanique des niveaux, pas une prévision.</p>';
+  if(host._h!==out){host.innerHTML=out;host._h=out;}
+}
+
+/* ---------------- 2. Contexte : volatilité, taux, poids lourds ---------------- */
+var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
+var BIG=[["NVDA","Nvidia"],["MSFT","Microsoft"],["AAPL","Apple"],["AMZN","Amazon"],["META","Meta"],["GOOGL","Alphabet"],["AVGO","Broadcom"],["TSLA","Tesla"],["COST","Costco"],["NFLX","Netflix"]];
+function loadCtx(){
+  var tk=CTX.map(function(x){return x[2];}).concat(BIG.map(function(x){return "NASDAQ:"+x[0];}));
+  return q(u.fetchJSON(TV,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({symbols:{tickers:tk},columns:["close","change"]})},12000)).then(function(j){
+    if(!j||!j.data)return;j.data.forEach(function(o){CX.rows[o.s]={c:o.d[0],ch:o.d[1]};});CX.ts=Date.now();renderCtx();});
+}
+function renderCtx(){
+  var host=u.$("ctx");if(!host)return;
+  if(!CX.ts){host.innerHTML='<div class="empty">Chargement du contexte…</div>';return;}
+  function tile(x){var r=CX.rows[x[2]];if(!r)return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">—</b></div>';
+    var isY=x[0]==="US10Y",v=isY?nf(r.c,3)+" %":px(r.c),c=isY?(function(){var bp=r.c-r.c/(1+(r.ch||0)/100);return (bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";})():pct(r.ch);
+    return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">'+v+'</b><span class="mono '+u.cls(r.ch)+'">'+c+'</span></div>';}
+  var big=BIG.map(function(x){return {n:x[1],s:x[0],r:CX.rows["NASDAQ:"+x[0]]};}).filter(function(x){return x.r;}).sort(function(a,b){return b.r.ch-a.r.ch;});
+  var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
+  var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
+  var out='<div class="ctx-grid">'+CTX.map(tile).join("")+'</div><div class="ctx-h"><span class="x-k">Poids lourds du Nasdaq 100</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+
+    '<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
+    '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
+  if(host._h!==out){host.innerHTML=out;host._h=out;}
+}
+
+CK.plan={boot:function(){
+  render();renderCtx();
+  function all(){if(CK.xApi){CK.xApi.loadLevels("NDX");CK.xApi.loadOptions("NDX");}loadPrev();}
+  all();setInterval(function(){if(CK.xApi)CK.xApi.loadLevels("NDX");},120000);
+  setInterval(function(){if(CK.xApi)CK.xApi.loadOptions("NDX");},600000);
+  setInterval(loadPrev,600000);
+  loadCtx();setInterval(loadCtx,60000);
+  setInterval(render,5000);setInterval(renderCtx,15000);
 }};
 })();
 
@@ -4366,11 +4505,11 @@ function seg(id,cur,opts){return '<div class="st-seg" id="'+id+'" role="group">'
 /* Studio : l'essentiel visible, le reste replié. Tout s'applique tout de suite. */
 function renderStudio(){
   var C=CK.cfg(),sp=CK.layout&&CK.layout.spaces?CK.layout.spaces():[];
-  var h='<button type="button" class="st-own" id="sOwn"><b>Copier le Desk</b><span>Récupère-le et change tout ce que tu veux avec une IA, sans coder →</span></button>'+'<div class="st-sec"><h4>Mon desk</h4><div class="st-grid">'+
+  var h=''+'<div class="st-sec"><h4>Mon desk</h4><div class="st-grid">'+
     fld("Nom",'<input id="sName" maxlength="24" value="'+esc(C.name)+'">')+fld("Sous-titre",'<input id="sTag" maxlength="40" value="'+esc(C.tagline)+'">')+
     fld("Cryptos suivies dans la barre du haut",'<input id="sWatch" value="'+esc((C.watchlist||[]).join(", "))+'" placeholder="BTC, ETH, SOL">',true)+'</div></div>'+
     '<div class="st-sec"><h4>Espaces affichés</h4><p class="st-hint">Décoche un espace qui ne t\'intéresse pas : il disparaît de l\'accueil et de la navigation (la page se recharge).</p><div class="st-chips">'+
-    [["journee","Journée"],["macro","Signaux"],["screener","Screener"],["liq","Liquidations"],["news","News"],["veille","Agent IA"],["net","Connexions"]].map(function(x){var on=(C.espaces||{})[x[0]]!==false;return '<button type="button" class="st-chip" data-esp="'+x[0]+'" aria-pressed="'+on+'">'+(on?"✓ ":"")+x[1]+'</button>';}).join("")+'</div></div>'+
+    [["plan","Plan NDX"],["journee","Journée"],["news","News"],["net","Connexions"]].map(function(x){var on=(C.espaces||{})[x[0]]!==false;return '<button type="button" class="st-chip" data-esp="'+x[0]+'" aria-pressed="'+on+'">'+(on?"✓ ":"")+x[1]+'</button>';}).join("")+'</div></div>'+
     '<div class="st-sec"><h4>Blocs de chaque espace</h4><p class="st-hint">Clique sur un bloc pour l\'afficher ou le masquer. Pour changer l\'ordre ou la largeur : ouvre l\'espace puis le bouton Disposition.</p>'+
     sp.map(function(s){return '<div class="st-space"><b>'+esc(s.name)+'</b><div class="st-chips">'+s.blocks.map(function(bk){return '<button type="button" class="st-chip" data-sp="'+s.id+'" data-bk="'+bk.id+'" aria-pressed="'+(bk.on&&C.modules[bk.id]!==false?"true":"false")+'">'+esc(bk.name)+'</button>';}).join("")+'</div></div>';}).join("")+
     '<button type="button" class="btn sm" id="sLayout">Réorganiser l\'espace ouvert</button></div>'+
@@ -4389,7 +4528,7 @@ function renderStudio(){
 function segVal(id){var b=document.querySelector("#"+id+' [aria-pressed="true"]');return b?b.getAttribute("data-v"):"";}
 function readStudio(){
   var C=CK.merge(CK.cfg(),{}),v=function(id){return $(id).value;};
-  C.name=v("sName").trim()||"captain";C.tagline=v("sTag").trim();
+  C.name=v("sName").trim()||"DAMOUR GLOBAL";C.tagline=v("sTag").trim();
   C.theme=segVal("sTheme")||"dark";C.newsLang=segVal("sLang")||"fr";C.beginner=$("sBeg").checked;
   C.watchlist=v("sWatch").split(/[,\s;]+/).map(function(x){return x.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");}).filter(Boolean).slice(0,12);
   if(!C.watchlist.length)C.watchlist=["BTC","ETH","SOL"];
@@ -4410,13 +4549,12 @@ function wireStudio(){
   $("studioBody").addEventListener("input",function(){clearTimeout(deb);deb=setTimeout(function(){var prev=CK.cfg();applyLive(readStudio(),prev);},150);});
   $("studioBody").addEventListener("change",function(){var prev=CK.cfg();applyLive(readStudio(),prev);});
   $("studioBody").addEventListener("click",function(e){
-    if(e.target.closest("#sOwn")){CK.closeOv($("ovStudio"));setTimeout(function(){CK.openOv("ovOwn");},220);return;}
     if(e.target.id==="sLayout"){CK.closeOv($("ovStudio"));setTimeout(function(){CK.layout.edit(true);},220);return;}
     var sb=e.target.closest(".st-seg button");
     if(sb){sb.parentNode.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===sb?"true":"false");});var prev=CK.cfg();applyLive(readStudio(),prev);
       if(sb.parentNode.id==="sTheme")CK.setTheme(sb.getAttribute("data-v"),sb);return;}
     var es=e.target.closest("[data-esp]");if(es){var C2=CK.merge(CK.cfg(),{}),k=es.getAttribute("data-esp");C2.espaces=C2.espaces||{};C2.espaces[k]=C2.espaces[k]===false;
-      var reste=["journee","macro","screener","liq","news","veille","net"].filter(function(x){return C2.espaces[x]!==false;}).length;if(!reste){CK.toast("Garde au moins un espace.");return;}
+      var reste=["plan","journee","news","net"].filter(function(x){return C2.espaces[x]!==false;}).length;if(!reste){CK.toast("Garde au moins un espace.");return;}
       CK.setCfg(C2,true);CK.toast("Espace "+(C2.espaces[k]===false?"masqué":"affiché")+". Rechargement…");setTimeout(function(){location.reload();},700);return;}
     var ch=e.target.closest(".st-chip");if(!ch)return;
     var on=ch.getAttribute("aria-pressed")!=="true",id=ch.getAttribute("data-bk");ch.setAttribute("aria-pressed",on?"true":"false");
@@ -4492,7 +4630,6 @@ function wireCalc(){$("btnCalc").addEventListener("click",function(){var b=S.tic
 var palSel=0,palItems=[];
 function cmds(){return [
   {t:"Affichage sombre",k:"thème",run:function(){CK.setTheme("dark");}},{t:"Affichage clair",k:"thème",run:function(){CK.setTheme("light");}},
-  {t:"Copier le Desk",k:"personnaliser avec une IA",run:function(){CK.openOv("ovOwn");}},
   {t:"Ouvrir le Studio",k:"personnaliser",run:function(){$("btnStudio").click();}},{t:"Déplacer les blocs",k:"disposition",run:function(){CK.layout.edit(true);}},
   
   {t:"Alertes",k:"prix",run:function(){$("btnAlerts").click();}},{t:"Calculateur de position",k:"risque",run:function(){$("btnCalc").click();}},
@@ -4534,45 +4671,26 @@ UI.boot=function(){wireOwn();wireStudio();wireAlerts();wireCalc();wirePal();};
 var CK=window.CK,u=CK.u,esc=u.esc;
 var DEST=[
   {id:"bandeau",name:"Bandeau & alertes",sub:"prix, alertes de prix",c:"#C4C8CF"},
+  {id:"plan",name:"Plan NDX",sub:"niveaux, contexte, annonces",c:"#B8F36B"},
   {id:"journee",name:"Journée",sub:"sessions, agenda, dérivés",c:"#E9C46A"},
-  {id:"signaux",name:"Signaux",sub:"10 indicateurs",c:"#7FA8F0"},
-  {id:"screener",name:"Screener",sub:"setups, graphiques",c:"#FF8A3D"},
-  {id:"liq",name:"Liquidations",sub:"flux, carte, top 24 h",c:"#F07384"},
-  {id:"news",name:"News",sub:"flux macro, agenda",c:"#A99BEA"},
-  {id:"veille",name:"Agent",sub:"scalp, analyste, IA",c:"#B8F36B"},
-  {id:"fond",name:"Fond 3D",sub:"relief du BTC",c:"#8E949E"}
+  {id:"opts",name:"Options",sub:"murs, max pain, put/call",c:"#7FA8F0"},
+  {id:"news",name:"News",sub:"flux macro, agenda",c:"#A99BEA"}
 ];
 var DN={};DEST.forEach(function(d){DN[d.id]=d;});
 /* kind : ws (temps réel), http (périodique), od (à la demande), fb (secours) ; exp = intervalle attendu en ms */
 var SRC=[
-  {id:"okxws",name:"OKX",p:"WebSocket",kind:"ws",to:["bandeau","liq"],
-   ep:["wss://ws.okx.com:8443/ws/v5/public · tickers","wss://ws.okx.com:8443/ws/v5/public · liquidation-orders"],data:"Prix en continu des actifs suivis et liquidations des perpétuels OKX.",freq:"Temps réel"},
-  {id:"okx",name:"OKX",p:"REST",kind:"http",exp:60000,to:["screener","liq","journee","signaux","fond"],
+  {id:"okx",name:"OKX",p:"REST",kind:"http",exp:60000,to:["plan","journee","bandeau"],
    ep:["/api/v5/market/tickers (SPOT, SWAP)","/api/v5/market/candles","/api/v5/public/funding-rate (+ history)","/api/v5/public/liquidation-orders","/api/v5/public/instruments"],
    data:"Univers des coins et volumes, bougies du screener, funding, historique des liquidations, tailles de contrats, BTC journalier du relief.",freq:"Tickers toutes les 60 s, le reste toutes les 10 min ou à la demande"},
-  {id:"bybit",name:"Bybit",p:"WebSocket",kind:"ws",to:["liq"],ep:["wss://stream.bybit.com/v5/public/linear · allLiquidation"],data:"Toutes les liquidations des contrats linéaires.",freq:"Temps réel"},
-  {id:"binws",name:"Binance",p:"WebSocket",kind:"ws",to:["liq"],ep:["wss://fstream.binance.com/ws/!forceOrder@arr"],data:"Liquidations forcées Binance Futures (Binance n'envoie qu'une liquidation par seconde et par coin : c'est un échantillon).",freq:"Temps réel"},
-  {id:"binfx",name:"Binance Futures",p:"REST",kind:"http",exp:600000,to:["signaux","journee","liq"],
-   ep:["/futures/data/openInterestHist (1 j et 1 h)","/fapi/v1/klines (1 h)"],data:"Open interest, funding, ratios long/short, flux taker, basis, et données horaires de la carte des liquidations.",freq:"Toutes les 10 min et à l'ouverture de la carte"},
-  {id:"bybitrest",name:"Bybit",p:"REST",kind:"http",exp:300000,to:["liq","signaux"],ep:["/v5/market/tickers (OI, funding)","/v5/market/open-interest (1 h, 1 j)","/v5/market/account-ratio"],data:"Open interest, funding, ratio long/short des comptes, historique d'OI pour la carte des liquidations.",freq:"Toutes les 60 s et 5 min"},
-  {id:"bitget",name:"Bitget",p:"REST",kind:"http",exp:120000,to:["liq","signaux"],ep:["/api/v2/mix/market/ticker","/api/v2/mix/market/open-interest"],data:"Open interest et funding des perpétuels USDT.",freq:"Toutes les 60 s"},
-  {id:"hl",name:"Hyperliquid",p:"REST",kind:"http",exp:120000,to:["liq","signaux"],ep:["api.hyperliquid.xyz/info · metaAndAssetCtxs"],data:"Open interest et funding (horaire, ramené à 8 h).",freq:"Toutes les 60 s"},
-  {id:"deribit",name:"Deribit",p:"REST",kind:"http",exp:600000,to:["liq"],ep:["/get_volatility_index_data (DVOL)","/get_book_summary_by_currency (options)"],data:"Volatilité implicite DVOL et ratio put/call des options.",freq:"Toutes les 5 min"},
-  {id:"coinbase",name:"Coinbase",p:"REST",kind:"http",exp:600000,to:["liq"],ep:["api.exchange.coinbase.com/products/BTC-USD/ticker"],data:"Prix spot en dollars pour la prime Coinbase (demande US).",freq:"Toutes les 5 min"},
-  {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["signaux","bandeau"],
+  {id:"deribit",name:"Deribit",p:"REST",kind:"http",exp:600000,to:["opts"],ep:["/get_volatility_index_data (DVOL)","/get_book_summary_by_currency (options)"],data:"Volatilité implicite DVOL et ratio put/call des options.",freq:"Toutes les 5 min"},
+  {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["plan","bandeau"],
    ep:["scanner.tradingview.com/global/scan"],data:"DXY, taux 10 ans, ZN, Nasdaq, S&P, VIX, or, BTC, TOTAL2, dominances : prix, moyennes, performances, ADX.",freq:"Toutes les 2 min"},
-  {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news","screener"],
+  {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news"],
    ep:["embed-widget-events.js","tv.js"],data:"Calendrier économique officiel (secours de l'agenda) et graphiques au clic.",freq:"À l'affichage"},
-  {id:"fng",name:"alternative.me",p:"REST",kind:"http",exp:1800000,to:["signaux"],ep:["api.alternative.me/fng/?limit=30"],data:"Indice Fear & Greed (signal Sentiment).",freq:"Toutes les 30 min"},
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},
   {id:"tree",name:"Tree of Alpha",p:"JSON",kind:"http",exp:120000,to:["news"],ep:["news.treeofalpha.com/api/news"],data:"Fil crypto à la minute : dépêches des comptes d'actu (The Block, CoinDesk, Wu Blockchain, Lookonchain…), annonces des exchanges (listings, delistings), SEC / Maison-Blanche.",freq:"Toutes les 20 s"},
-  {id:"tg",name:"News Telegram (relais)",p:"REST",kind:"http",exp:180000,to:["news","veille"],ep:["…workers.dev/tg"],data:"Walter Bloomberg, Watcher Guru, PhoenixNews, BWEnews, unfolded et Whale Alert (transferts de plus de 50 M$), via le relais Cloudflare du Desk.",freq:"1 fois par minute, onglet visible"},
-  {id:"iapay",name:"IA payantes (au choix)",p:"REST",kind:"http",exp:900000,to:["veille"],ep:["api.openai.com","api.anthropic.com","api.x.ai","api.perplexity.ai","api.deepseek.com","api.mistral.ai"],data:"ChatGPT, Claude, Grok, Perplexity, DeepSeek ou Mistral comme cerveau de l'agent de veille, avec la clé API de l'utilisateur (gardée dans le navigateur).",freq:"Toutes les 2 à 10 min, seulement avec une clé"},
-  {id:"openrouter",name:"OpenRouter (IA)",p:"REST",kind:"http",exp:900000,to:["veille"],ep:["openrouter.ai/api/v1/chat/completions"],data:"Un des cerveaux possibles de l'agent de veille (modèles gratuits, 50 analyses par jour). Clé personnelle, gardée dans le navigateur.",freq:"En relais, seulement avec une clé"},
-  {id:"gemini",name:"Gemini (IA)",p:"REST",kind:"http",exp:900000,to:["veille"],ep:["generativelanguage.googleapis.com/v1beta/models/…:generateContent"],data:"Un des cerveaux possibles de l'agent de veille : reçoit l'état du marché et décide quoi dire. Clé personnelle, gardée dans le navigateur.",freq:"Toutes les 2 à 10 min, seulement avec une clé"},
-  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts"],ep:["…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
-  {id:"ff",name:"Forex Factory (allorigins)",p:"REST",kind:"fb",exp:900000,to:["journee"],ep:["api.allorigins.win/raw?url=…ff_calendar_thisweek.json"],data:"Calendrier de la semaine, secours de l'agenda.",freq:"Après échec du relais"},
-  {id:"tr",name:"Traduction",p:"REST",kind:"od",to:["news"],ep:["translate.googleapis.com (gtx)","api.mymemory.translated.net (secours)"],data:"Titres de news traduits en français.",freq:"À chaque nouvelle news"}
+  {id:"tg",name:"News Telegram (relais)",p:"REST",kind:"http",exp:180000,to:["news"],ep:["…workers.dev/tg"],data:"Walter Bloomberg, Watcher Guru, PhoenixNews, BWEnews, unfolded et Whale Alert (transferts de plus de 50 M$), via le relais Cloudflare du Desk.",freq:"1 fois par minute, onglet visible"},
+  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
 ];
 CK.NETSRC=SRC;
 
@@ -4847,7 +4965,7 @@ function pine(b){
   var K=V.k[b]||{},k1=K["1m"]||[],tk=S.tick[b+"-USDT"],px=tk&&tk.last?tk.last:(k1.length?k1[k1.length-1].c:null);if(!px)return "";
   var nv=niveaux(b,px,famOn()),L=nv.au_dessus.concat(nv.en_dessous),d=new Date().toLocaleString("fr-FR",{timeZone:"Europe/Paris",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
   var hex=function(u){return (UCOL[u]||"#AEB3BC").toUpperCase();},q=function(s){return String(s).replace(/"/g,"'").replace(/[^\x20-\x7E\u00C0-\u017F·]/g,"");};
-  var s="//@version=5\n// Niveaux du Desk Captain Trading · "+b+" · "+d+" (heure de Paris)\n// À utiliser sur OKX:"+b+"USDT.P. Pour mettre à jour : recopie depuis le Desk.\nindicator(\"Niveaux Captain · "+b+"\", overlay=true, max_labels_count=50)\n";
+  var s="//@version=5\n// Niveaux du Desk DAMOUR GLOBAL · "+b+" · "+d+" (heure de Paris)\n// À utiliser sur OKX:"+b+"USDT.P. Pour mettre à jour : recopie depuis le Desk.\nindicator(\"Niveaux Desk · "+b+"\", overlay=true, max_labels_count=50)\n";
   L.forEach(function(l,i){var u=String(l.unite).toLowerCase(),t=q(nom(l.nom)+" · "+(UNOM[u]||u));
     s+="hline("+l.prix+", \""+t+"\", color="+hex(u)+", linestyle="+(u==="1h"||u==="15m"?"hline.style_dashed":"hline.style_solid")+", linewidth="+(u==="semaine"||u==="jour"||u==="poc"?2:1)+")\n";
     s+="var label l"+i+" = label.new(na, na, \""+t+"\", style=label.style_label_left, color=color.new("+hex(u)+", 85), textcolor="+hex(u)+", size=size.small)\nlabel.set_xy(l"+i+", bar_index + 3, "+l.prix+")\n";});
@@ -4861,7 +4979,7 @@ function grandChart(b,tf,officiel){
   if(document.getElementById("ovChart").hidden){document.getElementById("chartTitle").textContent=b+" · niveaux de l'agent";document.getElementById("chartLink").href="https://www.tradingview.com/chart/?symbol=OKX%3A"+b+"USDT.P";CK.openOv("ovChart");}
   if(GC&&GC.chart){try{GC.chart.remove();}catch(e){}GC=null;}
   var K=V.k[b]||{},k1=K["1m"]||[],tk=S.tick[b+"-USDT"],px=tk&&tk.last?tk.last:(k1.length?k1[k1.length-1].c:null),nv=px?niveaux(b,px,famOn()):{au_dessus:[],en_dessous:[]},L=nv.au_dessus.concat(nv.en_dessous);
-  var barre='<div class="g8-bar">'+[["15m","15 min"],["1H","1 h"],["4H","4 h"]].map(function(z){return '<button type="button" data-g8tf="'+z[0]+'" aria-pressed="'+(!officiel&&tf===z[0])+'">'+z[1]+'</button>';}).join("")+'<span class="g8-sep"></span><button type="button" data-g8pine="1" title="Copier l’indicateur Niveaux Captain : à coller une seule fois dans TradingView, il se met ensuite à jour tout seul">Indicateur TradingView</button><button type="button" data-g8off="1" aria-pressed="'+!!officiel+'">TradingView officiel</button><span class="g8-note">'+(officiel?"Graphique TradingView (sans les niveaux de l'agent)":"Niveaux calculés par l'agent, mis à jour en direct")+'</span></div>';
+  var barre='<div class="g8-bar">'+[["15m","15 min"],["1H","1 h"],["4H","4 h"]].map(function(z){return '<button type="button" data-g8tf="'+z[0]+'" aria-pressed="'+(!officiel&&tf===z[0])+'">'+z[1]+'</button>';}).join("")+'<span class="g8-sep"></span><button type="button" data-g8pine="1" title="Copier l’indicateur Niveaux Desk : à coller une seule fois dans TradingView, il se met ensuite à jour tout seul">Indicateur TradingView</button><button type="button" data-g8off="1" aria-pressed="'+!!officiel+'">TradingView officiel</button><span class="g8-note">'+(officiel?"Graphique TradingView (sans les niveaux de l'agent)":"Niveaux calculés par l'agent, mis à jour en direct")+'</span></div>';
   if(officiel){box.innerHTML=barre+'<div class="g8-wrap"><div id="g8tv" style="height:100%"></div></div>';
     var go=function(){new window.TradingView.widget({container_id:"g8tv",symbol:"OKX:"+b+"USDT.P",interval:tf==="15m"?"15":tf==="1H"?"60":"240",theme:"dark",autosize:true,locale:"fr",timezone:"Europe/Paris",style:"1",allow_symbol_change:false});};
     if(window.TradingView)go();else{var sc=document.createElement("script");sc.src="https://s3.tradingview.com/tv.js";sc.onload=go;document.head.appendChild(sc);}
@@ -4886,10 +5004,10 @@ function lier(b,tf){var box=document.getElementById("chartBox");if(!box||box._g8
   box.addEventListener("click",function(e){
     var fm=e.target.closest("[data-fam]");if(fm&&GC0.b){var f=famOn(),k=fm.getAttribute("data-fam");f[k]=!f[k];CK.lsj("agent:niv",f);grandChart(GC0.b,V.gtf);V.ch={};paintCards();return;}
     if(e.target.closest("[data-g8pine]")){
-      CK.ui.copy(PINE_AUTO).then(function(){CK.toast("<b>Indicateur « Niveaux Captain » copié.</b> À faire une seule fois sur TradingView : Éditeur Pine (en bas) → Ctrl+A puis Ctrl+V → Enregistrer → « Ajouter au graphique ». Mets-le en favori (étoile) : il calcule ensuite les niveaux tout seul, sur tous tes graphiques.",{ms:16000});},function(){CK.toast("Copie impossible dans ce navigateur.");});return;}
+      CK.ui.copy(PINE_AUTO).then(function(){CK.toast("<b>Indicateur « Niveaux Desk » copié.</b> À faire une seule fois sur TradingView : Éditeur Pine (en bas) → Ctrl+A puis Ctrl+V → Enregistrer → « Ajouter au graphique ». Mets-le en favori (étoile) : il calcule ensuite les niveaux tout seul, sur tous tes graphiques.",{ms:16000});},function(){CK.toast("Copie impossible dans ce navigateur.");});return;}
     var t=e.target.closest("[data-g8tf]");if(t&&GC0.b){grandChart(GC0.b,t.getAttribute("data-g8tf"));return;}if(e.target.closest("[data-g8off]")&&GC0.b){grandChart(GC0.b,V.gtf,!document.getElementById("g8tv"));}});}
-/* L'indicateur TradingView qui recalcule lui-même les niveaux du Desk (source : tradingview/niveaux-captain.pine) */
-var PINE_AUTO="//@version=5\n// ============================================================================\n// Niveaux Captain · Desk Captain Trading\n// Les mêmes niveaux que le Desk, calculés directement par TradingView :\n// semaine passée, jour (haut et bas d'hier, ouverture), POC (prix au plus gros\n// volume, jour et veille), sessions Asie / Londres / New York, sommets et creux 4 h et 1 h.\n// À ajouter UNE SEULE FOIS : ensuite il se met à jour tout seul, sur tous les graphiques.\n// Fonctionne sur les unités de temps intraday (1 min à 4 h). Heures des sessions en UTC, comme le Desk.\n// Lecture de marché, pas un conseil d'achat ou de vente.\n// ============================================================================\nindicator(\"Niveaux Captain\", overlay = true, max_lines_count = 80, max_labels_count = 80)\n\ngrpN = \"Niveaux affichés\"\nshowW   = input.bool(true,  \"Semaine : haut et bas de la semaine passée\", group = grpN)\nshowD   = input.bool(true,  \"Jour : haut et bas d'hier, ouverture du jour\", group = grpN)\nshowPOC = input.bool(true,  \"POC : prix au plus gros volume (jour et veille)\", group = grpN)\nshowS   = input.bool(true,  \"Sessions : Asie, Londres, New York\", group = grpN)\nshow4h  = input.bool(true,  \"Sommets et creux 4 h\", group = grpN)\nshow1h  = input.bool(false, \"Sommets et creux 1 h\", group = grpN)\ngrpR = \"Réglages\"\npocPct  = input.float(0.05, \"Finesse du POC (% du prix)\", minval = 0.01, step = 0.01, group = grpR)\ndecal   = input.int(12, \"Position des étiquettes (barres à droite)\", minval = 1, maxval = 300, group = grpR)\nplein   = input.bool(true, \"Lignes sur toute la largeur du graphique\", group = grpR)\n\n// Couleurs du Desk\ncW = color.rgb(195, 166, 255)\ncD = color.rgb(255, 194, 102)\ncP = color.rgb(95, 211, 230)\ncS = color.rgb(127, 168, 240)\nc4 = color.rgb(255, 159, 90)\nc1 = color.rgb(174, 179, 188)\n\n// ---------- Semaine et jour (bougies terminées, aucune valeur qui change après coup) ----------\n[dH, dL, dO] = request.security(syminfo.tickerid, \"D\", [high[1], low[1], open], lookahead = barmerge.lookahead_on)\n[wH, wL] = request.security(syminfo.tickerid, \"W\", [high[1], low[1]], lookahead = barmerge.lookahead_on)\n\n// ---------- Sommets et creux (2 bougies de chaque côté, comme le Desk) ----------\npivots() =>\n    ph = ta.pivothigh(high, 2, 2)\n    pl = ta.pivotlow(low, 2, 2)\n    [ta.valuewhen(not na(ph), ph, 0), ta.valuewhen(not na(ph), ph, 1), ta.valuewhen(not na(pl), pl, 0), ta.valuewhen(not na(pl), pl, 1)]\n[h4a, h4b, l4a, l4b] = request.security(syminfo.tickerid, \"240\", pivots())\n[h1a, h1b, l1a, l1b] = request.security(syminfo.tickerid, \"60\", pivots())\n\n// ---------- Sessions du jour (UTC) ----------\nnouveauJour = ta.change(time(\"D\")) != 0\ndans(s) => not na(time(timeframe.period, s + \":1234567\", \"UTC\"))\nvar float asH = na\nvar float asL = na\nvar float loH = na\nvar float loL = na\nvar float nyH = na\nvar float nyL = na\nif nouveauJour\n    asH := na\n    asL := na\n    loH := na\n    loL := na\n    nyH := na\n    nyL := na\nif timeframe.isintraday\n    if dans(\"0000-0700\")\n        asH := na(asH) ? high : math.max(asH, high)\n        asL := na(asL) ? low : math.min(asL, low)\n    if dans(\"0700-1330\")\n        loH := na(loH) ? high : math.max(loH, high)\n        loL := na(loL) ? low : math.min(loL, low)\n    if dans(\"1330-2000\")\n        nyH := na(nyH) ? high : math.max(nyH, high)\n        nyL := na(nyL) ? low : math.min(nyL, low)\n\n// ---------- POC : profil de volume du jour, mis à jour à chaque bougie ----------\nvar map<int, float> profil = map.new<int, float>()\nvar float pas = na\nvar int pocK = na\nvar float pocV = 0.0\nvar float pocJour = na\nvar float pocHier = na\nif nouveauJour or na(pas)\n    if nouveauJour and not na(pocJour)\n        pocHier := pocJour\n    profil.clear()\n    pas := open * pocPct / 100\n    pocK := na\n    pocV := 0.0\n    pocJour := na\nif timeframe.isintraday and not na(pas) and volume > 0\n    k = int(math.floor(hlc3 / pas))\n    v = nz(profil.get(k)) + volume\n    profil.put(k, v)\n    if v > pocV\n        pocV := v\n        pocK := k\n    pocJour := (pocK + 0.5) * pas\n\n// ---------- Dessin (refait à la dernière bougie) ----------\nvar array<line> lignes = array.new<line>()\nvar array<label> etiquettes = array.new<label>()\ntrace(float p, string nom, color c, bool pointille) =>\n    if not na(p)\n        lignes.push(line.new(bar_index - 1, p, bar_index, p, extend = plein ? extend.both : extend.right, color = color.new(c, 15), width = 1, style = pointille ? line.style_dashed : line.style_solid))\n        etiquettes.push(label.new(bar_index + decal, p, nom + \"  \" + str.tostring(p, format.mintick), style = label.style_label_left, color = color.new(c, 82), textcolor = c, size = size.small))\n\nif barstate.islast\n    for l in lignes\n        line.delete(l)\n    for e in etiquettes\n        label.delete(e)\n    lignes.clear()\n    etiquettes.clear()\n    if showW\n        trace(wH, \"Haut sem. passée\", cW, false)\n        trace(wL, \"Bas sem. passée\", cW, false)\n    if showD\n        trace(dH, \"Haut d'hier\", cD, false)\n        trace(dL, \"Bas d'hier\", cD, false)\n        trace(dO, \"Ouv. du jour\", cD, true)\n    if showPOC and timeframe.isintraday\n        trace(pocJour, \"POC du jour\", cP, false)\n        trace(pocHier, \"POC d'hier\", cP, true)\n    if showS and timeframe.isintraday\n        trace(asH, \"Haut Asie\", cS, true)\n        trace(asL, \"Bas Asie\", cS, true)\n        trace(loH, \"Haut Londres\", cS, true)\n        trace(loL, \"Bas Londres\", cS, true)\n        trace(nyH, \"Haut New York\", cS, true)\n        trace(nyL, \"Bas New York\", cS, true)\n    if show4h\n        trace(h4a, \"Sommet 4h\", c4, false)\n        trace(h4b, \"Sommet 4h\", c4, false)\n        trace(l4a, \"Creux 4h\", c4, false)\n        trace(l4b, \"Creux 4h\", c4, false)\n    if show1h\n        trace(h1a, \"Sommet 1h\", c1, true)\n        trace(h1b, \"Sommet 1h\", c1, true)\n        trace(l1a, \"Creux 1h\", c1, true)\n        trace(l1b, \"Creux 1h\", c1, true)\n";
+/* L'indicateur TradingView qui recalcule lui-même les niveaux du Desk (source : tradingview/niveaux-desk.pine) */
+var PINE_AUTO="//@version=5\n// ============================================================================\n// Niveaux Desk · DAMOUR GLOBAL\n// Les mêmes niveaux que le Desk, calculés directement par TradingView :\n// semaine passée, jour (haut et bas d'hier, ouverture), POC (prix au plus gros\n// volume, jour et veille), sessions Asie / Londres / New York, sommets et creux 4 h et 1 h.\n// À ajouter UNE SEULE FOIS : ensuite il se met à jour tout seul, sur tous les graphiques.\n// Fonctionne sur les unités de temps intraday (1 min à 4 h). Heures des sessions en UTC, comme le Desk.\n// Lecture de marché, pas un conseil d'achat ou de vente.\n// ============================================================================\nindicator(\"Niveaux Desk\", overlay = true, max_lines_count = 80, max_labels_count = 80)\n\ngrpN = \"Niveaux affichés\"\nshowW   = input.bool(true,  \"Semaine : haut et bas de la semaine passée\", group = grpN)\nshowD   = input.bool(true,  \"Jour : haut et bas d'hier, ouverture du jour\", group = grpN)\nshowPOC = input.bool(true,  \"POC : prix au plus gros volume (jour et veille)\", group = grpN)\nshowS   = input.bool(true,  \"Sessions : Asie, Londres, New York\", group = grpN)\nshow4h  = input.bool(true,  \"Sommets et creux 4 h\", group = grpN)\nshow1h  = input.bool(false, \"Sommets et creux 1 h\", group = grpN)\ngrpR = \"Réglages\"\npocPct  = input.float(0.05, \"Finesse du POC (% du prix)\", minval = 0.01, step = 0.01, group = grpR)\ndecal   = input.int(12, \"Position des étiquettes (barres à droite)\", minval = 1, maxval = 300, group = grpR)\nplein   = input.bool(true, \"Lignes sur toute la largeur du graphique\", group = grpR)\n\n// Couleurs du Desk\ncW = color.rgb(195, 166, 255)\ncD = color.rgb(255, 194, 102)\ncP = color.rgb(95, 211, 230)\ncS = color.rgb(127, 168, 240)\nc4 = color.rgb(255, 159, 90)\nc1 = color.rgb(174, 179, 188)\n\n// ---------- Semaine et jour (bougies terminées, aucune valeur qui change après coup) ----------\n[dH, dL, dO] = request.security(syminfo.tickerid, \"D\", [high[1], low[1], open], lookahead = barmerge.lookahead_on)\n[wH, wL] = request.security(syminfo.tickerid, \"W\", [high[1], low[1]], lookahead = barmerge.lookahead_on)\n\n// ---------- Sommets et creux (2 bougies de chaque côté, comme le Desk) ----------\npivots() =>\n    ph = ta.pivothigh(high, 2, 2)\n    pl = ta.pivotlow(low, 2, 2)\n    [ta.valuewhen(not na(ph), ph, 0), ta.valuewhen(not na(ph), ph, 1), ta.valuewhen(not na(pl), pl, 0), ta.valuewhen(not na(pl), pl, 1)]\n[h4a, h4b, l4a, l4b] = request.security(syminfo.tickerid, \"240\", pivots())\n[h1a, h1b, l1a, l1b] = request.security(syminfo.tickerid, \"60\", pivots())\n\n// ---------- Sessions du jour (UTC) ----------\nnouveauJour = ta.change(time(\"D\")) != 0\ndans(s) => not na(time(timeframe.period, s + \":1234567\", \"UTC\"))\nvar float asH = na\nvar float asL = na\nvar float loH = na\nvar float loL = na\nvar float nyH = na\nvar float nyL = na\nif nouveauJour\n    asH := na\n    asL := na\n    loH := na\n    loL := na\n    nyH := na\n    nyL := na\nif timeframe.isintraday\n    if dans(\"0000-0700\")\n        asH := na(asH) ? high : math.max(asH, high)\n        asL := na(asL) ? low : math.min(asL, low)\n    if dans(\"0700-1330\")\n        loH := na(loH) ? high : math.max(loH, high)\n        loL := na(loL) ? low : math.min(loL, low)\n    if dans(\"1330-2000\")\n        nyH := na(nyH) ? high : math.max(nyH, high)\n        nyL := na(nyL) ? low : math.min(nyL, low)\n\n// ---------- POC : profil de volume du jour, mis à jour à chaque bougie ----------\nvar map<int, float> profil = map.new<int, float>()\nvar float pas = na\nvar int pocK = na\nvar float pocV = 0.0\nvar float pocJour = na\nvar float pocHier = na\nif nouveauJour or na(pas)\n    if nouveauJour and not na(pocJour)\n        pocHier := pocJour\n    profil.clear()\n    pas := open * pocPct / 100\n    pocK := na\n    pocV := 0.0\n    pocJour := na\nif timeframe.isintraday and not na(pas) and volume > 0\n    k = int(math.floor(hlc3 / pas))\n    v = nz(profil.get(k)) + volume\n    profil.put(k, v)\n    if v > pocV\n        pocV := v\n        pocK := k\n    pocJour := (pocK + 0.5) * pas\n\n// ---------- Dessin (refait à la dernière bougie) ----------\nvar array<line> lignes = array.new<line>()\nvar array<label> etiquettes = array.new<label>()\ntrace(float p, string nom, color c, bool pointille) =>\n    if not na(p)\n        lignes.push(line.new(bar_index - 1, p, bar_index, p, extend = plein ? extend.both : extend.right, color = color.new(c, 15), width = 1, style = pointille ? line.style_dashed : line.style_solid))\n        etiquettes.push(label.new(bar_index + decal, p, nom + \"  \" + str.tostring(p, format.mintick), style = label.style_label_left, color = color.new(c, 82), textcolor = c, size = size.small))\n\nif barstate.islast\n    for l in lignes\n        line.delete(l)\n    for e in etiquettes\n        label.delete(e)\n    lignes.clear()\n    etiquettes.clear()\n    if showW\n        trace(wH, \"Haut sem. passée\", cW, false)\n        trace(wL, \"Bas sem. passée\", cW, false)\n    if showD\n        trace(dH, \"Haut d'hier\", cD, false)\n        trace(dL, \"Bas d'hier\", cD, false)\n        trace(dO, \"Ouv. du jour\", cD, true)\n    if showPOC and timeframe.isintraday\n        trace(pocJour, \"POC du jour\", cP, false)\n        trace(pocHier, \"POC d'hier\", cP, true)\n    if showS and timeframe.isintraday\n        trace(asH, \"Haut Asie\", cS, true)\n        trace(asL, \"Bas Asie\", cS, true)\n        trace(loH, \"Haut Londres\", cS, true)\n        trace(loL, \"Bas Londres\", cS, true)\n        trace(nyH, \"Haut New York\", cS, true)\n        trace(nyL, \"Bas New York\", cS, true)\n    if show4h\n        trace(h4a, \"Sommet 4h\", c4, false)\n        trace(h4b, \"Sommet 4h\", c4, false)\n        trace(l4a, \"Creux 4h\", c4, false)\n        trace(l4b, \"Creux 4h\", c4, false)\n    if show1h\n        trace(h1a, \"Sommet 1h\", c1, true)\n        trace(h1b, \"Sommet 1h\", c1, true)\n        trace(l1a, \"Creux 1h\", c1, true)\n        trace(l1b, \"Creux 1h\", c1, true)\n";
 var GC0={b:""};
 function legende(L,px){var h="",mis=false;L.slice().sort(function(x,y){return y.prix-x.prix;}).forEach(function(l){if(!mis&&l.prix<=px){h+='<div class="g8-now"><span>prix</span><b class="num">'+fp(px)+'</b></div>';mis=true;}var u=String(l.unite).toLowerCase();h+='<div class="g8-l" style="--u:'+(UCOL[u]||"#AEB3BC")+'"><i></i><b class="num">'+fp(l.prix)+'</b><span>'+esc(nom(l.nom))+'</span><em>'+(UNOM[u]||u.toUpperCase())+'</em><small class="num '+cl(-l.distance_pct)+'">'+sgn(l.distance_pct,2)+' %</small></div>';});if(!mis)h+='<div class="g8-now"><span>prix</span><b class="num">'+fp(px)+'</b></div>';return h;}
 function majGrand(){
@@ -5176,13 +5294,10 @@ CK.veille={
 "use strict";
 var CK=window.CK,u=CK.u,esc=u.esc;
 var W0=[
-  {v:"journee",name:"Journée",key:"1",col:"#E9C46A",desc:"Sessions, annonces et dérivés : où en est la journée."},
-  {v:"macro",name:"Signaux",key:"2",col:"#7FA8F0",desc:"Dix indicateurs, une direction chacun, avec la preuve."},
-  {v:"screener",name:"Screener",key:"3",col:"#FF8A3D",desc:"Les cryptos qui préparent un mouvement."},
-  {v:"liq",name:"Liquidations",key:"4",col:"#F07384",desc:"Qui se fait liquider, et où sont les aimants de prix."},
-  {v:"news",name:"News",key:"5",col:"#A99BEA",desc:"Toutes les news en direct : tweets, Trump, macro, crypto, en français."},
-  {v:"veille",name:"Agent",key:"6",col:"#B8F36B",desc:"Une lecture du marché toutes les 30 min : niveaux, scénarios et bilan."},
-  {v:"net",name:"Connexions",key:"7",col:"#5FD3C6",desc:"L'état de chaque source de données, en direct."}
+  {v:"plan",name:"Plan NDX",key:"1",col:"#B8F36B",desc:"Le plan du jour : niveaux, murs d'options, annonces et ouverture US."},
+  {v:"journee",name:"Journée",key:"2",col:"#E9C46A",desc:"Sessions, annonces et dérivés : où en est la journée."},
+  {v:"news",name:"News",key:"3",col:"#A99BEA",desc:"Toutes les news en direct : tweets, Trump, macro, en français."},
+  {v:"net",name:"Connexions",key:"4",col:"#5FD3C6",desc:"L'état de chaque source de données, en direct."}
 ];
 /* Espaces décochés dans le Studio : retirés de l'accueil ; les raccourcis clavier suivent l'ordre restant */
 var W=W0.filter(function(w){var e=(CK.cfg&&CK.cfg().espaces)||{};return e[w.v]!==false;});W.forEach(function(w,i){w.key=String(i+1);});
@@ -5287,6 +5402,7 @@ ART.veille=function(d,tips){
     s+='<g class="hv"'+tt+'>'+(tips?'<circle class="hit" cx="'+x+'" cy="'+y+'" r="16"/>':'')+'<circle cx="'+x+'" cy="'+y+'" r="'+(4+(m.importance||1)*2)+'" style="fill:var(--wc);opacity:'+(m.importance>=2?1:.55)+'"/></g>';});
   if(!pts.length)s+='<text class="lb sm" x="'+cx+'" y="'+(cy+124)+'">'+(st.active?"Veille active":"Clé IA à ajouter")+'</text>';
   return s;};
+ART.plan=function(d,tips){return ART.journee(d,tips);};
 ART.net=function(d,tips){
   var sm=CK.netSummary?CK.netSummary():{list:[]},C={ok:"var(--up)",warn:"var(--warn)",down:"var(--down)",idle:"var(--faint)"},s="";
   sm.list.forEach(function(x,i){var c=i%5,r=Math.floor(i/5),cx=40+c*80,cy=36+r*60,col=C[x.st.k];
@@ -5703,8 +5819,8 @@ CK.sound={
   <div class="brand">
     <span class="mark" id="brandMark" aria-hidden="true"></span>
     <div class="bt">
-      <div class="bname" id="bName">captain</div>
-      <div class="bsub" id="bSub">Trading · Desk</div>
+      <div class="bname" id="bName">DAMOUR GLOBAL</div>
+      <div class="bsub" id="bSub">Desk Nasdaq 100</div>
     </div>
   </div>
   <div class="island" id="island" aria-live="polite">
@@ -5720,7 +5836,6 @@ CK.sound={
     <button type="button" class="btn icon" id="btnAlerts" title="Alertes" aria-label="Alertes"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="badge" id="alertCount" hidden></span></button>
     <button type="button" class="btn icon" id="btnCalc" title="Calculateur de position" aria-label="Calculateur de position"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h1M12 12h1M15.5 12h0M8.5 16h1M12 16h1M15.5 16h0"/></svg></button>
     <button type="button" class="btn icon kbd" id="btnPalette" title="Commandes (Ctrl+K)" aria-label="Commandes">⌘K</button>
-    <!--@public--><button type="button" class="btn own" id="btnOwn" title="Copier le Desk et le personnaliser avec une IA, sans coder">Copier le Desk</button><!--/@public-->
     <button type="button" class="btn primary" id="btnStudio">Studio</button>
   </div>
 </header>
@@ -5738,6 +5853,16 @@ CK.sound={
   <section class="mod" data-mod="net">
     <header class="mhd"><span class="mno"></span><h2>Connexions</h2><span class="meta" id="netMeta"></span></header>
     <div class="card net-card" id="net"></div>
+  </section>
+
+  <section class="mod" data-mod="plan">
+    <header class="mhd"><span class="mno"></span><h2>Plan du jour Nasdaq 100</h2><span class="meta">niveaux · options · annonces · ouverture US</span></header>
+    <div class="card"><div class="lv plan" id="plan"></div></div>
+  </section>
+
+  <section class="mod" data-mod="ctx">
+    <header class="mhd"><span class="mno"></span><h2>Contexte de marché</h2><span class="meta">volatilité · taux · dollar · poids lourds</span></header>
+    <div class="card"><div class="ctx" id="ctx"></div></div>
   </section>
 
   <section class="mod" data-mod="levels">
@@ -5862,7 +5987,7 @@ CK.sound={
 </div>
 
 <footer class="foot">
-  <span id="footBrand">Captain Trading · Desk</span>
+  <span id="footBrand">DAMOUR GLOBAL · Desk Nasdaq 100</span>
   <span class="sep">·</span>
   <span>Données : OKX, Binance, Bybit, TradingView, FinancialJuice, alternative.me</span>
   <span class="sep">·</span>
@@ -5903,27 +6028,6 @@ CK.sound={
       <label class="chk"><input type="checkbox" id="alRose"> M'alerter quand un indicateur de la carte change d'état</label>
       <p class="note">Les alertes sonnent tant que cet onglet reste ouvert (même en arrière-plan).</p>
     </div>
-  </div>
-</div>
-
-<div class="ov" id="ovOwn" data-nofocus hidden>
-  <div class="modal own-m" role="dialog" aria-modal="true" aria-labelledby="ownTitle">
-    <div class="mh"><h3 id="ownTitle">Copier le Desk</h3><button type="button" class="x" data-close aria-label="Fermer">×</button></div>
-    <div class="mb own-b">
-      <p class="own-lead">Ce Desk est gratuit et le restera. Tu peux aussi le transformer comme tu veux : tes couleurs, tes cryptos, tes blocs, tes idées. Pas besoin de savoir coder : tu le demandes à une IA, et elle le fait.</p>
-      <ol class="own-steps">
-        <li><b>Installe Claude Code</b><span>L'assistant de Claude qui travaille directement sur ton ordinateur. Il faut un abonnement Claude (à partir de Pro).</span><a class="btn sm" href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer">Installer Claude Code</a></li>
-        <li><b>Ouvre-le dans un dossier vide</b><span>Par exemple un dossier « mon-desk » sur ton bureau.</span></li>
-        <li><b>Colle ce texte</b><span>Claude récupère le Desk, l'installe et l'ouvre dans ton navigateur.</span>
-          <div class="own-prompt"><p id="ownPrompt">Récupère le projet https://github.com/captaincryptotrading21/desk dans ce dossier. Lis le fichier CLAUDE.md pour comprendre comment il est construit, puis ouvre index.html dans mon navigateur pour que je voie mon Desk. Si un outil manque sur mon ordinateur (Git ou Node.js), installe-le ou explique-moi simplement comment faire. Ensuite, demande-moi ce que je veux changer, fais les modifications une par une et montre-moi le résultat à chaque fois.</p><button type="button" class="btn sm primary" id="ownCopy">Copier le texte</button></div></li>
-      </ol>
-      <div class="own-ex"><b>Ensuite, demande ce que tu veux :</b>
-        <span>« Passe toute l'interface en violet »</span><span>« Ajoute AVAX et LINK en haut »</span><span>« Mets le carnet d'ordres sous la carte des liquidations »</span><span>« Ajoute un bloc avec le prix de l'or »</span></div>
-      <ul class="own-trust">
-        <li>Gratuit, sans inscription</li><li>Rien à connecter à ton compte d'échange</li><li>Aucune clé ni mot de passe</li><li>Code lisible par tous sur GitHub</li>
-      </ul>
-    </div>
-    <div class="mf"><a class="btn" href="https://github.com/captaincryptotrading21/desk" target="_blank" rel="noopener noreferrer">Voir le code sur GitHub</a></div>
   </div>
 </div>
 

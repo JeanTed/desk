@@ -4,16 +4,17 @@
    Tu peux aussi les modifier ici à la main (garde les guillemets et virgules).
    ================================================================ */
 window.COCKPIT_CONFIG = {
-  id: "captain",                 // identifiant interne (sauvegardes du navigateur)
-  name: "captain",            // nom affiché en haut à gauche (« captain » = logo Captain Trading)
-  tagline: "Trading · Desk",   // sous-titre sous le nom
+  id: "damour",                  // identifiant interne (sauvegardes du navigateur)
+  name: "DAMOUR GLOBAL",       // nom affiché en haut à gauche (texte tant qu'il n'y a pas de logo image)
+  tagline: "Desk Nasdaq 100",   // sous-titre sous le nom
   accent: "#FF8A3D",             // couleur d'accent (toute l'interface suit)
   theme: "dark",                 // affichage au premier lancement : "dark" ou "light"
   beginner: false,               // true = boutons « ? » qui expliquent chaque module
-  watchlist: ["BTC", "ETH", "SOL"], // cryptos suivies dans la barre du haut
+  watchlist: [],                 // cryptos suivies dans la barre du haut (vide : indices et macro seulement)
   modules: {                     // false = module masqué
-    day: true, map: true, events: true, deriv: true, liq: true, movers: true, screener: true, news: true,
-    levels: true, opts: true, book: true, corr: true, net: true, veille: true
+    plan: true, ctx: true, day: true, events: true, deriv: true, news: true,
+    levels: true, opts: true, net: true,
+    map: false, liq: false, movers: false, screener: false, book: false, corr: false, veille: false
   },
   layout: null,                  // disposition des blocs (réglée avec le bouton « Disposition »)
   moversMarket: "spot",          // top mouvements par défaut : "spot" ou "perp"

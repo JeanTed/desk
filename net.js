@@ -10,45 +10,26 @@
 var CK=window.CK,u=CK.u,esc=u.esc;
 var DEST=[
   {id:"bandeau",name:"Bandeau & alertes",sub:"prix, alertes de prix",c:"#C4C8CF"},
+  {id:"plan",name:"Plan NDX",sub:"niveaux, contexte, annonces",c:"#B8F36B"},
   {id:"journee",name:"Journée",sub:"sessions, agenda, dérivés",c:"#E9C46A"},
-  {id:"signaux",name:"Signaux",sub:"10 indicateurs",c:"#7FA8F0"},
-  {id:"screener",name:"Screener",sub:"setups, graphiques",c:"#FF8A3D"},
-  {id:"liq",name:"Liquidations",sub:"flux, carte, top 24 h",c:"#F07384"},
-  {id:"news",name:"News",sub:"flux macro, agenda",c:"#A99BEA"},
-  {id:"veille",name:"Agent",sub:"scalp, analyste, IA",c:"#B8F36B"},
-  {id:"fond",name:"Fond 3D",sub:"relief du BTC",c:"#8E949E"}
+  {id:"opts",name:"Options",sub:"murs, max pain, put/call",c:"#7FA8F0"},
+  {id:"news",name:"News",sub:"flux macro, agenda",c:"#A99BEA"}
 ];
 var DN={};DEST.forEach(function(d){DN[d.id]=d;});
 /* kind : ws (temps réel), http (périodique), od (à la demande), fb (secours) ; exp = intervalle attendu en ms */
 var SRC=[
-  {id:"okxws",name:"OKX",p:"WebSocket",kind:"ws",to:["bandeau","liq"],
-   ep:["wss://ws.okx.com:8443/ws/v5/public · tickers","wss://ws.okx.com:8443/ws/v5/public · liquidation-orders"],data:"Prix en continu des actifs suivis et liquidations des perpétuels OKX.",freq:"Temps réel"},
-  {id:"okx",name:"OKX",p:"REST",kind:"http",exp:60000,to:["screener","liq","journee","signaux","fond"],
+  {id:"okx",name:"OKX",p:"REST",kind:"http",exp:60000,to:["plan","journee","bandeau"],
    ep:["/api/v5/market/tickers (SPOT, SWAP)","/api/v5/market/candles","/api/v5/public/funding-rate (+ history)","/api/v5/public/liquidation-orders","/api/v5/public/instruments"],
    data:"Univers des coins et volumes, bougies du screener, funding, historique des liquidations, tailles de contrats, BTC journalier du relief.",freq:"Tickers toutes les 60 s, le reste toutes les 10 min ou à la demande"},
-  {id:"bybit",name:"Bybit",p:"WebSocket",kind:"ws",to:["liq"],ep:["wss://stream.bybit.com/v5/public/linear · allLiquidation"],data:"Toutes les liquidations des contrats linéaires.",freq:"Temps réel"},
-  {id:"binws",name:"Binance",p:"WebSocket",kind:"ws",to:["liq"],ep:["wss://fstream.binance.com/ws/!forceOrder@arr"],data:"Liquidations forcées Binance Futures (Binance n'envoie qu'une liquidation par seconde et par coin : c'est un échantillon).",freq:"Temps réel"},
-  {id:"binfx",name:"Binance Futures",p:"REST",kind:"http",exp:600000,to:["signaux","journee","liq"],
-   ep:["/futures/data/openInterestHist (1 j et 1 h)","/fapi/v1/klines (1 h)"],data:"Open interest, funding, ratios long/short, flux taker, basis, et données horaires de la carte des liquidations.",freq:"Toutes les 10 min et à l'ouverture de la carte"},
-  {id:"bybitrest",name:"Bybit",p:"REST",kind:"http",exp:300000,to:["liq","signaux"],ep:["/v5/market/tickers (OI, funding)","/v5/market/open-interest (1 h, 1 j)","/v5/market/account-ratio"],data:"Open interest, funding, ratio long/short des comptes, historique d'OI pour la carte des liquidations.",freq:"Toutes les 60 s et 5 min"},
-  {id:"bitget",name:"Bitget",p:"REST",kind:"http",exp:120000,to:["liq","signaux"],ep:["/api/v2/mix/market/ticker","/api/v2/mix/market/open-interest"],data:"Open interest et funding des perpétuels USDT.",freq:"Toutes les 60 s"},
-  {id:"hl",name:"Hyperliquid",p:"REST",kind:"http",exp:120000,to:["liq","signaux"],ep:["api.hyperliquid.xyz/info · metaAndAssetCtxs"],data:"Open interest et funding (horaire, ramené à 8 h).",freq:"Toutes les 60 s"},
-  {id:"deribit",name:"Deribit",p:"REST",kind:"http",exp:600000,to:["liq"],ep:["/get_volatility_index_data (DVOL)","/get_book_summary_by_currency (options)"],data:"Volatilité implicite DVOL et ratio put/call des options.",freq:"Toutes les 5 min"},
-  {id:"coinbase",name:"Coinbase",p:"REST",kind:"http",exp:600000,to:["liq"],ep:["api.exchange.coinbase.com/products/BTC-USD/ticker"],data:"Prix spot en dollars pour la prime Coinbase (demande US).",freq:"Toutes les 5 min"},
-  {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["signaux","bandeau"],
+  {id:"deribit",name:"Deribit",p:"REST",kind:"http",exp:600000,to:["opts"],ep:["/get_volatility_index_data (DVOL)","/get_book_summary_by_currency (options)"],data:"Volatilité implicite DVOL et ratio put/call des options.",freq:"Toutes les 5 min"},
+  {id:"tvscan",name:"TradingView Scanner",p:"REST",kind:"http",exp:120000,to:["plan","bandeau"],
    ep:["scanner.tradingview.com/global/scan"],data:"DXY, taux 10 ans, ZN, Nasdaq, S&P, VIX, or, BTC, TOTAL2, dominances : prix, moyennes, performances, ADX.",freq:"Toutes les 2 min"},
-  {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news","screener"],
+  {id:"tvw",name:"TradingView widgets",p:"Intégration",kind:"od",to:["journee","news"],
    ep:["embed-widget-events.js","tv.js"],data:"Calendrier économique officiel (secours de l'agenda) et graphiques au clic.",freq:"À l'affichage"},
-  {id:"fng",name:"alternative.me",p:"REST",kind:"http",exp:1800000,to:["signaux"],ep:["api.alternative.me/fng/?limit=30"],data:"Indice Fear & Greed (signal Sentiment).",freq:"Toutes les 30 min"},
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},
   {id:"tree",name:"Tree of Alpha",p:"JSON",kind:"http",exp:120000,to:["news"],ep:["news.treeofalpha.com/api/news"],data:"Fil crypto à la minute : dépêches des comptes d'actu (The Block, CoinDesk, Wu Blockchain, Lookonchain…), annonces des exchanges (listings, delistings), SEC / Maison-Blanche.",freq:"Toutes les 20 s"},
-  {id:"tg",name:"News Telegram (relais)",p:"REST",kind:"http",exp:180000,to:["news","veille"],ep:["…workers.dev/tg"],data:"Walter Bloomberg, Watcher Guru, PhoenixNews, BWEnews, unfolded et Whale Alert (transferts de plus de 50 M$), via le relais Cloudflare du Desk.",freq:"1 fois par minute, onglet visible"},
-  {id:"iapay",name:"IA payantes (au choix)",p:"REST",kind:"http",exp:900000,to:["veille"],ep:["api.openai.com","api.anthropic.com","api.x.ai","api.perplexity.ai","api.deepseek.com","api.mistral.ai"],data:"ChatGPT, Claude, Grok, Perplexity, DeepSeek ou Mistral comme cerveau de l'agent de veille, avec la clé API de l'utilisateur (gardée dans le navigateur).",freq:"Toutes les 2 à 10 min, seulement avec une clé"},
-  {id:"openrouter",name:"OpenRouter (IA)",p:"REST",kind:"http",exp:900000,to:["veille"],ep:["openrouter.ai/api/v1/chat/completions"],data:"Un des cerveaux possibles de l'agent de veille (modèles gratuits, 50 analyses par jour). Clé personnelle, gardée dans le navigateur.",freq:"En relais, seulement avec une clé"},
-  {id:"gemini",name:"Gemini (IA)",p:"REST",kind:"http",exp:900000,to:["veille"],ep:["generativelanguage.googleapis.com/v1beta/models/…:generateContent"],data:"Un des cerveaux possibles de l'agent de veille : reçoit l'état du marché et décide quoi dire. Clé personnelle, gardée dans le navigateur.",freq:"Toutes les 2 à 10 min, seulement avec une clé"},
-  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts"],ep:["…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
-  {id:"ff",name:"Forex Factory (allorigins)",p:"REST",kind:"fb",exp:900000,to:["journee"],ep:["api.allorigins.win/raw?url=…ff_calendar_thisweek.json"],data:"Calendrier de la semaine, secours de l'agenda.",freq:"Après échec du relais"},
-  {id:"tr",name:"Traduction",p:"REST",kind:"od",to:["news"],ep:["translate.googleapis.com (gtx)","api.mymemory.translated.net (secours)"],data:"Titres de news traduits en français.",freq:"À chaque nouvelle news"}
+  {id:"tg",name:"News Telegram (relais)",p:"REST",kind:"http",exp:180000,to:["news"],ep:["…workers.dev/tg"],data:"Walter Bloomberg, Watcher Guru, PhoenixNews, BWEnews, unfolded et Whale Alert (transferts de plus de 50 M$), via le relais Cloudflare du Desk.",freq:"1 fois par minute, onglet visible"},
+  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/calendar.json","…/data/news.json","…/data/fj.json","…/data/options.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news crypto de 6 sites traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 (Yahoo Finance, lues par options.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
 ];
 CK.NETSRC=SRC;
 

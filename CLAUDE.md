@@ -1,11 +1,11 @@
-# Captain Trading · Desk — guide pour l'agent IA
+# DAMOUR GLOBAL · Desk Nasdaq 100 — guide pour l'agent IA
 
 Ce fichier explique le projet à un agent IA (Claude Code ou autre) pour qu'il puisse le modifier sans rien casser.
 La personne qui te parle ne sait probablement pas coder : réponds en français simple, fais les modifications toi-même, puis vérifie-les.
 
 ## Ce qu'est le projet
 
-Un tableau de bord de trading crypto et macro, en **un seul fichier HTML** (`index.html`), sans serveur ni clé API.
+Un tableau de bord de trading des futures **Nasdaq 100** (plan du jour, niveaux, options, contexte de marché, news), en **un seul fichier HTML** (`index.html`), sans serveur ni clé API.
 Toutes les données sont lues directement depuis le navigateur sur des API publiques (OKX, Binance, Bybit, Bitget, Hyperliquid, Deribit, Coinbase, CoinGecko, TradingView, FinancialJuice, Tree of Alpha…).
 Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navigateur ne peut pas lire lui-même : agenda économique, news crypto traduites, copie de FinancialJuice.
 
@@ -31,6 +31,7 @@ Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navig
 | `day.js` | Frise « Journée de trading » : sessions, annonces, funding. |
 | `signals.js` | Liste des signaux (familles dans `FAM`) et leurs explications. |
 | `liqmap.js` | Carte des liquidations. |
+| `plan.js` | **Plan du jour Nasdaq 100** (niveaux de la veille/nuit, murs d'options, annonces, ouverture US) et **Contexte de marché** (VIX, VXN, taux, dollar, futures, poids lourds via le scanner TradingView). |
 | `pos.js` | Dérivés agrégés (open interest, funding, ratios). |
 | `extra.js` | Niveaux clés, options Deribit, carnet d'ordres agrégé, alertes flash des news, corrélations. |
 | `screener.js` | Screener (préréglages dans `PRESETS`, colonnes dans `COLS`). |
@@ -39,14 +40,18 @@ Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navig
 | `veille.js` | **L'espace « Agent »** : affichage de la lecture du marché écrite par l'agent (`lectureHTML`, `actifCol`, `jauge`, `etat`), mise à jour en direct (`majLive`), lectures précédentes (`histo`), onglets Bilan (`viewBilan`) et Conso IA (`viewConso`), cartes BTC/ETH/SOL/dollar avec graphiques et niveaux (`card`, `cardUSD`, `niveaux`), indicateur TradingView (`PINE_AUTO`). |
 | `desk-news-worker.js` | **Le relais Cloudflare** (code de l'agent et des news Telegram). Il ne tourne pas dans le navigateur : il se déploie sur Cloudflare Workers (voir plus bas). Aucune clé dedans : elles sont des secrets Cloudflare. |
 | `options.py` | **Robot des options sur indices** (Python, sur GitHub, à la suite de `robot.mjs`) : lit les chaînes d'options du Nasdaq 100 (via l'ETF `QQQ`, strikes convertis en points) et du S&P 500 (`^SPX`) sur Yahoo Finance avec la bibliothèque `yfinance`, calcule open interest, put/call, max pain et murs, publie `data/options.json`. Si Yahoo refuse, l'ancienne version est gardée. Affiché dans le bloc Options (`extra.js`, `loadOptionsIdx`). |
-| `niveaux-captain.pine` | L'indicateur TradingView « Niveaux Captain » (Pine v5), copié par le bouton « Indicateur TradingView » du Desk. |
+| `niveaux-desk.pine` | L'indicateur TradingView « Niveaux Desk » (Pine v5), copié par le bouton « Indicateur TradingView » du Desk. |
 | `agent-manuel.md` | Ancien manuel de l'agent, **plus utilisé** (l'agent actuel a sa méthode dans le relais). Ne pas le modifier. |
 | `sound.js` | Ambiances sonores et sons d'interface. |
 | `bg.js` | Fond animé. |
 
 Tout le code partage l'objet global `window.CK`. Chaque fichier est une fonction auto-exécutée qui ajoute son module (`CK.day`, `CK.map`, `CK.layout`…).
 
-## L'agent IA (espace « Agent », touche 6)
+## Espaces actuels et code désactivé
+
+Espaces visibles : Plan NDX, Journée, News, Connexions. Les espaces Signaux, Screener, Liquidations et Agent, ainsi que les blocs crypto (carnet d'ordres, corrélations, top mouvements), ont été retirés de l'affichage (`modules` à `false` dans `config.js`, absents de `VIEWS0`/`DEFAULTS` dans `layout.js`) ; leur code reste dans les fichiers mais n'est plus démarré. La section suivante décrit l'ancien agent : elle ne s'applique plus.
+
+## L'ancien agent IA (espace retiré)
 
 L'agent tourne sur un relais Cloudflare commun à tous les utilisateurs (`desk-news-worker.js`). Toutes les minutes, il mesure le marché (OKX, TradingView, news Telegram et Tree of Alpha, agenda) et calcule des faits (liquidations, levier, tendance, niveaux). Toutes les 30 min, juste après l'ouverture de l'Europe et de Wall Street, et tout de suite sur un événement fort (purge, gros mouvement, news majeure), une IA gratuite (Gemini, puis Groq en secours) écrit une **lecture du marché** : ce qui se passe, pourquoi, et pour chaque actif un scénario haussier et un baissier (déclencheur à au moins 0,2 % du prix, objectif à au moins 0,4 % au-delà). Le relais vérifie chaque prix cité et remplace un scénario absurde par celui du Desk.
 
@@ -106,6 +111,6 @@ Le bouton « Studio » permet de choisir les espaces affichés sur l'accueil (`e
 
 ## Le robot (optionnel)
 
-Par défaut, `data` dans `config.js` pointe vers le robot de Captain Trading : l'agenda et les news fonctionnent tout de suite.
+Ici, `data` dans `config.js` pointe vers le site GitHub Pages de Teddy (`https://jeanted.github.io/desk`), qui publie les fichiers du robot.
 Pour avoir ton propre robot : mets ce dossier sur ton GitHub, active GitHub Pages (Settings → Pages → Source : GitHub Actions), puis remplace `data` par `https://TON-PSEUDO.github.io/NOM-DU-DEPOT`. Le fichier `.github/workflows/desk.yml` fait tourner `robot.mjs` toutes les 10 minutes.
 Le même fichier lance ensuite `options.py` (options Nasdaq 100 et S&P 500, Yahoo Finance, usage personnel) ; si cette étape échoue, le Desk est publié quand même. Les options des indices ne s'affichent que si `data` pointe vers **ton** robot : le robot de Captain Trading n'a pas ce fichier.

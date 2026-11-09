@@ -11,13 +11,10 @@
 "use strict";
 var CK=window.CK,u=CK.u,esc=u.esc;
 var W0=[
-  {v:"journee",name:"Journée",key:"1",col:"#E9C46A",desc:"Sessions, annonces et dérivés : où en est la journée."},
-  {v:"macro",name:"Signaux",key:"2",col:"#7FA8F0",desc:"Dix indicateurs, une direction chacun, avec la preuve."},
-  {v:"screener",name:"Screener",key:"3",col:"#FF8A3D",desc:"Les cryptos qui préparent un mouvement."},
-  {v:"liq",name:"Liquidations",key:"4",col:"#F07384",desc:"Qui se fait liquider, et où sont les aimants de prix."},
-  {v:"news",name:"News",key:"5",col:"#A99BEA",desc:"Toutes les news en direct : tweets, Trump, macro, crypto, en français."},
-  {v:"veille",name:"Agent",key:"6",col:"#B8F36B",desc:"Une lecture du marché toutes les 30 min : niveaux, scénarios et bilan."},
-  {v:"net",name:"Connexions",key:"7",col:"#5FD3C6",desc:"L'état de chaque source de données, en direct."}
+  {v:"plan",name:"Plan NDX",key:"1",col:"#B8F36B",desc:"Le plan du jour : niveaux, murs d'options, annonces et ouverture US."},
+  {v:"journee",name:"Journée",key:"2",col:"#E9C46A",desc:"Sessions, annonces et dérivés : où en est la journée."},
+  {v:"news",name:"News",key:"3",col:"#A99BEA",desc:"Toutes les news en direct : tweets, Trump, macro, en français."},
+  {v:"net",name:"Connexions",key:"4",col:"#5FD3C6",desc:"L'état de chaque source de données, en direct."}
 ];
 /* Espaces décochés dans le Studio : retirés de l'accueil ; les raccourcis clavier suivent l'ordre restant */
 var W=W0.filter(function(w){var e=(CK.cfg&&CK.cfg().espaces)||{};return e[w.v]!==false;});W.forEach(function(w,i){w.key=String(i+1);});
@@ -122,6 +119,7 @@ ART.veille=function(d,tips){
     s+='<g class="hv"'+tt+'>'+(tips?'<circle class="hit" cx="'+x+'" cy="'+y+'" r="16"/>':'')+'<circle cx="'+x+'" cy="'+y+'" r="'+(4+(m.importance||1)*2)+'" style="fill:var(--wc);opacity:'+(m.importance>=2?1:.55)+'"/></g>';});
   if(!pts.length)s+='<text class="lb sm" x="'+cx+'" y="'+(cy+124)+'">'+(st.active?"Veille active":"Clé IA à ajouter")+'</text>';
   return s;};
+ART.plan=function(d,tips){return ART.journee(d,tips);};
 ART.net=function(d,tips){
   var sm=CK.netSummary?CK.netSummary():{list:[]},C={ok:"var(--up)",warn:"var(--warn)",down:"var(--down)",idle:"var(--faint)"},s="";
   sm.list.forEach(function(x,i){var c=i%5,r=Math.floor(i/5),cx=40+c*80,cy=36+r*60,col=C[x.st.k];

@@ -12,11 +12,11 @@ function seg(id,cur,opts){return '<div class="st-seg" id="'+id+'" role="group">'
 /* Studio : l'essentiel visible, le reste replié. Tout s'applique tout de suite. */
 function renderStudio(){
   var C=CK.cfg(),sp=CK.layout&&CK.layout.spaces?CK.layout.spaces():[];
-  var h='<button type="button" class="st-own" id="sOwn"><b>Copier le Desk</b><span>Récupère-le et change tout ce que tu veux avec une IA, sans coder →</span></button>'+'<div class="st-sec"><h4>Mon desk</h4><div class="st-grid">'+
+  var h=''+'<div class="st-sec"><h4>Mon desk</h4><div class="st-grid">'+
     fld("Nom",'<input id="sName" maxlength="24" value="'+esc(C.name)+'">')+fld("Sous-titre",'<input id="sTag" maxlength="40" value="'+esc(C.tagline)+'">')+
     fld("Cryptos suivies dans la barre du haut",'<input id="sWatch" value="'+esc((C.watchlist||[]).join(", "))+'" placeholder="BTC, ETH, SOL">',true)+'</div></div>'+
     '<div class="st-sec"><h4>Espaces affichés</h4><p class="st-hint">Décoche un espace qui ne t\'intéresse pas : il disparaît de l\'accueil et de la navigation (la page se recharge).</p><div class="st-chips">'+
-    [["journee","Journée"],["macro","Signaux"],["screener","Screener"],["liq","Liquidations"],["news","News"],["veille","Agent IA"],["net","Connexions"]].map(function(x){var on=(C.espaces||{})[x[0]]!==false;return '<button type="button" class="st-chip" data-esp="'+x[0]+'" aria-pressed="'+on+'">'+(on?"✓ ":"")+x[1]+'</button>';}).join("")+'</div></div>'+
+    [["plan","Plan NDX"],["journee","Journée"],["news","News"],["net","Connexions"]].map(function(x){var on=(C.espaces||{})[x[0]]!==false;return '<button type="button" class="st-chip" data-esp="'+x[0]+'" aria-pressed="'+on+'">'+(on?"✓ ":"")+x[1]+'</button>';}).join("")+'</div></div>'+
     '<div class="st-sec"><h4>Blocs de chaque espace</h4><p class="st-hint">Clique sur un bloc pour l\'afficher ou le masquer. Pour changer l\'ordre ou la largeur : ouvre l\'espace puis le bouton Disposition.</p>'+
     sp.map(function(s){return '<div class="st-space"><b>'+esc(s.name)+'</b><div class="st-chips">'+s.blocks.map(function(bk){return '<button type="button" class="st-chip" data-sp="'+s.id+'" data-bk="'+bk.id+'" aria-pressed="'+(bk.on&&C.modules[bk.id]!==false?"true":"false")+'">'+esc(bk.name)+'</button>';}).join("")+'</div></div>';}).join("")+
     '<button type="button" class="btn sm" id="sLayout">Réorganiser l\'espace ouvert</button></div>'+
@@ -35,7 +35,7 @@ function renderStudio(){
 function segVal(id){var b=document.querySelector("#"+id+' [aria-pressed="true"]');return b?b.getAttribute("data-v"):"";}
 function readStudio(){
   var C=CK.merge(CK.cfg(),{}),v=function(id){return $(id).value;};
-  C.name=v("sName").trim()||"captain";C.tagline=v("sTag").trim();
+  C.name=v("sName").trim()||"DAMOUR GLOBAL";C.tagline=v("sTag").trim();
   C.theme=segVal("sTheme")||"dark";C.newsLang=segVal("sLang")||"fr";C.beginner=$("sBeg").checked;
   C.watchlist=v("sWatch").split(/[,\s;]+/).map(function(x){return x.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");}).filter(Boolean).slice(0,12);
   if(!C.watchlist.length)C.watchlist=["BTC","ETH","SOL"];
@@ -56,13 +56,12 @@ function wireStudio(){
   $("studioBody").addEventListener("input",function(){clearTimeout(deb);deb=setTimeout(function(){var prev=CK.cfg();applyLive(readStudio(),prev);},150);});
   $("studioBody").addEventListener("change",function(){var prev=CK.cfg();applyLive(readStudio(),prev);});
   $("studioBody").addEventListener("click",function(e){
-    if(e.target.closest("#sOwn")){CK.closeOv($("ovStudio"));setTimeout(function(){CK.openOv("ovOwn");},220);return;}
     if(e.target.id==="sLayout"){CK.closeOv($("ovStudio"));setTimeout(function(){CK.layout.edit(true);},220);return;}
     var sb=e.target.closest(".st-seg button");
     if(sb){sb.parentNode.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===sb?"true":"false");});var prev=CK.cfg();applyLive(readStudio(),prev);
       if(sb.parentNode.id==="sTheme")CK.setTheme(sb.getAttribute("data-v"),sb);return;}
     var es=e.target.closest("[data-esp]");if(es){var C2=CK.merge(CK.cfg(),{}),k=es.getAttribute("data-esp");C2.espaces=C2.espaces||{};C2.espaces[k]=C2.espaces[k]===false;
-      var reste=["journee","macro","screener","liq","news","veille","net"].filter(function(x){return C2.espaces[x]!==false;}).length;if(!reste){CK.toast("Garde au moins un espace.");return;}
+      var reste=["plan","journee","news","net"].filter(function(x){return C2.espaces[x]!==false;}).length;if(!reste){CK.toast("Garde au moins un espace.");return;}
       CK.setCfg(C2,true);CK.toast("Espace "+(C2.espaces[k]===false?"masqué":"affiché")+". Rechargement…");setTimeout(function(){location.reload();},700);return;}
     var ch=e.target.closest(".st-chip");if(!ch)return;
     var on=ch.getAttribute("aria-pressed")!=="true",id=ch.getAttribute("data-bk");ch.setAttribute("aria-pressed",on?"true":"false");
@@ -138,7 +137,6 @@ function wireCalc(){$("btnCalc").addEventListener("click",function(){var b=S.tic
 var palSel=0,palItems=[];
 function cmds(){return [
   {t:"Affichage sombre",k:"thème",run:function(){CK.setTheme("dark");}},{t:"Affichage clair",k:"thème",run:function(){CK.setTheme("light");}},
-  {t:"Copier le Desk",k:"personnaliser avec une IA",run:function(){CK.openOv("ovOwn");}},
   {t:"Ouvrir le Studio",k:"personnaliser",run:function(){$("btnStudio").click();}},{t:"Déplacer les blocs",k:"disposition",run:function(){CK.layout.edit(true);}},
   
   {t:"Alertes",k:"prix",run:function(){$("btnAlerts").click();}},{t:"Calculateur de position",k:"risque",run:function(){$("btnCalc").click();}},

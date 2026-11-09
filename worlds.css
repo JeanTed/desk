@@ -349,7 +349,7 @@ html{overflow-x:clip}
 /* ================= Rendu pro : en-tête et marque ================= */
 .top{padding:12px var(--pad);gap:20px}
 .brand{gap:12px;cursor:pointer;border-radius:10px;outline-offset:6px}
-/* Marque Captain Trading : tête + ailes, mot-symbole « captain » en minuscules épaisses, « TRADING » espacé */
+/* Marque : zone du logo dans l'en-tête */
 .mark{width:128px;height:40px;position:relative}
 .brand:not(.custom) .bt{display:none}
 .brand.custom .mark{width:40px;overflow:hidden}
@@ -1324,3 +1324,22 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 
 /* Flash news sur téléphone : en bas, compactes, sans le texte original */
 @media (max-width:600px){.flash-wrap{top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));right:12px;width:calc(100vw - 24px)}.flash{padding:10px 40px 12px 14px;gap:4px}.flash b{font-size:14.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.fl-o{display:none}}
+
+/* Plan du jour Nasdaq 100 et contexte de marché */
+.plan-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 10px}
+.plan-px{display:block;font-size:26px;letter-spacing:-.01em}
+.plan-us{text-align:right}.plan-us b{display:block;font-size:18px}
+.plan-sub{font:500 12px var(--font);color:var(--muted)}
+.plan .plan-opt .lv-tag{color:var(--accent)}
+.plan-rd{margin:12px 2px 4px;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.plan-ag{margin:12px 0 0}.plan-ev{display:flex;align-items:center;gap:10px;padding:5px 2px;font-size:14px;border-bottom:1px solid var(--line)}
+.plan-ev.past{opacity:.5}.plan-i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--warn)}.plan-i.hi{background:var(--down)}
+.ctx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.ctx-t{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--neu-bg)}
+.ctx-t b{font-size:18px}.ctx-t .mono{font-size:12.5px}
+.ctx-h{display:flex;justify-content:space-between;align-items:center;margin:16px 2px 6px}
+.ctx-b{display:grid;grid-template-columns:96px minmax(40px,1fr) 78px 70px;align-items:center;gap:10px;padding:5px 2px;font-size:13.5px;border-bottom:1px solid var(--line)}
+.ctx-bar{height:6px;border-radius:3px;background:var(--neu-bg);overflow:hidden}.ctx-bar i{display:block;height:100%;border-radius:3px;background:var(--up)}.ctx-bar i.down{background:var(--down)}
+.ctx-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:600px){.ctx-b{grid-template-columns:78px minmax(30px,1fr) 66px 62px;gap:6px;font-size:12.5px}}
+.brand.custom .mark:empty{display:none}

@@ -1,6 +1,6 @@
 //@version=5
 // ============================================================================
-// Niveaux Captain · Desk Captain Trading
+// Niveaux Desk · DAMOUR GLOBAL
 // Les mêmes niveaux que le Desk, calculés directement par TradingView :
 // semaine passée, jour (haut et bas d'hier, ouverture), POC (prix au plus gros
 // volume, jour et veille), sessions Asie / Londres / New York, sommets et creux 4 h et 1 h.
@@ -8,7 +8,7 @@
 // Fonctionne sur les unités de temps intraday (1 min à 4 h). Heures des sessions en UTC, comme le Desk.
 // Lecture de marché, pas un conseil d'achat ou de vente.
 // ============================================================================
-indicator("Niveaux Captain", overlay = true, max_lines_count = 80, max_labels_count = 80)
+indicator("Niveaux Desk", overlay = true, max_lines_count = 80, max_labels_count = 80)
 
 grpN = "Niveaux affichés"
 showW   = input.bool(true,  "Semaine : haut et bas de la semaine passée", group = grpN)

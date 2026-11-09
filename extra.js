@@ -97,7 +97,7 @@ function loadOptionsIdx(b){
     var I=j&&j.idx&&j.idx[b];
     if(!I||!I.exp||!I.exp.length){OP.data[b]={err:j?"Le robot n'a pas encore de données pour cet indice.":"Fichier options.json introuvable sur le robot."};renderOptions();return;}
     var list=I.exp.map(function(e){return {ts:e.ts,code:e.date,c:e.c,p:e.p,oi:e.c+e.p,usd:e.usd,pcr:e.pcr,mp:e.mp};}).filter(function(e){return e.ts>Date.now()-86400000;}).sort(function(x,y){return x.ts-y.ts;});
-    OP.data[b]={list:list,calls:I.calls||[],puts:I.puts||[],px:I.spot,mult:I.mult||100,idx:true,ts:Date.now(),src:j.ts||I.ts};
+    OP.data[b]={list:list,calls:(I.calls||[]).slice(0,4),puts:(I.puts||[]).slice(0,4),wc:I.calls||[],wp:I.puts||[],px:I.spot,mult:I.mult||100,idx:true,ts:Date.now(),src:j.ts||I.ts};
     CK.options=OP;renderOptions();
   });
 }
@@ -275,6 +275,8 @@ function renderCorr(){
 }
 
 /* ================= Démarrage ================= */
+/* utilisé par le Plan du jour (plan.js) */
+CK.opData=OP;CK.xApi={loadLevels:loadLevels,loadOptions:loadOptions};
 CK.extra={boot:function(){
   xtip();
   [["levels","lv",LV,"lvSym2",renderLevels,loadLevels],["opts","op",OP,"opSym2",renderOptions,loadOptions],["book","bk",BK,"bkSym",renderBook,loadBook]].forEach(function(m){

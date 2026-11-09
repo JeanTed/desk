@@ -152,8 +152,8 @@ def lire_indice(yf, cle, sym_opt, sym_idx):
         "src": sym_opt,
         "ratio": round(ratio, 4),
         "exp": echeances,
-        "calls": sorted(strikes, key=lambda x: -x["c"])[:4],
-        "puts": sorted(strikes, key=lambda x: -x["p"])[:4],
+        "calls": sorted(strikes, key=lambda x: -x["c"])[:8],
+        "puts": sorted(strikes, key=lambda x: -x["p"])[:8],
     }
 
 

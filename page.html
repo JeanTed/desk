@@ -3,20 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Captain Trading · Desk</title>
-<meta name="description" content="Le desk crypto gratuit : prix et liquidations en direct, news X, Trump et onchain, et un agent IA qui lit le marché toutes les 30 min.">
+<title>DAMOUR GLOBAL · Desk Nasdaq 100</title>
+<meta name="description" content="Desk de trading des futures Nasdaq 100 : plan du jour, niveaux clés, options, contexte de marché et news en direct.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Captain Trading">
-<meta property="og:title" content="Captain Trading · Desk">
-<meta property="og:description" content="Le desk crypto gratuit : prix et liquidations en direct, news X, Trump et onchain, et un agent IA qui lit le marché toutes les 30 min.">
-<meta property="og:url" content="https://captaincryptotrading21.github.io/desk/">
-<meta property="og:image" content="https://captaincryptotrading21.github.io/desk/apercu.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="DAMOUR GLOBAL">
+<meta property="og:title" content="DAMOUR GLOBAL · Desk Nasdaq 100">
+<meta property="og:description" content="Plan du jour, niveaux clés, options et contexte de marché pour le Nasdaq 100.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Captain Trading · Desk">
-<meta name="twitter:description" content="Le desk crypto gratuit : prix et liquidations en direct, news X, Trump et onchain, et un agent IA qui lit le marché toutes les 30 min.">
-<meta name="twitter:image" content="https://captaincryptotrading21.github.io/desk/apercu.png">
+<meta name="twitter:title" content="DAMOUR GLOBAL · Desk Nasdaq 100">
+<meta name="twitter:description" content="Plan du jour, niveaux clés, options et contexte de marché pour le Nasdaq 100.">
 <!--@public--><script>window.CK_PUBLIC=1;</script><!--/@public-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +21,7 @@
 </script>
 <script>
 /* Applique le thème avant l'affichage (évite un flash) */
-(function(){try{var c=window.COCKPIT_CONFIG||{},k="cockpit:"+(c.id||"captain")+":",t=localStorage.getItem(k+"theme")||c.theme||"dark";if(t!=="light")t="dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+(function(){try{var c=window.COCKPIT_CONFIG||{},k="cockpit:"+(c.id||"damour")+":",t=localStorage.getItem(k+"theme")||c.theme||"dark";if(t!=="light")t="dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
 </script>
 <style>
 /*@@CSS@@*/
@@ -42,8 +37,8 @@
   <div class="brand">
     <span class="mark" id="brandMark" aria-hidden="true"></span>
     <div class="bt">
-      <div class="bname" id="bName">captain</div>
-      <div class="bsub" id="bSub">Trading · Desk</div>
+      <div class="bname" id="bName">DAMOUR GLOBAL</div>
+      <div class="bsub" id="bSub">Desk Nasdaq 100</div>
     </div>
   </div>
   <div class="island" id="island" aria-live="polite">
@@ -59,7 +54,6 @@
     <button type="button" class="btn icon" id="btnAlerts" title="Alertes" aria-label="Alertes"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="badge" id="alertCount" hidden></span></button>
     <button type="button" class="btn icon" id="btnCalc" title="Calculateur de position" aria-label="Calculateur de position"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h1M12 12h1M15.5 12h0M8.5 16h1M12 16h1M15.5 16h0"/></svg></button>
     <button type="button" class="btn icon kbd" id="btnPalette" title="Commandes (Ctrl+K)" aria-label="Commandes">⌘K</button>
-    <!--@public--><button type="button" class="btn own" id="btnOwn" title="Copier le Desk et le personnaliser avec une IA, sans coder">Copier le Desk</button><!--/@public-->
     <button type="button" class="btn primary" id="btnStudio">Studio</button>
   </div>
 </header>
@@ -77,6 +71,16 @@
   <section class="mod" data-mod="net">
     <header class="mhd"><span class="mno"></span><h2>Connexions</h2><span class="meta" id="netMeta"></span></header>
     <div class="card net-card" id="net"></div>
+  </section>
+
+  <section class="mod" data-mod="plan">
+    <header class="mhd"><span class="mno"></span><h2>Plan du jour Nasdaq 100</h2><span class="meta">niveaux · options · annonces · ouverture US</span></header>
+    <div class="card"><div class="lv plan" id="plan"></div></div>
+  </section>
+
+  <section class="mod" data-mod="ctx">
+    <header class="mhd"><span class="mno"></span><h2>Contexte de marché</h2><span class="meta">volatilité · taux · dollar · poids lourds</span></header>
+    <div class="card"><div class="ctx" id="ctx"></div></div>
   </section>
 
   <section class="mod" data-mod="levels">
@@ -201,7 +205,7 @@
 </div>
 
 <footer class="foot">
-  <span id="footBrand">Captain Trading · Desk</span>
+  <span id="footBrand">DAMOUR GLOBAL · Desk Nasdaq 100</span>
   <span class="sep">·</span>
   <span>Données : OKX, Binance, Bybit, TradingView, FinancialJuice, alternative.me</span>
   <span class="sep">·</span>
@@ -242,27 +246,6 @@
       <label class="chk"><input type="checkbox" id="alRose"> M'alerter quand un indicateur de la carte change d'état</label>
       <p class="note">Les alertes sonnent tant que cet onglet reste ouvert (même en arrière-plan).</p>
     </div>
-  </div>
-</div>
-
-<div class="ov" id="ovOwn" data-nofocus hidden>
-  <div class="modal own-m" role="dialog" aria-modal="true" aria-labelledby="ownTitle">
-    <div class="mh"><h3 id="ownTitle">Copier le Desk</h3><button type="button" class="x" data-close aria-label="Fermer">×</button></div>
-    <div class="mb own-b">
-      <p class="own-lead">Ce Desk est gratuit et le restera. Tu peux aussi le transformer comme tu veux : tes couleurs, tes cryptos, tes blocs, tes idées. Pas besoin de savoir coder : tu le demandes à une IA, et elle le fait.</p>
-      <ol class="own-steps">
-        <li><b>Installe Claude Code</b><span>L'assistant de Claude qui travaille directement sur ton ordinateur. Il faut un abonnement Claude (à partir de Pro).</span><a class="btn sm" href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer">Installer Claude Code</a></li>
-        <li><b>Ouvre-le dans un dossier vide</b><span>Par exemple un dossier « mon-desk » sur ton bureau.</span></li>
-        <li><b>Colle ce texte</b><span>Claude récupère le Desk, l'installe et l'ouvre dans ton navigateur.</span>
-          <div class="own-prompt"><p id="ownPrompt">Récupère le projet https://github.com/captaincryptotrading21/desk dans ce dossier. Lis le fichier CLAUDE.md pour comprendre comment il est construit, puis ouvre index.html dans mon navigateur pour que je voie mon Desk. Si un outil manque sur mon ordinateur (Git ou Node.js), installe-le ou explique-moi simplement comment faire. Ensuite, demande-moi ce que je veux changer, fais les modifications une par une et montre-moi le résultat à chaque fois.</p><button type="button" class="btn sm primary" id="ownCopy">Copier le texte</button></div></li>
-      </ol>
-      <div class="own-ex"><b>Ensuite, demande ce que tu veux :</b>
-        <span>« Passe toute l'interface en violet »</span><span>« Ajoute AVAX et LINK en haut »</span><span>« Mets le carnet d'ordres sous la carte des liquidations »</span><span>« Ajoute un bloc avec le prix de l'or »</span></div>
-      <ul class="own-trust">
-        <li>Gratuit, sans inscription</li><li>Rien à connecter à ton compte d'échange</li><li>Aucune clé ni mot de passe</li><li>Code lisible par tous sur GitHub</li>
-      </ul>
-    </div>
-    <div class="mf"><a class="btn" href="https://github.com/captaincryptotrading21/desk" target="_blank" rel="noopener noreferrer">Voir le code sur GitHub</a></div>
   </div>
 </div>
 
