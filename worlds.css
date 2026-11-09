@@ -1404,3 +1404,7 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:span 2;align-self:stretch;display:flex;flex-direction:column}
 .grid.flow[data-w="journee"] .mod[data-mod="levels"] .card{flex:1}
 @media(max-width:860px){.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:auto}}
+
+/* Plan Futures : Plan du jour et Options côte à côte, même hauteur (pas de trou) ; Contexte de marché dessous */
+.grid.flow[data-w="plan"] .mod[data-mod="plan"],.grid.flow[data-w="plan"] .mod[data-mod="opts"]{align-self:stretch;display:flex;flex-direction:column}
+.grid.flow[data-w="plan"] .mod[data-mod="plan"] .card,.grid.flow[data-w="plan"] .mod[data-mod="opts"] .card{flex:1}
