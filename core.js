@@ -4,6 +4,33 @@
 (function(){
 "use strict";
 var CK = window.CK = {};
+/* Contrats micro (MNQ, MES) : mêmes niveaux que l'indice, décalés de l'écart contrat/indice (basis) */
+CK.fut=(function(){
+  var M={
+    MNQ:{base:"NDX",n:"MNQ",full:"Micro E-mini Nasdaq-100",pt:2,tv:"CME_MINI:MNQ1!",big:"CME_MINI:NQ1!",it:"NASDAQ:NDX",div:.007},
+    MES:{base:"SPX",n:"MES",full:"Micro E-mini S&P 500",pt:5,tv:"CME_MINI:MES1!",big:"CME_MINI:ES1!",it:"SP:SPX",div:.013}
+  };
+  var F={M:M,TICK:.25,rows:{}};
+  F.is=function(s){return !!M[s];};
+  F.base=function(s){return M[s]?M[s].base:s;};
+  /* prochain trimestriel (mars, juin, sept., déc.) : 3e vendredi, 13 h 30 UTC */
+  F.expiry=function(now){
+    now=now||Date.now();var d=new Date(now),y=d.getUTCFullYear();
+    for(var k=0;k<6;k++){var mo=[2,5,8,11][k%4],yy=y+Math.floor(k/4),t=new Date(Date.UTC(yy,mo,1,13,30)),fri=(5-t.getUTCDay()+7)%7;t=new Date(Date.UTC(yy,mo,1+fri+14,13,30));if(t.getTime()>now)return t.getTime();}
+    return now;
+  };
+  /* écart contrat − indice en points : mesuré (TradingView) si cohérent, sinon estimé par le coût de portage */
+  F.info=function(s,spot){
+    var m=M[s];if(!m||!(spot>0))return {v:0,src:"",days:0};
+    var f=F.rows[m.big],i=F.rows[m.it],days=Math.max(0,(F.expiry()-Date.now())/86400000);
+    if(f&&i&&f.c>0&&i.c>0){var v=f.c-i.c;if(Math.abs(v)<spot*.03)return {v:v,src:"mesuré",days:days};}
+    var r=F.rows["TVC:US05Y"],rate=r&&r.c>0&&r.c<15?r.c/100:.04;
+    return {v:spot*(rate-m.div)*days/365,src:"estimé",days:days};
+  };
+  F.off=function(s,spot){return F.is(s)?F.info(s,spot).v:0;};
+  return F;
+})();
+
 var OKX = "https://www.okx.com";
 var BFX = "https://fapi.binance.com/futures/data/";
 var TV_SCAN = "https://scanner.tradingview.com/global/scan";

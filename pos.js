@@ -18,9 +18,9 @@ var EX=[["binance","Binance"],["bybit","Bybit"],["okx","OKX"],["bitget","Bitget"
 S.pos=S.pos||{};["BTC","ETH","NDX","SPX"].forEach(function(k){S.pos[k]=S.pos[k]||{ex:{}};});
 /* Indices actions : perpétuels OKX qui répliquent le Nasdaq 100 et le S&P 500 (mêmes instruments que les corrélations) */
 var IDX={NDX:{n:"NASDAQ 100",inst:"US100-USDT-SWAP",idx:"US100-USDT"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",idx:"SPX-USDT"}};
-var ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["BTC","BTC"],["ETH","ETH"]];
+var FT=CK.fut,ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["MNQ","MNQ"],["MES","MES"],["BTC","BTC"],["ETH","ETH"]];
 var sym=CK.ls("posSym2")||"NDX",lastUp=0;
-if(!S.pos[sym])sym="NDX";
+if(!S.pos[FT.base(sym)])sym="NDX";
 function J(url,opt){return u.fetchJSON(url,opt,12000);}
 function q(p){return p.catch(function(){return null;});}
 
@@ -131,21 +131,21 @@ function spark(arr,mid){if(!arr||arr.length<2)return "";var mn=Math.min.apply(nu
 /* ---------- Affichage ---------- */
 function tile(k,v,sub,read,extra){return '<div class="pz-t"><span class="pz-k">'+k+'</span><b class="pz-v">'+v+'</b>'+(sub?'<span class="pz-s">'+sub+'</span>':"")+(extra||"")+(read||"")+'</div>';}
 function idxTiles(P){
-  var has=P.tot>0,nxt=P.ex.okx&&P.ex.okx.next,dp=P.last&&P.open?(P.last/P.open-1)*100:null;
-  return [
+  var has=P.tot>0,nxt=P.ex.okx&&P.ex.okx.next,dp=P.last&&P.open?(P.last/P.open-1)*100:null,fu=FT.is(sym),M=fu?FT.M[sym]:null,inf=fu&&P.last?FT.info(sym,P.last):null;
+  return (fu?[tile("Prix "+M.n+" (estimé)",P.last?u.px(P.last+inf.v):"—","indice + écart "+(inf.v>=0?"+":"−")+nf(Math.abs(inf.v),2)+" pts ("+inf.src+")",""),tile("Valeur du point",M.pt+" $","tick 0,25 pt = "+nf(.25*M.pt,2)+" $ · 10 pts = "+nf(10*M.pt,0)+" $","")]:[]).concat([
     tile("Prix du perpétuel",P.last?u.px(P.last):"—",dp!=null?'<span class="'+u.cls(dp)+'">'+sgn(dp,2)+' %</span> sur 24 h · OKX':"",""),
     tile("Open interest",has?usd(P.tot):"—","OKX seul · positions ouvertes en $",""),
     tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · OKX":"",readFund(P.fw)),
     tile("Prochain funding",'<span id="pzCd">'+(nxt?u.clock(nxt-Date.now()):"—")+'</span>',"OKX",""),
     tile("Basis du perpétuel",P.basis!=null?'<span class="'+u.cls(P.basis)+'">'+sgn(P.basis,3)+' %</span>':"—","mark "+(P.mark?u.px(P.mark):"—")+" / index "+(P.index?u.px(P.index):"—"),readBasis(P.basis))
-  ].join("");
+  ]).join("");
 }
 function render(){
-  var host=u.$("deriv");if(!host)return;cbCalc(sym);var P=S.pos[sym]||{ex:{}},has=P.tot>0;
+  var host=u.$("deriv");if(!host)return;var bs=FT.base(sym);cbCalc(bs);var P=S.pos[bs]||{ex:{}},has=P.tot>0;
   var nxt=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!nxt||x.next<nxt))nxt=x.next;});
-  var isI=!!IDX[sym],EXL=isI?[["okx","OKX"]]:EX;
+  var isI=!!IDX[bs],EXL=isI?[["okx","OKX"]]:EX;
   var head='<div class="pz-h"><div class="seg" role="group" aria-label="Actif">'+ASSETS.map(function(a){var b=a[0];return '<button type="button" data-pz="'+b+'" aria-pressed="'+(b===sym)+'">'+a[1]+'</button>';}).join("")+'</div>'+
-    '<span class="pz-meta">'+(isI?'OKX · perpétuel '+IDX[sym].n:(P.nEx||0)+' plateformes')+' · '+(lastUp?"mis à jour "+u.ago(lastUp):"chargement…")+'</span></div>';
+    '<span class="pz-meta">'+(isI?'OKX · perpétuel '+IDX[bs].n:(P.nEx||0)+' plateformes')+' · '+(lastUp?"mis à jour "+u.ago(lastUp):"chargement…")+'</span></div>';
   var t=isI?idxTiles(P):[
     tile("Open interest total",has?usd(P.tot):"—",P.oi1h!=null?'<span class="'+u.cls(P.oi1h)+'">'+sgn(P.oi1h,2)+' %</span> 1 h · <span class="'+u.cls(P.oi24)+'">'+sgn(P.oi24,2)+' %</span> 24 h'+(P.oi7!=null?' · <span class="'+u.cls(P.oi7)+'">'+sgn(P.oi7,1)+' %</span> 7 j':""):"variation en cours de calcul",readOI(P),spark(P.oiH)),
     tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · pondéré par l'OI":"",readFund(P.fw)),
@@ -162,10 +162,10 @@ function render(){
     return '<tr><td><b>'+e[1]+'</b></td><td class="r mono">'+usd(x.oiU)+'</td><td class="pz-bar"><i style="width:'+(x.oiU/mx*100).toFixed(1)+'%"></i><span class="mono">'+nf(share,1)+' %</span></td>'+
       '<td class="r mono '+(x.f8!=null?u.cls(x.f8):"")+'">'+(x.f8!=null?nf(x.f8,4)+" %":"—")+'</td><td class="r mono">'+(x.f8!=null?nf(x.f8*3*365,1)+" %":"—")+'</td></tr>';}).join("");
   var html=head+'<div class="pz-g">'+t+'</div><div class="pz-tw"><table class="pz-tb"><thead><tr><th>Plateforme</th><th class="r">Open interest</th><th>Part</th><th class="r">Funding 8 h</th><th class="r">Par an</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    (isI?'<p class="pz-n">Indice suivi via le perpétuel OKX '+IDX[sym].inst+' (cote en continu, en dollars). Seules les données disponibles sans clé sont affichées : pas de ratio long/short, de flux taker ni d\'options pour les indices. Funding ramené à 8 h.'+(P.bad?' <b>Attention : le prix reçu ne ressemble pas à un indice, vérifier l\'instrument.</b>':'')+'</p>':'<p class="pz-n">Funding Hyperliquid ramené de l\'heure à 8 h. Ratios et flux taker : Binance (et Bybit pour les comptes). Prime Coinbase calculée en dollars contre l\'USDT d\'OKX.</p>');
+    (isI?'<p class="pz-n">'+(FT.is(sym)?'Pour '+sym+', le positionnement est celui du perpétuel OKX de l\'indice '+IDX[bs].n+' (les micros du CME n\'ont pas de données ouvertes sans clé). ':'')+'Indice suivi via le perpétuel OKX '+IDX[bs].inst+' (cote en continu, en dollars). Seules les données disponibles sans clé sont affichées : pas de ratio long/short, de flux taker ni d\'options pour les indices. Funding ramené à 8 h.'+(P.bad?' <b>Attention : le prix reçu ne ressemble pas à un indice, vérifier l\'instrument.</b>':'')+'</p>':'<p class="pz-n">Funding Hyperliquid ramené de l\'heure à 8 h. Ratios et flux taker : Binance (et Bybit pour les comptes). Prime Coinbase calculée en dollars contre l\'USDT d\'OKX.</p>');
   if(host._h!==html){host.innerHTML=html;host._h=html;}
 }
-function tick(){var el=u.$("pzCd");if(!el)return;var P=S.pos[sym]||{ex:{}},n=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!n||x.next<n))n=x.next;});if(n)el.textContent=u.clock(n-Date.now());}
+function tick(){var el=u.$("pzCd");if(!el)return;var P=S.pos[FT.base(sym)]||{ex:{}},n=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!n||x.next<n))n=x.next;});if(n)el.textContent=u.clock(n-Date.now());}
 
 CK.pos={
   boot:function(){

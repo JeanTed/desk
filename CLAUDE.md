@@ -47,6 +47,10 @@ Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navig
 
 Tout le code partage l'objet global `window.CK`. Chaque fichier est une fonction auto-exécutée qui ajoute son module (`CK.day`, `CK.map`, `CK.layout`…).
 
+## Contrats micro MNQ et MES
+
+`CK.fut` (début de `core.js`) décrit MNQ (base NDX, 2 $ le point) et MES (base SPX, 5 $ le point), tick 0,25. Leurs niveaux = niveaux de l'indice + écart contrat/indice (`CK.fut.info`) : mesuré avec les futures NQ/ES de TradingView (`CK.fut.rows`, rempli par `loadCtx` dans `plan.js`), sinon estimé par le coût de portage jusqu'au prochain trimestriel. Les boutons MNQ/MES existent dans Plan Futures, Contexte, Niveaux clés, Options et Dérivés ; les données restent chargées sur NDX/SPX. Colonnes « Points » et « $ / contrat » dans les listes de niveaux.
+
 ## Espaces actuels et code désactivé
 
 Espaces visibles : Plan Futures, Journée, News, Connexions. Les espaces Signaux, Screener, Liquidations et Agent, ainsi que les blocs crypto (carnet d'ordres, corrélations, top mouvements), ont été retirés de l'affichage (`modules` à `false` dans `config.js`, absents de `VIEWS0`/`DEFAULTS` dans `layout.js`) ; leur code reste dans les fichiers mais n'est plus démarré. La section suivante décrit l'ancien agent : elle ne s'applique plus.

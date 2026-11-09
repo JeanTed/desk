@@ -2187,6 +2187,14 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .brand.custom .mark img{width:54px;height:54px;object-fit:contain;object-position:center;border-radius:50%}
 .brand.custom .mark .lg-on-light{display:none}
 .brand.custom .mark .lg-on-dark{display:block;opacity:1}
+
+/* Contrats micro (MNQ, MES) : colonnes points et $ par contrat */
+.lv-r.lv-fu{grid-template-columns:46px minmax(0,1fr) auto 78px 70px 62px;gap:8px}
+.lv-hd{display:grid;grid-template-columns:46px minmax(0,1fr) auto 78px 70px 62px;gap:8px;padding:4px 8px;font:600 10.5px var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lv-hd span:nth-child(n+3){text-align:right}
+.plan-spec{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--inset);font-size:12.5px;color:var(--muted);line-height:1.5}
+.plan-spec b{color:var(--text)}
+@media(max-width:560px){.lv-r.lv-fu,.lv-hd{grid-template-columns:40px minmax(0,1fr) auto 62px 56px 50px;gap:5px;font-size:12.5px}}
 </style>
 <script>
 /* ================================================================
@@ -2195,6 +2203,33 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 (function(){
 "use strict";
 var CK = window.CK = {};
+/* Contrats micro (MNQ, MES) : mêmes niveaux que l'indice, décalés de l'écart contrat/indice (basis) */
+CK.fut=(function(){
+  var M={
+    MNQ:{base:"NDX",n:"MNQ",full:"Micro E-mini Nasdaq-100",pt:2,tv:"CME_MINI:MNQ1!",big:"CME_MINI:NQ1!",it:"NASDAQ:NDX",div:.007},
+    MES:{base:"SPX",n:"MES",full:"Micro E-mini S&P 500",pt:5,tv:"CME_MINI:MES1!",big:"CME_MINI:ES1!",it:"SP:SPX",div:.013}
+  };
+  var F={M:M,TICK:.25,rows:{}};
+  F.is=function(s){return !!M[s];};
+  F.base=function(s){return M[s]?M[s].base:s;};
+  /* prochain trimestriel (mars, juin, sept., déc.) : 3e vendredi, 13 h 30 UTC */
+  F.expiry=function(now){
+    now=now||Date.now();var d=new Date(now),y=d.getUTCFullYear();
+    for(var k=0;k<6;k++){var mo=[2,5,8,11][k%4],yy=y+Math.floor(k/4),t=new Date(Date.UTC(yy,mo,1,13,30)),fri=(5-t.getUTCDay()+7)%7;t=new Date(Date.UTC(yy,mo,1+fri+14,13,30));if(t.getTime()>now)return t.getTime();}
+    return now;
+  };
+  /* écart contrat − indice en points : mesuré (TradingView) si cohérent, sinon estimé par le coût de portage */
+  F.info=function(s,spot){
+    var m=M[s];if(!m||!(spot>0))return {v:0,src:"",days:0};
+    var f=F.rows[m.big],i=F.rows[m.it],days=Math.max(0,(F.expiry()-Date.now())/86400000);
+    if(f&&i&&f.c>0&&i.c>0){var v=f.c-i.c;if(Math.abs(v)<spot*.03)return {v:v,src:"mesuré",days:days};}
+    var r=F.rows["TVC:US05Y"],rate=r&&r.c>0&&r.c<15?r.c/100:.04;
+    return {v:spot*(rate-m.div)*days/365,src:"estimé",days:days};
+  };
+  F.off=function(s,spot){return F.is(s)?F.info(s,spot).v:0;};
+  return F;
+})();
+
 var OKX = "https://www.okx.com";
 var BFX = "https://fapi.binance.com/futures/data/";
 var TV_SCAN = "https://scanner.tradingview.com/global/scan";
@@ -3696,9 +3731,9 @@ var EX=[["binance","Binance"],["bybit","Bybit"],["okx","OKX"],["bitget","Bitget"
 S.pos=S.pos||{};["BTC","ETH","NDX","SPX"].forEach(function(k){S.pos[k]=S.pos[k]||{ex:{}};});
 /* Indices actions : perpétuels OKX qui répliquent le Nasdaq 100 et le S&P 500 (mêmes instruments que les corrélations) */
 var IDX={NDX:{n:"NASDAQ 100",inst:"US100-USDT-SWAP",idx:"US100-USDT"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",idx:"SPX-USDT"}};
-var ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["BTC","BTC"],["ETH","ETH"]];
+var FT=CK.fut,ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["MNQ","MNQ"],["MES","MES"],["BTC","BTC"],["ETH","ETH"]];
 var sym=CK.ls("posSym2")||"NDX",lastUp=0;
-if(!S.pos[sym])sym="NDX";
+if(!S.pos[FT.base(sym)])sym="NDX";
 function J(url,opt){return u.fetchJSON(url,opt,12000);}
 function q(p){return p.catch(function(){return null;});}
 
@@ -3809,21 +3844,21 @@ function spark(arr,mid){if(!arr||arr.length<2)return "";var mn=Math.min.apply(nu
 /* ---------- Affichage ---------- */
 function tile(k,v,sub,read,extra){return '<div class="pz-t"><span class="pz-k">'+k+'</span><b class="pz-v">'+v+'</b>'+(sub?'<span class="pz-s">'+sub+'</span>':"")+(extra||"")+(read||"")+'</div>';}
 function idxTiles(P){
-  var has=P.tot>0,nxt=P.ex.okx&&P.ex.okx.next,dp=P.last&&P.open?(P.last/P.open-1)*100:null;
-  return [
+  var has=P.tot>0,nxt=P.ex.okx&&P.ex.okx.next,dp=P.last&&P.open?(P.last/P.open-1)*100:null,fu=FT.is(sym),M=fu?FT.M[sym]:null,inf=fu&&P.last?FT.info(sym,P.last):null;
+  return (fu?[tile("Prix "+M.n+" (estimé)",P.last?u.px(P.last+inf.v):"—","indice + écart "+(inf.v>=0?"+":"−")+nf(Math.abs(inf.v),2)+" pts ("+inf.src+")",""),tile("Valeur du point",M.pt+" $","tick 0,25 pt = "+nf(.25*M.pt,2)+" $ · 10 pts = "+nf(10*M.pt,0)+" $","")]:[]).concat([
     tile("Prix du perpétuel",P.last?u.px(P.last):"—",dp!=null?'<span class="'+u.cls(dp)+'">'+sgn(dp,2)+' %</span> sur 24 h · OKX':"",""),
     tile("Open interest",has?usd(P.tot):"—","OKX seul · positions ouvertes en $",""),
     tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · OKX":"",readFund(P.fw)),
     tile("Prochain funding",'<span id="pzCd">'+(nxt?u.clock(nxt-Date.now()):"—")+'</span>',"OKX",""),
     tile("Basis du perpétuel",P.basis!=null?'<span class="'+u.cls(P.basis)+'">'+sgn(P.basis,3)+' %</span>':"—","mark "+(P.mark?u.px(P.mark):"—")+" / index "+(P.index?u.px(P.index):"—"),readBasis(P.basis))
-  ].join("");
+  ]).join("");
 }
 function render(){
-  var host=u.$("deriv");if(!host)return;cbCalc(sym);var P=S.pos[sym]||{ex:{}},has=P.tot>0;
+  var host=u.$("deriv");if(!host)return;var bs=FT.base(sym);cbCalc(bs);var P=S.pos[bs]||{ex:{}},has=P.tot>0;
   var nxt=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!nxt||x.next<nxt))nxt=x.next;});
-  var isI=!!IDX[sym],EXL=isI?[["okx","OKX"]]:EX;
+  var isI=!!IDX[bs],EXL=isI?[["okx","OKX"]]:EX;
   var head='<div class="pz-h"><div class="seg" role="group" aria-label="Actif">'+ASSETS.map(function(a){var b=a[0];return '<button type="button" data-pz="'+b+'" aria-pressed="'+(b===sym)+'">'+a[1]+'</button>';}).join("")+'</div>'+
-    '<span class="pz-meta">'+(isI?'OKX · perpétuel '+IDX[sym].n:(P.nEx||0)+' plateformes')+' · '+(lastUp?"mis à jour "+u.ago(lastUp):"chargement…")+'</span></div>';
+    '<span class="pz-meta">'+(isI?'OKX · perpétuel '+IDX[bs].n:(P.nEx||0)+' plateformes')+' · '+(lastUp?"mis à jour "+u.ago(lastUp):"chargement…")+'</span></div>';
   var t=isI?idxTiles(P):[
     tile("Open interest total",has?usd(P.tot):"—",P.oi1h!=null?'<span class="'+u.cls(P.oi1h)+'">'+sgn(P.oi1h,2)+' %</span> 1 h · <span class="'+u.cls(P.oi24)+'">'+sgn(P.oi24,2)+' %</span> 24 h'+(P.oi7!=null?' · <span class="'+u.cls(P.oi7)+'">'+sgn(P.oi7,1)+' %</span> 7 j':""):"variation en cours de calcul",readOI(P),spark(P.oiH)),
     tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · pondéré par l'OI":"",readFund(P.fw)),
@@ -3840,10 +3875,10 @@ function render(){
     return '<tr><td><b>'+e[1]+'</b></td><td class="r mono">'+usd(x.oiU)+'</td><td class="pz-bar"><i style="width:'+(x.oiU/mx*100).toFixed(1)+'%"></i><span class="mono">'+nf(share,1)+' %</span></td>'+
       '<td class="r mono '+(x.f8!=null?u.cls(x.f8):"")+'">'+(x.f8!=null?nf(x.f8,4)+" %":"—")+'</td><td class="r mono">'+(x.f8!=null?nf(x.f8*3*365,1)+" %":"—")+'</td></tr>';}).join("");
   var html=head+'<div class="pz-g">'+t+'</div><div class="pz-tw"><table class="pz-tb"><thead><tr><th>Plateforme</th><th class="r">Open interest</th><th>Part</th><th class="r">Funding 8 h</th><th class="r">Par an</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    (isI?'<p class="pz-n">Indice suivi via le perpétuel OKX '+IDX[sym].inst+' (cote en continu, en dollars). Seules les données disponibles sans clé sont affichées : pas de ratio long/short, de flux taker ni d\'options pour les indices. Funding ramené à 8 h.'+(P.bad?' <b>Attention : le prix reçu ne ressemble pas à un indice, vérifier l\'instrument.</b>':'')+'</p>':'<p class="pz-n">Funding Hyperliquid ramené de l\'heure à 8 h. Ratios et flux taker : Binance (et Bybit pour les comptes). Prime Coinbase calculée en dollars contre l\'USDT d\'OKX.</p>');
+    (isI?'<p class="pz-n">'+(FT.is(sym)?'Pour '+sym+', le positionnement est celui du perpétuel OKX de l\'indice '+IDX[bs].n+' (les micros du CME n\'ont pas de données ouvertes sans clé). ':'')+'Indice suivi via le perpétuel OKX '+IDX[bs].inst+' (cote en continu, en dollars). Seules les données disponibles sans clé sont affichées : pas de ratio long/short, de flux taker ni d\'options pour les indices. Funding ramené à 8 h.'+(P.bad?' <b>Attention : le prix reçu ne ressemble pas à un indice, vérifier l\'instrument.</b>':'')+'</p>':'<p class="pz-n">Funding Hyperliquid ramené de l\'heure à 8 h. Ratios et flux taker : Binance (et Bybit pour les comptes). Prime Coinbase calculée en dollars contre l\'USDT d\'OKX.</p>');
   if(host._h!==html){host.innerHTML=html;host._h=html;}
 }
-function tick(){var el=u.$("pzCd");if(!el)return;var P=S.pos[sym]||{ex:{}},n=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!n||x.next<n))n=x.next;});if(n)el.textContent=u.clock(n-Date.now());}
+function tick(){var el=u.$("pzCd");if(!el)return;var P=S.pos[FT.base(sym)]||{ex:{}},n=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!n||x.next<n))n=x.next;});if(n)el.textContent=u.clock(n-Date.now());}
 
 CK.pos={
   boot:function(){
@@ -3890,9 +3925,9 @@ function X(title,body){return ' data-x="'+esc('<b>'+title+'</b><span>'+body+'</s
 
 /* ================= 1. Niveaux clés ================= */
 /* Actifs des niveaux clés : Nasdaq 100 par défaut ; les indices passent par les perpétuels OKX qui les répliquent */
-var LASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["BTC","BTC"],["ETH","ETH"]],IDXL={NDX:"US100-USDT-SWAP",SPX:"SPX-USDT-SWAP"};
+var FT=CK.fut,LASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["MNQ","MNQ"],["MES","MES"],["BTC","BTC"],["ETH","ETH"]],IDXL={NDX:"US100-USDT-SWAP",SPX:"SPX-USDT-SWAP",MNQ:"US100-USDT-SWAP",MES:"SPX-USDT-SWAP"};
 var LV={sym:CK.ls("lvSym2")||"NDX",data:{},px:{}};
-function lvPx(b){return IDXL[b]?LV.px[b]:livePx(b);}
+function lvPx(b){if(!IDXL[b])return livePx(b);var B=FT.base(b),p=LV.px[B];return p>0?p+FT.off(b,p):p;}
 var LDESC={
   DO:["Ouverture du jour (UTC)","Prix à 00 h 00 UTC. Au-dessus, la journée est acheteuse ; en dessous, vendeuse. Souvent retesté."],
   PDH:["Plus haut d'hier","Résistance classique. Une cassure franche ouvre la voie à la hausse ; un rejet confirme la résistance."],
@@ -3913,6 +3948,7 @@ function zoned(tz,y,m,d,h,mi){/* heure locale d'un fuseau → timestamp UTC */va
 function sessionWin(tz,oh,om,ch,cm,now){var p=tzParts(tz,now),y=+p.year,m=+p.month,d=+p.day,o=zoned(tz,y,m,d,oh,om);
   if(o>now){var pr=tzParts(tz,now-86400000);y=+pr.year;m=+pr.month;d=+pr.day;o=zoned(tz,y,m,d,oh,om);}return [o,zoned(tz,y,m,d,ch,cm)];}
 function loadLevels(b){
+  b=FT.base(b);
   var id=IDXL[b]||b+"-USDT";
   return Promise.all([q(J(OKX+"/api/v5/market/candles?instId="+id+"&bar=1Dutc&limit=3")),q(J(OKX+"/api/v5/market/candles?instId="+id+"&bar=1Wutc&limit=2")),
     q(J(OKX+"/api/v5/market/candles?instId="+id+"&bar=1Mutc&limit=1")),q(J(OKX+"/api/v5/market/history-candles?instId="+id+"&bar=15m&limit=100")),q(J(OKX+"/api/v5/market/candles?instId="+id+"&bar=15m&limit=100")),q(J(OKX+"/api/v5/market/ticker?instId="+id))]).then(function(a){
@@ -3932,21 +3968,25 @@ function loadLevels(b){
   });
 }
 function renderLevels(){
-  var host=u.$("levels");if(!host)return;var b=LV.sym,d=LV.data[b],p=lvPx(b);
+  var host=u.$("levels");if(!host)return;var b=LV.sym,B=FT.base(b),fu=FT.is(b),d=LV.data[B],p=lvPx(b);
   if(!d||!p){host.innerHTML=seg("lv",b,LASSETS)+'<div class="empty">Calcul des niveaux…</div>';return;}
+  var inf=fu?FT.info(b,LV.px[B]):null,off=inf?inf.v:0,M=fu?FT.M[b]:null;
   var L=d.L.slice().sort(function(x,y){return y.px-x.px;}),html="",placed=false;
-  L.forEach(function(x){var dd=(x.px/p-1)*100,ds=LDESC[x.k];
-    if(!placed&&x.px<p){html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+u.px(p)+'</b></div>';placed=true;}
+  L.forEach(function(x){var v=x.px+off,dd=(v/p-1)*100,ds=LDESC[x.k],pts=v-p;
+    if(!placed&&v<p){html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+u.px(p)+'</b></div>';placed=true;}
     var near=Math.abs(dd)<.35;
-    html+='<div class="lv-r '+(x.px>p?"ab":"be")+(near?" near":"")+'"'+X(ds[0],ds[1]+(x.t?" (session "+x.t+")":"")+" Distance : "+(dd>0?"+":"")+nf(dd,2)+" %.")+'>'+
-      '<span class="lv-tag">'+x.k+'</span><span class="lv-n">'+ds[0]+(x.t?' <em>'+x.t+'</em>':'')+'</span><b class="mono">'+u.px(x.px)+'</b><span class="lv-d mono">'+(dd>0?"+":"")+nf(dd,2)+' %</span></div>';});
+    html+='<div class="lv-r '+(v>p?"ab":"be")+(near?" near":"")+(fu?" lv-fu":"")+'"'+X(ds[0],ds[1]+(x.t?" (session "+x.t+")":"")+" Distance : "+(dd>0?"+":"")+nf(dd,2)+" %."+(fu?" Soit "+(pts>0?"+":"")+nf(pts,2)+" points, "+nf(Math.abs(pts)*M.pt,0)+" $ par contrat "+M.n+".":""))+'>'+
+      '<span class="lv-tag">'+x.k+'</span><span class="lv-n">'+ds[0]+(x.t?' <em>'+x.t+'</em>':'')+'</span><b class="mono">'+u.px(v)+'</b>'+
+      (fu?'<span class="lv-d mono">'+(pts>0?"+":"−")+nf(Math.abs(pts),2)+' pts</span><span class="lv-d mono">'+(pts>0?"+":"−")+nf(Math.abs(pts)*M.pt,0)+' $</span>':'')+
+      '<span class="lv-d mono">'+(dd>0?"+":"")+nf(dd,2)+' %</span></div>';});
   if(!placed)html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+u.px(p)+'</b></div>';
-  var out=seg("lv",b,LASSETS)+'<div class="lv-list">'+html+'</div><p class="x-n">Survole un niveau pour son explication. Les niveaux à moins de 0,35 % du prix sont mis en avant. Sessions : Tokyo 9 h–15 h, Londres 8 h–16 h 30, New York 9 h 30–16 h (heures locales).'+(IDXL[b]?' Indice suivi via le perpétuel OKX '+IDXL[b]+' : « jour » = 00 h UTC, pas l\'ouverture de Wall Street.':'')+'</p>';
+  var out=seg("lv",b,LASSETS)+(fu?'<div class="lv-hd"><span>Niveau</span><span></span><span>Prix</span><span>Points</span><span>$ / contrat</span><span>%</span></div>':'')+'<div class="lv-list">'+html+'</div><p class="x-n">Survole un niveau pour son explication. Les niveaux à moins de 0,35 % du prix sont mis en avant. Sessions : Tokyo 9 h–15 h, Londres 8 h–16 h 30, New York 9 h 30–16 h (heures locales).'+(IDXL[b]?' Indice suivi via le perpétuel OKX '+IDXL[B]+' : « jour » = 00 h UTC, pas l\'ouverture de Wall Street.':'')+
+    (fu?' <b>'+M.n+'</b> ('+M.full+') : 1 point = '+M.pt+' $, tick 0,25 pt = '+nf(.25*M.pt,2)+' $. Niveaux = indice '+FT.M[b].base+' '+(off>=0?"+":"−")+' '+nf(Math.abs(off),2)+' pts d\'écart contrat/indice ('+inf.src+(inf.src==="estimé"?" par le coût de portage, jusqu\'à l\'échéance dans "+Math.round(inf.days)+" j":"")+'). L\'écart fond jusqu\'à l\'échéance trimestrielle : vérifie sur ta plateforme.':'')+'</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 
 /* ================= 2. Options Deribit ================= */
-var OASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["BTC","BTC"],["ETH","ETH"]];
+var OASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["MNQ","MNQ"],["MES","MES"],["BTC","BTC"],["ETH","ETH"]];
 var OP={sym:CK.ls("opSym2")||"NDX",data:{}};
 /* Options sur indices : lues par le robot GitHub (options.py, Yahoo Finance) et publiées dans data/options.json */
 function loadOptionsIdx(b){
@@ -3963,6 +4003,7 @@ function loadOptionsIdx(b){
 var MON={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
 function expTs(code){var m=code.match(/^(\d{1,2})([A-Z]{3})(\d{2})$/);return m?Date.UTC(2000+ +m[3],MON[m[2]],+m[1],8,0):0;}
 function loadOptions(b){
+  b=FT.base(b);
   if(IDXL[b])return loadOptionsIdx(b);
   return q(J(DB+"/get_book_summary_by_currency?currency="+b+"&kind=option",15000)).then(function(j){
     var R=j&&j.result;if(!R||!R.length)return;var E={},K={},und=0,now=Date.now();
@@ -3980,9 +4021,10 @@ function loadOptions(b){
 }
 function fmtDate(ts){return new Date(ts).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/Paris"});}
 function renderOptions(){
-  var host=u.$("opts");if(!host)return;var b=OP.sym,d=OP.data[b];
-  if(!d){host.innerHTML=seg("op",b,OASSETS)+'<div class="empty">'+(IDXL[b]?'Lecture des options du robot…':'Lecture des options Deribit…')+'</div>';return;}
+  var host=u.$("opts");if(!host)return;var b=OP.sym,B=FT.base(b),fu=FT.is(b),d=OP.data[B],M=fu?FT.M[b]:null,off=0;
+  if(!d){host.innerHTML=seg("op",b,OASSETS)+'<div class="empty">'+(IDXL[B]?'Lecture des options du robot…':'Lecture des options Deribit…')+'</div>';return;}
   if(d.err){host.innerHTML=seg("op",b,OASSETS)+'<div class="empty">'+esc(d.err)+' Les options sur indices demandent votre propre robot GitHub (voir CLAUDE.md, section « Le robot »).</div>';return;}
+  if(fu&&LV.px[B]>0){off=FT.off(b,LV.px[B]);d=Object.assign({},d,{list:d.list.map(function(e){return Object.assign({},e,{mp:e.mp?e.mp+off:e.mp});}),calls:d.calls.map(function(w){return Object.assign({},w,{k:w.k+off});}),puts:d.puts.map(function(w){return Object.assign({},w,{k:w.k+off});})});}
   var m=d.mult||1,unit=d.idx?"contrats":b,px=(d.idx?lvPx(b):livePx(b))||d.px,now=Date.now(),big=d.list.slice().sort(function(a,b){return b.usd-a.usd;})[0];
   var rows=d.list.slice(0,6).map(function(e){var mp=e.mp?(e.mp/px-1)*100:null,isBig=big&&e.ts===big.ts,ms=e.ts-now;
     var tip=X("Échéance du "+fmtDate(e.ts)+" à "+u.parisTime(e.ts),
@@ -3991,13 +4033,13 @@ function renderOptions(){
       (e.pcr!=null?"Put/call "+nf(e.pcr,2)+(e.pcr>1?" : plus de protections à la baisse que de paris haussiers.":e.pcr<.6?" : les paris haussiers dominent.":" : équilibré."):""));
     return '<div class="op-r'+(isBig?" big":"")+'"'+tip+'><span class="op-dt"><b>'+fmtDate(e.ts)+'</b><em>'+(ms<86400000?"dans "+u.clock(ms).replace(/:\d\d$/,""):"dans "+Math.round(ms/86400000)+" j")+'</em></span>'+
       '<span class="op-v mono">'+u.usd(e.usd)+'</span><span class="op-bar"><i style="width:'+(big?Math.max(3,e.usd/big.usd*100):0).toFixed(1)+'%"></i></span>'+
-      '<span class="op-mp mono">'+(e.mp?u.px(e.mp):"—")+'<em class="'+(mp==null?"":mp>0?"up":"down")+'">'+(mp==null?"":(mp>0?"+":"")+nf(mp,1)+" %")+'</em></span><span class="op-pc mono">'+(e.pcr!=null?nf(e.pcr,2):"—")+'</span></div>';}).join("");
+      '<span class="op-mp mono">'+(e.mp?u.px(e.mp):"—")+'<em class="'+(mp==null?"":mp>0?"up":"down")+'">'+(mp==null?"":(fu?(e.mp>px?"+":"−")+nf(Math.abs(e.mp-px),0)+" pts · ":"")+(mp>0?"+":"")+nf(mp,1)+" %")+'</em></span><span class="op-pc mono">'+(e.pcr!=null?nf(e.pcr,2):"—")+'</span></div>';}).join("");
   function wall(arr,put){return arr.map(function(s){var v=put?s.p:s.c,dd=(s.k/px-1)*100;
     return '<span class="op-w '+(put?"p":"c")+'"'+X((put?"Mur de puts":"Mur de calls")+" à "+u.px(s.k),nf(v,0)+" "+unit+" d'open interest ("+u.usd(v*m*px)+"), toutes échéances. "+(put?"Les vendeurs de ces puts se couvrent en vendant si le prix s'en approche : zone de support souvent défendue, mais qui peut accélérer la baisse si elle cède.":"Les vendeurs de ces calls se couvrent en achetant si le prix monte : zone de résistance souvent défendue, mais qui peut accélérer la hausse si elle cède."))+'>'+
-      '<b class="mono">'+u.px(s.k)+'</b><em>'+u.usd(v*m*px)+' · '+(dd>0?"+":"")+nf(dd,1)+' %</em></span>';}).join("");}
+      '<b class="mono">'+u.px(s.k)+'</b><em>'+u.usd(v*m*px)+' · '+(fu?(s.k>px?"+":"−")+nf(Math.abs(s.k-px),0)+' pts / '+nf(Math.abs(s.k-px)*M.pt,0)+' $ · ':'')+(dd>0?"+":"")+nf(dd,1)+' %</em></span>';}).join("");}
   var out=seg("op",b,OASSETS)+'<div class="op-h"><span>Échéance</span><span>Notionnel</span><span></span><span>Max pain</span><span>Put/call</span></div><div class="op-l">'+rows+'</div>'+
     '<div class="op-ws"><div><span class="x-k">Murs de calls (résistances)</span>'+wall(d.calls,false)+'</div><div><span class="x-k">Murs de puts (supports)</span>'+wall(d.puts,true)+'</div></div>'+
-    (d.idx?'<p class="x-n">Options sur l\'indice '+(b==="NDX"?"Nasdaq 100, lues sur l\'ETF QQQ (très liquide) et converties en points de l\'indice":"S&P 500 (^SPX)")+', par le robot sur Yahoo Finance : open interest de la veille, prix différé. Notionnel en dollars réels. Prix de référence : perpétuel OKX en direct (écart possible avec l\'indice). Ce ne sont pas les options sur futures du CME. Survole une ligne pour son explication.</p>':'<p class="x-n">Options Deribit (environ 85 % du marché des options crypto). Expirations à 8 h UTC. Survole une ligne pour son explication.</p>');
+    (d.idx?'<p class="x-n">Options sur l\'indice '+(B==="NDX"?"Nasdaq 100, lues sur l\'ETF QQQ (très liquide) et converties en points de l\'indice":"S&P 500 (^SPX)")+', par le robot sur Yahoo Finance : open interest de la veille, prix différé. Notionnel en dollars réels. Prix de référence : perpétuel OKX en direct (écart possible avec l\'indice). Ce ne sont pas les options sur futures du CME. Survole une ligne pour son explication.'+(fu?' Niveaux convertis en <b>'+M.n+'</b> : indice '+(off>=0?"+":"−")+' '+nf(Math.abs(off),2)+' pts d\'écart contrat/indice, 1 point = '+M.pt+' $.':'')+'</p>':'<p class="x-n">Options Deribit (environ 85 % du marché des options crypto). Expirations à 8 h UTC. Survole une ligne pour son explication.</p>');
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 
@@ -4144,7 +4186,7 @@ CK.extra={boot:function(){
   /* le BTC reste chargé en fond : la carte des liquidations s'en sert */
   if(LV.sym!=="BTC"){loadLevels("BTC");setInterval(function(){if(LV.sym!=="BTC")loadLevels("BTC");},120000);}
   /* prix des indices : relevé toutes les 10 s (pas de flux en direct pour eux) */
-  setInterval(function(){[LV.sym,OP.sym].forEach(function(b,i,a){if(!IDXL[b]||a.indexOf(b)!==i)return;q(J(OKX+"/api/v5/market/ticker?instId="+IDXL[b],8000)).then(function(r){var t=r&&r.data&&r.data[0];if(t&&+t.last>0){LV.px[b]=+t.last;renderLevels();}});});},10000);
+  setInterval(function(){[LV.sym,OP.sym].map(FT.base).forEach(function(b,i,a){if(!IDXL[b]||a.indexOf(b)!==i)return;q(J(OKX+"/api/v5/market/ticker?instId="+IDXL[b],8000)).then(function(r){var t=r&&r.data&&r.data[0];if(t&&+t.last>0){LV.px[b]=+t.last;renderLevels();}});});},10000);
   loadOptions(OP.sym);setInterval(function(){loadOptions(OP.sym);},600000);setInterval(renderOptions,30000);
   loadCorr();setInterval(loadCorr,3600000);
   function bk(){var v=view();if(v==="liq"||!CK.FLOW)loadBook(BK.sym);}bk();setInterval(bk,20000);
@@ -4166,7 +4208,7 @@ CK.extra={boot:function(){
 (function(){
 "use strict";
 var CK=window.CK,u=CK.u,S=CK.S,esc=u.esc,nf=u.nf;
-var OKX="https://www.okx.com",TV="https://scanner.tradingview.com/global/scan",IDX={NDX:{n:"Nasdaq 100",inst:"US100-USDT-SWAP",perp:"US100"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",perp:"SPX"}};
+var OKX="https://www.okx.com",TV="https://scanner.tradingview.com/global/scan",FT=CK.fut,IDX={NDX:{n:"Nasdaq 100",inst:"US100-USDT-SWAP",perp:"US100"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",perp:"SPX"},MNQ:{n:"MNQ",inst:"US100-USDT-SWAP",perp:"US100",base:"NDX"},MES:{n:"MES",inst:"SPX-USDT-SWAP",perp:"SPX",base:"SPX"}},BASES=["NDX","SPX"];
 var PL={sym:CK.ls("plSym")||"NDX"};if(!IDX[PL.sym])PL.sym="NDX";
 var PD={};                      /* clôture d'hier (UTC), par indice */
 var CX={rows:{},ts:0};          /* contexte TradingView */
@@ -4200,40 +4242,42 @@ function loadPrev(b){
     var D=j&&j.data;if(D&&D[1]&&+D[1][4]>0)PD[b]=+D[1][4];render();});
 }
 function loadPx(b){
+  b=FT.base(b);
   return q(u.fetchJSON(OKX+"/api/v5/market/ticker?instId="+IDX[b].inst,null,8000)).then(function(j){
     var t=j&&j.data&&j.data[0];if(t&&+t.last>0&&CK.levels&&CK.levels.px){CK.levels.px[b]=+t.last;render();}});
 }
 function levelsOf(){
-  var d=CK.levels&&CK.levels.data&&CK.levels.data[PL.sym],o={};
+  var d=CK.levels&&CK.levels.data&&CK.levels.data[FT.base(PL.sym)],o={};
   if(d)d.L.forEach(function(x){o[x.k]=x.px;});
   return o;
 }
 function render(){
   var host=u.$("plan");if(!host)return;
-  var L=levelsOf(),p=CK.levels&&CK.levels.px&&CK.levels.px[PL.sym],now=Date.now(),I=IDX[PL.sym],sg=seg();
-  if(!p||!Object.keys(L).length){host.innerHTML=sg+'<div class="empty">Calcul du plan…</div>';return;}
+  var B=FT.base(PL.sym),fu=FT.is(PL.sym),M=fu?FT.M[PL.sym]:null,L=levelsOf(),p0=CK.levels&&CK.levels.px&&CK.levels.px[B],now=Date.now(),I=IDX[PL.sym],sg=seg();
+  if(!p0||!Object.keys(L).length){host.innerHTML=sg+'<div class="empty">Calcul du plan…</div>';return;}
+  var inf=fu?FT.info(PL.sym,p0):null,off=inf?inf.v:0,p=p0+off;Object.keys(L).forEach(function(k){L[k]+=off;});
   var rows=[];
   function add(tag,name,v,kind,tip){if(v>0)rows.push({tag:tag,n:name,px:v,k:kind,tip:tip||""});}
   add("PDH","Plus haut d'hier",L.PDH,"niv");add("PDL","Plus bas d'hier",L.PDL,"niv");
-  if(PD[PL.sym])add("PDC","Clôture d'hier (00 h UTC)",PD[PL.sym],"niv");
+  if(PD[B])add("PDC","Clôture d'hier (00 h UTC)",PD[B]+off,"niv");
   add("DO","Ouverture du jour (UTC)",L.DO,"niv");add("WO","Ouverture de la semaine",L.WO,"niv");
   var nh=Math.max(L.TKH||0,L.LDH||0),nl=Math.min(L.TKL||Infinity,L.LDL||Infinity);
   if(nh>0)add("NUH","Haut de la nuit (Tokyo + Londres)",nh,"niv");
   if(isFinite(nl)&&nl>0)add("NUL","Bas de la nuit (Tokyo + Londres)",nl,"niv");
-  var O=CK.opData&&CK.opData.data&&CK.opData.data[PL.sym],oinfo="";
+  var O=CK.opData&&CK.opData.data&&CK.opData.data[B],oinfo="";
   if(O&&O.list){
     var nx=O.list.filter(function(e){return e.ts>now;}).sort(function(a,b){return a.ts-b.ts;})[0];
-    if(nx&&nx.mp>0)add("MP","Max pain, échéance la plus proche",nx.mp,"opt","Prix d'exercice où les vendeurs d'options paient le moins à l'échéance du "+new Date(nx.ts).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+". L'indice y est souvent attiré en fin de vie des options.");
-    var wc=(O.wc||O.calls||[]).filter(function(w){return w.k>p;}),wp=(O.wp||O.puts||[]).filter(function(w){return w.k<p;});
+    if(nx&&nx.mp>0)add("MP","Max pain, échéance la plus proche",nx.mp+off,"opt","Prix d'exercice où les vendeurs d'options paient le moins à l'échéance du "+new Date(nx.ts).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+". L'indice y est souvent attiré en fin de vie des options.");
+    var wc=(O.wc||O.calls||[]).map(function(w){return {k:w.k+off,c:w.c,p:w.p};}).filter(function(w){return w.k>p;}),wp=(O.wp||O.puts||[]).map(function(w){return {k:w.k+off,c:w.c,p:w.p};}).filter(function(w){return w.k<p;});
     if(wc.length)add("MC","Mur de calls au-dessus",wc[0].k,"opt",nf(wc[0].c,0)+" contrats calls : résistance possible (les vendeurs de calls couvrent en vendant).");
     if(wp.length)add("MS","Mur de puts en dessous",wp[0].k,"opt",nf(wp[0].p,0)+" contrats puts : support possible.");
   }else if(O&&O.err)oinfo=O.err;
   rows.sort(function(a,b){return b.px-a.px;});
   var html="",placed=false;
   rows.forEach(function(x){
-    var dd=(x.px/p-1)*100;
+    var dd=(x.px/p-1)*100,pts=x.px-p;
     if(!placed&&x.px<p){html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+px(p)+'</b></div>';placed=true;}
-    html+='<div class="lv-r '+(x.px>p?"ab":"be")+(Math.abs(dd)<.35?" near":"")+(x.k==="opt"?" plan-opt":"")+'"'+(x.tip?' data-x="'+esc('<b>'+x.n+'</b><span>'+x.tip+'</span>')+'"':"")+'><span class="lv-tag">'+x.tag+'</span><span class="lv-n">'+esc(x.n)+'</span><b class="mono">'+px(x.px)+'</b><span class="lv-d mono">'+(dd>0?"+":"")+nf(dd,2)+' %</span></div>';
+    html+='<div class="lv-r '+(x.px>p?"ab":"be")+(Math.abs(dd)<.35?" near":"")+(x.k==="opt"?" plan-opt":"")+(fu?" lv-fu":"")+'"'+(x.tip?' data-x="'+esc('<b>'+x.n+'</b><span>'+x.tip+'</span>')+'"':"")+'><span class="lv-tag">'+x.tag+'</span><span class="lv-n">'+esc(x.n)+'</span><b class="mono">'+px(x.px)+'</b>'+(fu?'<span class="lv-d mono">'+(pts>0?"+":"−")+nf(Math.abs(pts),2)+' pts</span><span class="lv-d mono">'+(pts>0?"+":"−")+nf(Math.abs(pts)*M.pt,0)+' $</span>':'')+'<span class="lv-d mono">'+(dd>0?"+":"")+nf(dd,2)+' %</span></div>';
   });
   if(!placed)html+='<div class="lv-now"><span>Prix actuel</span><b class="mono">'+px(p)+'</b></div>';
   /* en-tête : prix, variation depuis l'ouverture du jour, compte à rebours US */
@@ -4249,8 +4293,9 @@ function render(){
   /* agenda du jour : annonces américaines importantes */
   var td=parisDay(now),ev=(S.cal||[]).filter(function(e){return parisDay(e.ts)===td&&(e.imp==="hi"||e.imp==="md");}).slice(0,6);
   var ag=ev.length?'<div class="plan-ag"><span class="x-k">Annonces du jour (heure de Paris)</span>'+ev.map(function(e){return '<div class="plan-ev'+(e.ts<now?" past":"")+'"><span class="mono">'+hm(e.ts)+'</span><span class="plan-i '+(e.imp==="hi"?"hi":"md")+'" aria-hidden="true"></span><span>'+esc(e.fr||e.t)+'</span></div>';}).join("")+'</div>':'<div class="plan-ag"><span class="x-k">Annonces du jour</span><div class="plan-ev"><span>Aucune annonce américaine importante au programme.</span></div></div>';
-  var out=sg+head+'<div class="lv-list">'+html+'</div>'+(rd.length?'<p class="plan-rd">'+rd.map(esc).join(" ")+'</p>':"")+ag+
-    '<p class="x-n">'+(oinfo?esc(oinfo)+" ":"")+'Prix et niveaux : perpétuel '+I.perp+' d\'OKX (journée à 00 h UTC), écart possible avec l\'indice. Nuit = Tokyo + Londres. Options : open interest de la veille (robot GitHub). Lecture mécanique des niveaux, pas une prévision.</p>';
+  var spec=fu?'<p class="plan-spec"><b>'+M.n+'</b> · '+M.full+' · 1 point = <b>'+M.pt+' $</b> · tick 0,25 pt = '+nf(.25*M.pt,2)+' $ · écart contrat/indice <b>'+(off>=0?"+":"−")+nf(Math.abs(off),2)+' pts</b> ('+inf.src+') · échéance trimestrielle dans '+Math.round(inf.days)+' j</p>':'';
+  var out=sg+head+spec+(fu?'<div class="lv-hd"><span>Niveau</span><span></span><span>Prix</span><span>Points</span><span>$ / contrat</span><span>%</span></div>':'')+'<div class="lv-list">'+html+'</div>'+(rd.length?'<p class="plan-rd">'+rd.map(esc).join(" ")+'</p>':"")+ag+
+    '<p class="x-n">'+(oinfo?esc(oinfo)+" ":"")+'Prix et niveaux : perpétuel '+I.perp+' d\'OKX (journée à 00 h UTC), écart possible avec l\'indice.'+(fu?' Pour '+M.n+', chaque niveau = indice + écart contrat/indice (mesuré avec le future '+(PL.sym==='MNQ'?'NQ':'ES')+' de TradingView, sinon estimé par le coût de portage) : vérifie le prix exact sur ta plateforme.':'')+' Nuit = Tokyo + Londres. Options : open interest de la veille (robot GitHub). Lecture mécanique des niveaux, pas une prévision.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 
@@ -4261,11 +4306,11 @@ var BIGS={
   NDX:[["NVDA","Nvidia","NASDAQ:NVDA"],["MSFT","Microsoft","NASDAQ:MSFT"],["AAPL","Apple","NASDAQ:AAPL"],["AMZN","Amazon","NASDAQ:AMZN"],["META","Meta","NASDAQ:META"],["GOOGL","Alphabet","NASDAQ:GOOGL"],["AVGO","Broadcom","NASDAQ:AVGO"],["TSLA","Tesla","NASDAQ:TSLA"],["COST","Costco","NASDAQ:COST"],["NFLX","Netflix","NASDAQ:NFLX"]],
   SPX:[["NVDA","Nvidia","NASDAQ:NVDA"],["MSFT","Microsoft","NASDAQ:MSFT"],["AAPL","Apple","NASDAQ:AAPL"],["AMZN","Amazon","NASDAQ:AMZN"],["META","Meta","NASDAQ:META"],["GOOGL","Alphabet","NASDAQ:GOOGL"],["AVGO","Broadcom","NASDAQ:AVGO"],["BRK.B","Berkshire","NYSE:BRK.B"],["JPM","JPMorgan","NYSE:JPM"],["LLY","Eli Lilly","NYSE:LLY"]]
 };
-var IDXT={NDX:["NASDAQ:NDX","Nasdaq 100"],SPX:["SP:SPX","S&P 500"]};
+var IDXT={NDX:["NASDAQ:NDX","Nasdaq 100"],SPX:["SP:SPX","S&P 500"],MNQ:["CME_MINI:MNQ1!","Micro Nasdaq 100 (MNQ)"],MES:["CME_MINI:MES1!","Micro S&P 500 (MES)"]};
 function loadCtx(){
   var seen={},tk=[];CTX.map(function(x){return x[2];}).concat(Object.keys(IDXT).map(function(k){return IDXT[k][0];}),BIGS.NDX.concat(BIGS.SPX).map(function(x){return x[2];})).forEach(function(t){if(!seen[t]){seen[t]=1;tk.push(t);}});
   return q(u.fetchJSON(TV,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({symbols:{tickers:tk},columns:["close","change"]})},12000)).then(function(j){
-    if(!j||!j.data)return;j.data.forEach(function(o){CX.rows[o.s]={c:o.d[0],ch:o.d[1]};});CX.ts=Date.now();renderCtx();});
+    if(!j||!j.data)return;j.data.forEach(function(o){CX.rows[o.s]={c:o.d[0],ch:o.d[1]};});FT.rows=CX.rows;CX.ts=Date.now();render();renderCtx();});
 }
 function renderCtx(){
   var host=u.$("ctx");if(!host)return;
@@ -4273,10 +4318,10 @@ function renderCtx(){
   function tile(x){var r=CX.rows[x[2]];if(!r)return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">—</b></div>';
     var isY=x[0]==="US10Y"||x[0]==="US05Y",v=isY?nf(r.c,3)+" %":px(r.c),c=isY?(function(){var bp=r.c-r.c/(1+(r.ch||0)/100);return (bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";})():pct(r.ch);
     return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">'+v+'</b><span class="mono '+u.cls(r.ch)+'">'+c+'</span></div>';}
-  var big=BIGS[PL.sym].map(function(x){return {n:x[1],s:x[0],r:CX.rows[x[2]]};}).filter(function(x){return x.r;}).sort(function(a,b){return b.r.ch-a.r.ch;});
+  var big=BIGS[FT.base(PL.sym)].map(function(x){return {n:x[1],s:x[0],r:CX.rows[x[2]]};}).filter(function(x){return x.r;}).sort(function(a,b){return b.r.ch-a.r.ch;});
   var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
-  var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],it[0]])+CTX.map(tile).join("")+'</div><div class="ctx-h"><span class="x-k">Poids lourds du '+it[1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+
+  var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div><div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+
     '<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
@@ -4285,10 +4330,10 @@ function renderCtx(){
 CK.plan={boot:function(){
   ["plan","ctx"].forEach(function(id){var host=u.$(id);if(host)host.addEventListener("click",function(e){var b=e.target.closest("[data-pl]");if(!b)return;PL.sym=b.getAttribute("data-pl");CK.ls("plSym",PL.sym);var p=u.$("plan"),c=u.$("ctx");if(p)p._h=null;if(c)c._h=null;render();renderCtx();});});
   render();renderCtx();
-  function lv(){if(CK.xApi)Object.keys(IDX).forEach(function(k){CK.xApi.loadLevels(k);});}
-  function op(){if(CK.xApi)Object.keys(IDX).forEach(function(k){CK.xApi.loadOptions(k);});}
-  lv();op();Object.keys(IDX).forEach(loadPrev);
-  setInterval(lv,120000);setInterval(op,600000);setInterval(function(){Object.keys(IDX).forEach(loadPrev);},600000);
+  function lv(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadLevels(k);});}
+  function op(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadOptions(k);});}
+  lv();op();BASES.forEach(loadPrev);
+  setInterval(lv,120000);setInterval(op,600000);setInterval(function(){BASES.forEach(loadPrev);},600000);
   setInterval(function(){if(!document.hidden)loadPx(PL.sym);},10000);
   loadCtx();setInterval(loadCtx,60000);
   setInterval(render,5000);setInterval(renderCtx,15000);
