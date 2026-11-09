@@ -18,6 +18,8 @@ import urllib.request
 from datetime import date, datetime, timezone
 
 OUT = "site"
+T0 = time.time()
+BUDGET = 150  # secondes accordées à la largeur de marché : au-delà, on abandonne sans bloquer le reste
 SITE = os.environ.get("SITE_URL", "").rstrip("/")
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
@@ -160,7 +162,9 @@ def mesurer(yf, tickers, nom):
     tickers = sorted(set(tickers))
     closes = []
     for i in range(0, len(tickers), 100):
-        d = yf.download(tickers[i:i + 100], period="1y", interval="1d", auto_adjust=True, progress=False, threads=True, group_by="column")
+        if time.time() - T0 > BUDGET:
+            raise RuntimeError("%s : temps dépassé (Yahoo trop lent)" % nom)
+        d = yf.download(tickers[i:i + 100], period="1y", interval="1d", auto_adjust=True, progress=False, threads=True, group_by="column", timeout=20)
         c = d["Close"] if "Close" in d else d
         if isinstance(c, pd.Series):
             c = c.to_frame(tickers[i])

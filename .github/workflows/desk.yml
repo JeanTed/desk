@@ -39,6 +39,7 @@ jobs:
           python-version: "3.12"
       - name: Options NDX et SPX
         continue-on-error: true
+        timeout-minutes: 4
         run: |
           pip install --quiet yfinance
           python options.py
@@ -47,18 +48,21 @@ jobs:
       # Prix et niveaux des contrats micro MNQ / MES (Yahoo Finance). Même règle : une panne ne bloque rien.
       - name: Futures MNQ et MES
         continue-on-error: true
+        timeout-minutes: 4
         run: python futpx.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       # Dates des prochains résultats des poids lourds (Yahoo Finance). Même règle : une panne ne bloque rien.
       - name: Résultats des poids lourds
         continue-on-error: true
+        timeout-minutes: 4
         run: python resultats.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       # Positionnement COT, Peur & Cupidité, adjudications du Trésor, largeur de marché. Chaque partie est indépendante.
       - name: Marché (COT, sentiment, Trésor, largeur)
         continue-on-error: true
+        timeout-minutes: 6
         run: |
           pip install --quiet lxml
           python marche.py
@@ -67,6 +71,7 @@ jobs:
       # Sentiment des news (Alpha Vantage, clé gratuite dans le secret ALPHAVANTAGE_KEY). Sans clé, rien ne change.
       - name: Sentiment des news
         continue-on-error: true
+        timeout-minutes: 4
         run: node sentiment.mjs
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
@@ -74,6 +79,7 @@ jobs:
       # Lecture du jour (actualités + prix) écrite par Gemini. Sans le secret GEMINI_KEY, cette étape ne fait rien.
       - name: Lecture du jour
         continue-on-error: true
+        timeout-minutes: 4
         run: node briefing.mjs
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
