@@ -161,7 +161,10 @@ def main():
     os.makedirs(f"{OUT}/data", exist_ok=True)
     prev = previous("options.json") or {}
     now = int(time.time() * 1000)
-    if prev.get("ts") and (now - prev["ts"]) < MAX_AGE_MIN * 60000 and all(k in prev.get("idx", {}) for k in INDICES):
+    # le fichier précédent n'est réutilisé que s'il est récent, complet et au format actuel
+    # (une même source d'options par indice) : sinon on relit Yahoo tout de suite
+    format_ok = all(prev.get("idx", {}).get(k, {}).get("src") == sym for k, (sym, _) in INDICES.items())
+    if prev.get("ts") and (now - prev["ts"]) < MAX_AGE_MIN * 60000 and format_ok:
         print("options.json récent : on le republie tel quel.")
         write(prev, None)
         return 0
