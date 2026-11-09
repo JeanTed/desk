@@ -197,6 +197,7 @@ def main():
     old = prev.get("corr") or {}
     if old.get("rows") and now - old.get("ts", 0) < 6 * 3600000:
         result["corr"] = old
+        etat["CORR"] = (True, len(old["rows"]), None)
     else:
         try:
             result["corr"] = {"ts": now, "rows": correlations(yf)}

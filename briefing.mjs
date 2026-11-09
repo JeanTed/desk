@@ -76,16 +76,29 @@ ${annonces.join("\n") || "aucune importante"}
 TITRES DES DERNIÈRES HEURES :
 ${titres.join("\n")}`;
 
-  const j = await getJSON(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${KEY}`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3, responseMimeType: "application/json" } }) }, 45000);
+  const corps = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3, responseMimeType: "application/json" } });
+  const essai = async (m) => getJSON(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps }, 45000);
+  let candidats = [MODEL, "gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.5-flash-lite"].filter((m, i, a) => m && a.indexOf(m) === i);
+  let j = null, derniere = "", MODEL_OK = MODEL;
+  for (let pass = 0; pass < 2 && !j; pass++) {
+    for (const m of candidats) {
+      try { j = await essai(m); MODEL_OK = m; break; } catch (e) { derniere = m + " : " + (e.message || e); console.log("Modèle refusé →", derniere.replace(KEY, "***")); }
+    }
+    if (j || pass) break;
+    try { // demande à Google les modèles disponibles pour cette clé
+      const L = await getJSON(`https://generativelanguage.googleapis.com/v1beta/models?key=${KEY}&pageSize=100`, {}, 15000);
+      candidats = ((L && L.models) || []).filter(x => /generateContent/.test((x.supportedGenerationMethods || []).join()) && /gemini-.*flash/i.test(x.name) && !/image|tts|live|audio|thinking|exp/i.test(x.name)).map(x => x.name.replace(/^models\//, "")).slice(0, 6);
+      console.log("Modèles disponibles :", candidats.join(", "));
+    } catch (e) { console.log("Liste des modèles impossible :", String(e.message || e)); break; }
+  }
+  if (!j) throw new Error("aucun modèle Gemini accepté (" + derniere + ")");
   const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts.map(p => p.text || "").join("");
   if (!txt) throw new Error("réponse vide");
   const o = JSON.parse(txt.replace(/^```json\s*|```\s*$/g, ""));
   const B = ["porteur", "plutôt porteur", "neutre", "mitigé", "plutôt prudent", "prudent"];
   const biais = B.includes(String(o.biais).toLowerCase()) ? String(o.biais).toLowerCase() : "neutre";
   const arr = (a, n, m) => (Array.isArray(a) ? a : []).map(x => clean(x, m)).filter(Boolean).slice(0, n);
-  const out = { ts: Date.now(), modele: MODEL, biais, titre: clean(o.titre, 140), resume: clean(o.resume, 900), points: arr(o.points, 6, 240), risques: arr(o.risques, 4, 160), n: titres.length };
+  const out = { ts: Date.now(), modele: MODEL_OK, biais, titre: clean(o.titre, 140), resume: clean(o.resume, 900), points: arr(o.points, 6, 240), risques: arr(o.risques, 4, 160), n: titres.length };
   if (!out.titre || !out.resume) throw new Error("réponse incomplète");
   await writeFile(OUT + "/data/briefing.json", JSON.stringify(out));
   await meta(true, titres.length, "");
