@@ -109,6 +109,19 @@ def _norm(r):
     return {str(k).lower().replace("_", ""): v for k, v in (r or {}).items()}
 
 
+def _date(v):
+    """Accepte 2026-11-12, 2026-11-12T00:00:00, 11/12/2026 ou 2026/11/12 ; renvoie AAAA-MM-JJ ou chaîne vide."""
+    import re
+    t = str(v or "").strip()
+    m = re.match(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", t)
+    if m:
+        return "%04d-%02d-%02d" % (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", t)
+    if m:
+        return "%04d-%02d-%02d" % (int(m.group(3)), int(m.group(1)), int(m.group(2)))
+    return ""
+
+
 def adjudications_treasurydirect(today):
     """TreasuryDirect : adjudications annoncées ou à venir (source officielle du Trésor)."""
     res, notes = [], []
@@ -122,13 +135,17 @@ def adjudications_treasurydirect(today):
         if isinstance(rows, dict):
             rows = rows.get("data") or rows.get("securities") or rows.get("results") or []
         rows = rows if isinstance(rows, list) else []
-        notes.append("td/%s: %d lignes%s" % (chemin, len(rows), (" clés " + ",".join(list(rows[0].keys())[:6])) if rows and isinstance(rows[0], dict) else ""))
+        ex = ""
+        if rows and isinstance(rows[0], dict):
+            n0 = _norm(rows[0])
+            ex = " ex " + "/".join(str(n0.get(k))[:19] for k in ("auctiondate", "securitytype", "securityterm", "announcementdate", "issuedate"))
+        notes.append("td/%s: %d lignes%s" % (chemin, len(rows), ex))
         for r in rows:
             if not isinstance(r, dict):
                 continue
             n = _norm(r)
-            d = str(n.get("auctiondate") or "")[:10]
-            if len(d) != 10 or d < today:
+            d = _date(n.get("auctiondate"))
+            if not d or d < today:
                 continue
             amt = num(n.get("offeringamount") or n.get("offeringamt") or n.get("offeringamountmillions"), 0)
             res.append({"d": d, "type": str(n.get("securitytype") or "").strip(), "term": str(n.get("securityterm") or "").strip(),
