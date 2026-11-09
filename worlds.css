@@ -1381,3 +1381,13 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .ctx-brief{margin:4px 0 8px;padding:10px 12px;border-radius:10px;background:var(--inset);border-left:3px solid var(--accent)}
 .ctx-brief b{font-size:15px}.ctx-brief p{margin:6px 0 0;font-size:13.5px;line-height:1.5}.ctx-brief ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;line-height:1.5}
 .ctx-brief .cb-r{color:var(--muted)}.ctx-brief .x-n{margin-top:8px}
+
+/* Dow / Russell (contrats YM, RTY) et sentiment des news */
+.dw-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 6px}
+.dw-c{padding:8px 10px;border-radius:10px;background:var(--inset)}
+.dw-h{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:4px;border-bottom:1px solid var(--line,rgba(255,255,255,.08));margin-bottom:2px}
+.dw-r{display:grid;grid-template-columns:minmax(0,1fr) auto 62px;gap:8px;padding:2px 0;font-size:12.5px}
+.dw-r span:first-child{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dw-r span:last-child{text-align:right}
+@media(max-width:640px){.dw-g{grid-template-columns:1fr}}
+.sn-b{display:flex;height:8px;border-radius:6px;overflow:hidden;background:var(--inset);margin:4px 0}
+.sn-b i{display:block;height:100%}.sn-b i.up{background:var(--up)}.sn-b i.down{background:var(--down)}.sn-b i.neu{background:var(--muted);opacity:.45}

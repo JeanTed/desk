@@ -26,7 +26,8 @@ from zoneinfo import ZoneInfo
 OUT = "site"
 SITE = os.environ.get("SITE_URL", "").rstrip("/")
 # clé du Desk -> (contrat Yahoo, perpétuel OKX de l'indice)
-CONTRATS = {"MNQ": ("MNQ=F", "US100-USDT-SWAP"), "MES": ("MES=F", "SPX-USDT-SWAP")}
+CONTRATS = {"MNQ": ("MNQ=F", "US100-USDT-SWAP"), "MES": ("MES=F", "SPX-USDT-SWAP"),
+             "YM": ("YM=F", None), "RTY": ("RTY=F", None)}  # YM (Dow) et RTY (Russell) : niveaux seuls, sans perpétuel OKX
 SESSIONS = [("TK", "Asia/Tokyo", (9, 0), (15, 0)), ("LD", "Europe/London", (8, 0), (16, 30)),
             ("NY", "America/New_York", (9, 30), (16, 0))]
 
@@ -122,7 +123,7 @@ def lire(yf, cle, sym, okx):
     out = {"sym": sym, "last": round(last, 2), "bar": int(bars[-1][0].timestamp() * 1000), "L": niveaux(bars, now)}
     # écart avec le perpétuel OKX au même moment (seulement si la bougie est récente)
     try:
-        if (now - bars[-1][0]).total_seconds() < 3600:
+        if okx and (now - bars[-1][0]).total_seconds() < 3600:
             j = get_json("https://www.okx.com/api/v5/market/ticker?instId=" + okx, 8)
             p = float(j["data"][0]["last"])
             if p > 0 and abs(last / p - 1) < 0.03:

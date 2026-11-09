@@ -50,6 +50,13 @@ jobs:
         run: python futpx.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      # Sentiment des news (Alpha Vantage, clé gratuite dans le secret ALPHAVANTAGE_KEY). Sans clé, rien ne change.
+      - name: Sentiment des news
+        continue-on-error: true
+        run: node sentiment.mjs
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          ALPHAVANTAGE_KEY: ${{ secrets.ALPHAVANTAGE_KEY }}
       # Lecture du jour (actualités + prix) écrite par Gemini. Sans le secret GEMINI_KEY, cette étape ne fait rien.
       - name: Lecture du jour
         continue-on-error: true

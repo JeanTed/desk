@@ -56,6 +56,8 @@ async function main() {
   const annonces = cal.filter(e => e && e.date && Date.parse(e.date) > now - 6 * 3600000 && Date.parse(e.date) < now + 30 * 3600000 && (e.impact === "High" || e.impact === "Medium"))
     .slice(0, 12).map(e => `- ${new Date(Date.parse(e.date)).toISOString().slice(5, 16).replace("T", " ")} UTC · ${clean(e.country, 4)} · ${clean(e.title, 80)}`);
   const snap = await snapshot();
+  const se = await local("sentiment.json", null);
+  const senti = se && se.ts && Date.now() - se.ts < 6 * 3600000 ? `Sentiment moyen des news financières (Alpha Vantage, de -1 très baissier à +1 très haussier) : ${se.score} (${se.label}) ; ${se.bull} haussières, ${se.neutral} neutres, ${se.bear} baissières sur ${se.n}.` : "";
   const corr = ((fy.corr && fy.corr.rows) || []).map(r => `- ${r.nom} : ${r.c30} sur 30 séances, ${r.c90 ?? "?"} sur 90`);
 
   const prompt = `Tu es l'analyste macro d'un trader de futures sur indices (MNQ, MES, Nasdaq 100, S&P 500). Date : ${jour}.
@@ -69,6 +71,9 @@ ${snap.join("\n") || "indisponibles"}
 
 CORRÉLATIONS MESURÉES :
 ${corr.join("\n") || "indisponibles"}
+
+SENTIMENT DES NEWS :
+${senti || "indisponible"}
 
 ANNONCES ÉCONOMIQUES (prochaines heures) :
 ${annonces.join("\n") || "aucune importante"}
