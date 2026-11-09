@@ -191,7 +191,7 @@ function applyIdentity(){
 CK.applyIdentity=applyIdentity;
 
 /* ---------------- Barre de prix ---------------- */
-var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"SPX",n:"S&P 500"},{k:"DJI",n:"Dow Jones"},{k:"RUT",n:"Russell 2000"},{k:"DXY",n:"Dollar"},{k:"US05Y",n:"Taux 5 ans"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"},{k:"BRENT",n:"Brent"}];
+var MACRO_STRIP=[{k:"NDX",n:"Nasdaq 100"},{k:"MNQ",n:"MNQ"},{k:"SPX",n:"S&P 500"},{k:"MES",n:"MES"},{k:"DJI",n:"Dow Jones"},{k:"RUT",n:"Russell 2000"},{k:"DXY",n:"Dollar"},{k:"US05Y",n:"Taux 5 ans"},{k:"US10Y",n:"Taux 10 ans"},{k:"VIX",n:"VIX"},{k:"GOLD",n:"Or"},{k:"BRENT",n:"Brent"}];
 function watch(){return [];}
 CK.watch=watch;
 function buildStrip(){
@@ -221,7 +221,7 @@ function paintMacroStrip(){
 }
 
 /* ---------------- Macro : scanner TradingView (en direct) ---------------- */
-var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD",DJI:"TVC:DJI",RUT:"TVC:RUT",BRENT:"TVC:UKOIL"};
+var TVS={DXY:"TVC:DXY",US10Y:"TVC:US10Y",US05Y:"TVC:US05Y",ZN:"CBOT:ZN1!",NDX:"NASDAQ:NDX",SPX:"SP:SPX",VIX:"TVC:VIX",GOLD:"TVC:GOLD",DJI:"TVC:DJI",RUT:"TVC:RUT",BRENT:"TVC:UKOIL",MNQ:"CME_MINI:MNQ1!",MES:"CME_MINI:MES1!"};
 CK.TVS=TVS;
 var TV_COLS=["close","change","SMA20","SMA50","SMA200","Perf.W","Perf.1M","High.3M","Low.3M","ADX"];
 function loadMacro(){
