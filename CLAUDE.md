@@ -38,6 +38,7 @@ Un petit robot GitHub (`robot.mjs`) publie toutes les 10 minutes ce que le navig
 | `net.js` | Espace « Connexions » : état en direct de chaque source (liste `SRC`). |
 | `veille.js` | **L'espace « Agent »** : affichage de la lecture du marché écrite par l'agent (`lectureHTML`, `actifCol`, `jauge`, `etat`), mise à jour en direct (`majLive`), lectures précédentes (`histo`), onglets Bilan (`viewBilan`) et Conso IA (`viewConso`), cartes BTC/ETH/SOL/dollar avec graphiques et niveaux (`card`, `cardUSD`, `niveaux`), indicateur TradingView (`PINE_AUTO`). |
 | `desk-news-worker.js` | **Le relais Cloudflare** (code de l'agent et des news Telegram). Il ne tourne pas dans le navigateur : il se déploie sur Cloudflare Workers (voir plus bas). Aucune clé dedans : elles sont des secrets Cloudflare. |
+| `options.py` | **Robot des options sur indices** (Python, sur GitHub, à la suite de `robot.mjs`) : lit les chaînes d'options Nasdaq 100 (`^NDX`) et S&P 500 (`^SPX`) sur Yahoo Finance avec la bibliothèque `yfinance`, calcule open interest, put/call, max pain et murs, publie `data/options.json`. Si Yahoo refuse, l'ancienne version est gardée. Affiché dans le bloc Options (`extra.js`, `loadOptionsIdx`). |
 | `niveaux-captain.pine` | L'indicateur TradingView « Niveaux Captain » (Pine v5), copié par le bouton « Indicateur TradingView » du Desk. |
 | `agent-manuel.md` | Ancien manuel de l'agent, **plus utilisé** (l'agent actuel a sa méthode dans le relais). Ne pas le modifier. |
 | `sound.js` | Ambiances sonores et sons d'interface. |
@@ -107,3 +108,4 @@ Le bouton « Studio » permet de choisir les espaces affichés sur l'accueil (`e
 
 Par défaut, `data` dans `config.js` pointe vers le robot de Captain Trading : l'agenda et les news fonctionnent tout de suite.
 Pour avoir ton propre robot : mets ce dossier sur ton GitHub, active GitHub Pages (Settings → Pages → Source : GitHub Actions), puis remplace `data` par `https://TON-PSEUDO.github.io/NOM-DU-DEPOT`. Le fichier `.github/workflows/desk.yml` fait tourner `robot.mjs` toutes les 10 minutes.
+Le même fichier lance ensuite `options.py` (options Nasdaq 100 et S&P 500, Yahoo Finance, usage personnel) ; si cette étape échoue, le Desk est publié quand même. Les options des indices ne s'affichent que si `data` pointe vers **ton** robot : le robot de Captain Trading n'a pas ce fichier.

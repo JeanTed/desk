@@ -1,6 +1,6 @@
 name: Robot du Desk
 
-# Toutes les 10 minutes : récupère l'agenda, les news crypto et FinancialJuice,
+# Toutes les 10 minutes : récupère l'agenda, les news crypto, FinancialJuice et les options NDX/SPX,
 # puis publie le Desk et ses données sur GitHub Pages.
 on:
   schedule:
@@ -31,6 +31,17 @@ jobs:
           node-version: 20
       - name: Récupérer les données
         run: node robot.mjs
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      # Options Nasdaq 100 / S&P 500 (Yahoo Finance). Si cette étape échoue, le Desk est publié quand même.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Options NDX et SPX
+        continue-on-error: true
+        run: |
+          pip install --quiet yfinance
+          python options.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       - uses: actions/configure-pages@v5

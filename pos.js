@@ -15,8 +15,12 @@
 var CK=window.CK,u=CK.u,S=CK.S;
 var BN="https://fapi.binance.com",BB="https://api.bybit.com",OKX="https://www.okx.com",BG="https://api.bitget.com",HL="https://api.hyperliquid.xyz/info",DB="https://www.deribit.com/api/v2/public",CB="https://api.exchange.coinbase.com";
 var EX=[["binance","Binance"],["bybit","Bybit"],["okx","OKX"],["bitget","Bitget"],["hl","Hyperliquid"]];
-S.pos=S.pos||{BTC:{ex:{}},ETH:{ex:{}}};
-var sym=CK.ls("posSym")||"BTC",lastUp=0;
+S.pos=S.pos||{};["BTC","ETH","NDX","SPX"].forEach(function(k){S.pos[k]=S.pos[k]||{ex:{}};});
+/* Indices actions : perpétuels OKX qui répliquent le Nasdaq 100 et le S&P 500 (mêmes instruments que les corrélations) */
+var IDX={NDX:{n:"NASDAQ 100",inst:"US100-USDT-SWAP",idx:"US100-USDT"},SPX:{n:"S&P 500",inst:"SPX-USDT-SWAP",idx:"SPX-USDT"}};
+var ASSETS=[["NDX","NASDAQ 100"],["SPX","S&P 500"],["BTC","BTC"],["ETH","ETH"]];
+var sym=CK.ls("posSym2")||"NDX",lastUp=0;
+if(!S.pos[sym])sym="NDX";
 function J(url,opt){return u.fetchJSON(url,opt,12000);}
 function q(p){return p.catch(function(){return null;});}
 
@@ -37,6 +41,26 @@ function loadFast(b){
     var of=S.fund&&S.fund[b];
     if(ok)P.ex.okx={oiC:+ok.oiCcy,oiU:+ok.oiUsd||+ok.oiCcy*mark,f8:of?of.r*100:null,next:of?of.next:null};
     if(bt){var bc=bo?+bo.size:+bt.holdingAmount;P.ex.bitget={oiC:bc,oiU:bc*(+bt.markPrice||mark),f8:+bt.fundingRate*100,next:null};}
+  });
+}
+function loadIdx(k){
+  var P=S.pos[k],d=IDX[k],i=d.inst;
+  return Promise.all([
+    q(J(OKX+"/api/v5/market/ticker?instId="+i)),
+    q(J(OKX+"/api/v5/public/mark-price?instType=SWAP&instId="+i)),
+    q(J(OKX+"/api/v5/public/open-interest?instType=SWAP&instId="+i)),
+    q(J(OKX+"/api/v5/public/funding-rate?instId="+i)),
+    q(J(OKX+"/api/v5/market/index-tickers?instId="+d.idx))
+  ]).then(function(a){
+    var g=function(r){return r&&r.data&&r.data[0];},tk=g(a[0]),mk=g(a[1]),oi=g(a[2]),fr=g(a[3]),ix=g(a[4]);
+    if(tk){P.last=+tk.last;P.open=+tk.open24h;}
+    var mark=mk?+mk.markPx:(tk?+tk.last:0);if(mark)P.mark=mark;
+    if(ix&&+ix.idxPx){P.index=+ix.idxPx;P.basis=mark?(mark/P.index-1)*100:null;}
+    if(oi||fr){var x=P.ex.okx||(P.ex.okx={oiC:0,oiU:0,f8:null,next:null});
+      if(oi){x.oiC=+oi.oiCcy;x.oiU=+oi.oiUsd||+oi.oiCcy*mark;}
+      if(fr){var iv=+fr.nextFundingTime-+fr.fundingTime,k8=iv>0?28800000/iv:1;x.f8=+fr.fundingRate*100*k8;x.next=+fr.nextFundingTime;}}
+    var o=P.ex.okx;P.tot=o&&o.oiU>0?o.oiU:0;P.nEx=P.tot>0?1:0;P.fw=o&&o.f8!=null&&isFinite(o.f8)?o.f8:null;
+    P.bad=!!(P.last&&P.last<500);
   });
 }
 function loadHL(){
@@ -85,7 +109,7 @@ function aggregate(){
   lastUp=Date.now();
 }
 function safe(p,n){return p.catch(function(e){if(window.console)console.warn("[pos] "+n,e);});}
-function all(){return Promise.all([safe(loadFast("BTC"),"BTC"),safe(loadFast("ETH"),"ETH"),safe(loadHL(),"HL")]).then(function(){aggregate();render();if(CK.computeFactors)CK.computeFactors();});}
+function all(){return Promise.all([safe(loadFast("BTC"),"BTC"),safe(loadFast("ETH"),"ETH"),safe(loadHL(),"HL"),safe(loadIdx("NDX"),"NDX"),safe(loadIdx("SPX"),"SPX")]).then(function(){aggregate();render();if(CK.computeFactors)CK.computeFactors();});}
 function slow(){return Promise.all([safe(loadHist("BTC"),"histBTC"),safe(loadHist("ETH"),"histETH"),safe(loadRatios("BTC"),"ratiosBTC"),safe(loadRatios("ETH"),"ratiosETH"),safe(loadOpt(),"options")]).then(function(){aggregate();render();if(CK.computeFactors)CK.computeFactors();});}
 
 /* ---------- Lecture ---------- */
@@ -106,12 +130,23 @@ function spark(arr,mid){if(!arr||arr.length<2)return "";var mn=Math.min.apply(nu
 
 /* ---------- Affichage ---------- */
 function tile(k,v,sub,read,extra){return '<div class="pz-t"><span class="pz-k">'+k+'</span><b class="pz-v">'+v+'</b>'+(sub?'<span class="pz-s">'+sub+'</span>':"")+(extra||"")+(read||"")+'</div>';}
+function idxTiles(P){
+  var has=P.tot>0,nxt=P.ex.okx&&P.ex.okx.next,dp=P.last&&P.open?(P.last/P.open-1)*100:null;
+  return [
+    tile("Prix du perpétuel",P.last?u.px(P.last):"—",dp!=null?'<span class="'+u.cls(dp)+'">'+sgn(dp,2)+' %</span> sur 24 h · OKX':"",""),
+    tile("Open interest",has?usd(P.tot):"—","OKX seul · positions ouvertes en $",""),
+    tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · OKX":"",readFund(P.fw)),
+    tile("Prochain funding",'<span id="pzCd">'+(nxt?u.clock(nxt-Date.now()):"—")+'</span>',"OKX",""),
+    tile("Basis du perpétuel",P.basis!=null?'<span class="'+u.cls(P.basis)+'">'+sgn(P.basis,3)+' %</span>':"—","mark "+(P.mark?u.px(P.mark):"—")+" / index "+(P.index?u.px(P.index):"—"),readBasis(P.basis))
+  ].join("");
+}
 function render(){
   var host=u.$("deriv");if(!host)return;cbCalc(sym);var P=S.pos[sym]||{ex:{}},has=P.tot>0;
   var nxt=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!nxt||x.next<nxt))nxt=x.next;});
-  var head='<div class="pz-h"><div class="seg" role="group" aria-label="Actif">'+["BTC","ETH"].map(function(b){return '<button type="button" data-pz="'+b+'" aria-pressed="'+(b===sym)+'">'+b+'</button>';}).join("")+'</div>'+
-    '<span class="pz-meta">'+(P.nEx||0)+' plateformes · '+(lastUp?"mis à jour "+u.ago(lastUp):"chargement…")+'</span></div>';
-  var t=[
+  var isI=!!IDX[sym],EXL=isI?[["okx","OKX"]]:EX;
+  var head='<div class="pz-h"><div class="seg" role="group" aria-label="Actif">'+ASSETS.map(function(a){var b=a[0];return '<button type="button" data-pz="'+b+'" aria-pressed="'+(b===sym)+'">'+a[1]+'</button>';}).join("")+'</div>'+
+    '<span class="pz-meta">'+(isI?'OKX · perpétuel '+IDX[sym].n:(P.nEx||0)+' plateformes')+' · '+(lastUp?"mis à jour "+u.ago(lastUp):"chargement…")+'</span></div>';
+  var t=isI?idxTiles(P):[
     tile("Open interest total",has?usd(P.tot):"—",P.oi1h!=null?'<span class="'+u.cls(P.oi1h)+'">'+sgn(P.oi1h,2)+' %</span> 1 h · <span class="'+u.cls(P.oi24)+'">'+sgn(P.oi24,2)+' %</span> 24 h'+(P.oi7!=null?' · <span class="'+u.cls(P.oi7)+'">'+sgn(P.oi7,1)+' %</span> 7 j':""):"variation en cours de calcul",readOI(P),spark(P.oiH)),
     tile("Funding moyen · 8 h",P.fw!=null?'<span class="'+u.cls(P.fw)+'">'+nf(P.fw,4)+' %</span>':"—",P.fw!=null?nf(P.fw*3*365,1)+" % par an · pondéré par l'OI":"",readFund(P.fw)),
     tile("Prochain funding",'<span id="pzCd">'+(nxt?u.clock(nxt-Date.now()):"—")+'</span>',"Binance · Bybit · OKX",""),
@@ -121,20 +156,20 @@ function render(){
     tile("Prime Coinbase",P.cb!=null?'<span class="'+u.cls(P.cb)+'">'+sgn(P.cb,3)+' %</span>':"—","Coinbase "+sym+"-USD vs OKX "+sym+"-USDT",readCB(P.cb)),
     tile("Volatilité implicite (DVOL)",P.dvol!=null?nf(P.dvol,1):"—",(P.dvol24!=null?"24 h : "+nf(P.dvol24,1):"")+(P.pcr!=null?" · put/call "+nf(P.pcr,2):"")+" · Deribit",readVol(P.dvol))
   ].join("");
-  var mx=0;EX.forEach(function(e){var x=P.ex[e[0]];if(x&&x.oiU>mx)mx=x.oiU;});
-  var rows=EX.map(function(e){var x=P.ex[e[0]];if(!x)return '<tr class="off"><td>'+e[1]+'</td><td colspan="4">indisponible pour le moment</td></tr>';
+  var mx=0;EXL.forEach(function(e){var x=P.ex[e[0]];if(x&&x.oiU>mx)mx=x.oiU;});
+  var rows=EXL.map(function(e){var x=P.ex[e[0]];if(!x)return '<tr class="off"><td>'+e[1]+'</td><td colspan="4">indisponible pour le moment</td></tr>';
     var share=P.tot?x.oiU/P.tot*100:0;
     return '<tr><td><b>'+e[1]+'</b></td><td class="r mono">'+usd(x.oiU)+'</td><td class="pz-bar"><i style="width:'+(x.oiU/mx*100).toFixed(1)+'%"></i><span class="mono">'+nf(share,1)+' %</span></td>'+
       '<td class="r mono '+(x.f8!=null?u.cls(x.f8):"")+'">'+(x.f8!=null?nf(x.f8,4)+" %":"—")+'</td><td class="r mono">'+(x.f8!=null?nf(x.f8*3*365,1)+" %":"—")+'</td></tr>';}).join("");
   var html=head+'<div class="pz-g">'+t+'</div><div class="pz-tw"><table class="pz-tb"><thead><tr><th>Plateforme</th><th class="r">Open interest</th><th>Part</th><th class="r">Funding 8 h</th><th class="r">Par an</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<p class="pz-n">Funding Hyperliquid ramené de l\'heure à 8 h. Ratios et flux taker : Binance (et Bybit pour les comptes). Prime Coinbase calculée en dollars contre l\'USDT d\'OKX.</p>';
+    (isI?'<p class="pz-n">Indice suivi via le perpétuel OKX '+IDX[sym].inst+' (cote en continu, en dollars). Seules les données disponibles sans clé sont affichées : pas de ratio long/short, de flux taker ni d\'options pour les indices. Funding ramené à 8 h.'+(P.bad?' <b>Attention : le prix reçu ne ressemble pas à un indice, vérifier l\'instrument.</b>':'')+'</p>':'<p class="pz-n">Funding Hyperliquid ramené de l\'heure à 8 h. Ratios et flux taker : Binance (et Bybit pour les comptes). Prime Coinbase calculée en dollars contre l\'USDT d\'OKX.</p>');
   if(host._h!==html){host.innerHTML=html;host._h=html;}
 }
 function tick(){var el=u.$("pzCd");if(!el)return;var P=S.pos[sym]||{ex:{}},n=null;["binance","bybit","okx"].forEach(function(e){var x=P.ex[e];if(x&&x.next&&(!n||x.next<n))n=x.next;});if(n)el.textContent=u.clock(n-Date.now());}
 
 CK.pos={
   boot:function(){
-    var host=u.$("deriv");if(host){host.classList.add("pz");host.addEventListener("click",function(e){var b=e.target.closest("[data-pz]");if(!b)return;sym=b.getAttribute("data-pz");CK.ls("posSym",sym);host._h=null;render();});}
+    var host=u.$("deriv");if(host){host.classList.add("pz");host.addEventListener("click",function(e){var b=e.target.closest("[data-pz]");if(!b)return;sym=b.getAttribute("data-pz");CK.ls("posSym2",sym);host._h=null;render();});}
     var h2=document.querySelector('.mod[data-mod="deriv"] .mhd h2');if(h2)h2.textContent="Dérivés & positionnement";
     var meta=document.querySelector('.mod[data-mod="deriv"] .mhd .meta');if(meta)meta.textContent="Binance · Bybit · OKX · Bitget · Hyperliquid";
     render();all().then(slow);
