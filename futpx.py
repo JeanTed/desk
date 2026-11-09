@@ -133,6 +133,43 @@ def lire(yf, cle, sym, okx):
     return out
 
 
+# Corrélations : séries quotidiennes (Yahoo). Clé -> (symbole, "ret" rendement en % ou "diff" variation en points)
+SERIES = {"NQ": ("NQ=F", "ret"), "ES": ("ES=F", "ret"), "BRENT": ("BZ=F", "ret"), "OR": ("GC=F", "ret"),
+          "USD": ("DX-Y.NYB", "ret"), "T10": ("^TNX", "diff"), "VIX": ("^VIX", "ret")}
+PAIRES = [("BRENT", "NQ", "Pétrole / Nasdaq", "négative"), ("BRENT", "OR", "Pétrole / Or", "faible"),
+          ("NQ", "OR", "Nasdaq / Or", "variable"), ("NQ", "USD", "Nasdaq / Dollar", "négative"),
+          ("NQ", "T10", "Nasdaq / Taux 10 ans", "négative"), ("NQ", "VIX", "Nasdaq / VIX", "négative")]
+
+
+def correlations(yf):
+    import pandas as pd
+    cols = {}
+    for cle, (sym, mode) in SERIES.items():
+        h = yf.Ticker(sym).history(period="8mo", interval="1d")
+        if h is None or len(h) < 60:
+            continue
+        c = h["Close"].copy()
+        c.index = [i.date() for i in c.index]
+        c = c[~c.index.duplicated(keep="last")]
+        cols[cle] = c.pct_change() * 100 if mode == "ret" else c.diff()
+        time.sleep(0.8)
+    df = pd.DataFrame(cols).dropna(how="all")
+    out = []
+    for a, b, nom, attendu in PAIRES:
+        if a not in df or b not in df:
+            continue
+        d = df[[a, b]].dropna()
+        if len(d) < 30:
+            continue
+        c30 = d.tail(30).corr().iloc[0, 1]
+        c90 = d.tail(90).corr().iloc[0, 1] if len(d) >= 60 else None
+        out.append({"nom": nom, "attendu": attendu, "c30": round(float(c30), 2),
+                    "c90": None if c90 is None or c90 != c90 else round(float(c90), 2), "n": int(min(len(d), 90))})
+    if not out:
+        raise RuntimeError("aucune paire calculable")
+    return out
+
+
 def main():
     os.makedirs(f"{OUT}/data", exist_ok=True)
     prev = previous("futpx.json") or {}
@@ -156,6 +193,20 @@ def main():
             etat[cle] = (False, 0, e)
             print(f"{cle} ({sym}) : ERREUR {type(e).__name__}: {str(e)[:160]}")
         time.sleep(1.0)
+    # corrélations : recalculées au plus toutes les 6 h (séries quotidiennes), sinon on garde les précédentes
+    old = prev.get("corr") or {}
+    if old.get("rows") and now - old.get("ts", 0) < 6 * 3600000:
+        result["corr"] = old
+    else:
+        try:
+            result["corr"] = {"ts": now, "rows": correlations(yf)}
+            etat["CORR"] = (True, len(result["corr"]["rows"]), None)
+            print("corrélations :", len(result["corr"]["rows"]), "paires")
+        except Exception as e:
+            etat["CORR"] = (False, 0, e)
+            print("corrélations : ERREUR", type(e).__name__, str(e)[:160])
+            if old:
+                result["corr"] = old
     if any(ok for ok, _, _ in etat.values()):
         result["ts"] = now
     else:

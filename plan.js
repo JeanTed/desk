@@ -151,6 +151,21 @@ function lecture(){
   var bias=sc<=-2?["dn","prudent"]:sc>=2?["up","porteur"]:sc<0?["warn","plutôt prudent"]:sc>0?["up","plutôt porteur"]:["neu","neutre"];
   return {L:L,bias:bias,sc:sc,n:n};
 }
+function corrHTML(){
+  var c=FT.y&&FT.y.corr&&FT.y.corr.rows;if(!c||!c.length)return '';
+  function cell(v){return v==null?'—':'<span class="mono '+(v>=.3?'up':v<=-.3?'down':'')+'">'+(v>0?'+':v<0?'−':'')+nf(Math.abs(v),2)+'</span>';}
+  return '<div class="ctx-h"><span class="x-k">Corrélations mesurées (rendements quotidiens)</span></div><div class="ctx-cor"><div class="cc-h"><span>Paire</span><span>30 séances</span><span>90 séances</span><span>Attendue</span></div>'+
+    c.map(function(r){return '<div class="cc-r"><span>'+esc(r.nom)+'</span>'+cell(r.c30)+cell(r.c90)+'<span class="cc-a">'+esc(r.attendu)+'</span></div>';}).join("")+'</div><p class="x-n">Corrélation de +1 : les deux bougent ensemble ; −1 : en sens inverse ; autour de 0 : pas de lien. Yahoo Finance (futures NQ, Brent, or ; dollar, taux et VIX), calculée par le robot.</p>';
+}
+function briefHTML(){
+  var b=FT.brief;if(!b||!b.titre||!b.ts||Date.now()-b.ts>8*3600000)return '';
+  var cl={"porteur":"up","plutôt porteur":"up","prudent":"dn","plutôt prudent":"warn","neutre":"neu","mitigé":"warn"}[String(b.biais||"").toLowerCase()]||"neu";
+  return '<div class="ctx-h"><span class="x-k">Lecture du jour · actualités et monde</span><span class="ctx-bias '+cl+'">Biais : '+esc(b.biais||"—")+'</span></div>'+
+    '<div class="ctx-brief"><b>'+esc(b.titre)+'</b><p>'+esc(b.resume||"")+'</p>'+
+    ((b.points||[]).length?'<ul>'+b.points.slice(0,6).map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul>':'')+
+    ((b.risques||[]).length?'<p class="cb-r"><span class="x-k">À surveiller</span> '+b.risques.slice(0,4).map(esc).join(" · ")+'</p>':'')+
+    '<p class="x-n">Rédigé par une IA à partir des titres des dernières heures (Bloomberg, Investing, Maison Blanche, Fed, FinancialJuice…) et des prix du jour, mis à jour à '+hm(b.ts)+' (Paris). Une interprétation des nouvelles, pas une prévision ni un conseil : elle peut se tromper.</p></div>';
+}
 function renderCtx(){
   var host=u.$("ctx");if(!host)return;
   var sg=seg();if(!CX.ts){host.innerHTML=sg+'<div class="empty">Chargement du contexte…</div>';return;}
@@ -161,8 +176,8 @@ function renderCtx(){
   var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
   var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div><div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+
-    (function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
-    '<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
+    briefHTML()+(function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
+    corrHTML()+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
@@ -172,7 +187,7 @@ CK.plan={boot:function(){
   render();renderCtx();
   function lv(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadLevels(k);});}
   function op(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadOptions(k);});}
-  lv();op();BASES.forEach(loadPrev);FT.load(render);setInterval(function(){FT.load(function(){render();if(CK.xApi&&CK.xApi.renderAll)CK.xApi.renderAll();});},180000);
+  lv();op();BASES.forEach(loadPrev);FT.load(function(){render();renderCtx();});setInterval(function(){FT.load(function(){render();renderCtx();if(CK.xApi&&CK.xApi.renderAll)CK.xApi.renderAll();});},180000);
   setInterval(lv,120000);setInterval(op,600000);setInterval(function(){BASES.forEach(loadPrev);},600000);
   setInterval(function(){if(!document.hidden)loadPx(PL.sym);},10000);
   loadCtx();setInterval(loadCtx,60000);

@@ -2204,6 +2204,15 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .ctx-lec li.up{border-left-color:var(--up)}.ctx-lec li.dn{border-left-color:var(--down)}.ctx-lec li.warn{border-left-color:var(--warn)}
 .ctx-bias{font:600 11.5px var(--font);letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--inset);color:var(--muted)}
 .ctx-bias.up{color:var(--up)}.ctx-bias.dn{color:var(--down)}.ctx-bias.warn{color:var(--warn)}
+
+/* Corrélations mesurées et lecture IA */
+.ctx-cor{display:grid;gap:2px;margin:4px 0 6px}
+.cc-h,.cc-r{display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 1fr 1fr;gap:8px;padding:6px 8px;align-items:center;font-size:13.5px}
+.cc-h{font:600 10.5px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cc-r{border-top:1px solid var(--line)}.cc-r .mono,.cc-h span:nth-child(n+2){text-align:right}.cc-a{text-align:right;color:var(--muted);font-size:12.5px}
+.ctx-brief{margin:4px 0 8px;padding:10px 12px;border-radius:10px;background:var(--inset);border-left:3px solid var(--accent)}
+.ctx-brief b{font-size:15px}.ctx-brief p{margin:6px 0 0;font-size:13.5px;line-height:1.5}.ctx-brief ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;line-height:1.5}
+.ctx-brief .cb-r{color:var(--muted)}.ctx-brief .x-n{margin-top:8px}
 </style>
 <script>
 /* ================================================================
@@ -2232,7 +2241,8 @@ CK.fut=(function(){
   F.fresh=function(s){var d=F.y&&F.y.fut&&F.y.fut[s];return d&&d.ts&&Date.now()-d.ts<2700000?d:null;};
   F.levels=function(s){var d=F.fresh(s);return d&&d.L&&d.L.length?d.L:null;};
   F.load=function(cb){var url=CK.relay&&CK.relay("/futpx");if(!url)return;
-    CK.u.fetchJSON(url+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.fut){F.y=j;if(cb)cb();}}).catch(function(){});};
+    CK.u.fetchJSON(url+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.fut){F.y=j;if(cb)cb();}}).catch(function(){});
+    var ub=CK.relay&&CK.relay("/briefing");if(ub)CK.u.fetchJSON(ub+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){if(j&&j.titre){F.brief=j;if(cb)cb();}}).catch(function(){});};
   /* séance des actions américaines ouverte (lun.–ven., 9 h 30–16 h New York) : seul moment où l'indice cash est comparable au future */
   F.cash=function(){var p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).forEach(function(x){p[x.type]=x.value;});
     var m=(+p.hour)*60+(+p.minute);return p.weekday!=="Sat"&&p.weekday!=="Sun"&&m>=575&&m<955;};
@@ -2319,7 +2329,7 @@ function fetchText(url,ms,noStore){var ctl=typeof AbortController!=="undefined"?
   return fetch(url,op).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(x){netOk(url,t0);return x;},function(e){netErr(url,e);throw e;}).finally(function(){clearTimeout(tm);});}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 /* Données du robot GitHub (agenda, news crypto, FinancialJuice) : C.data = adresse du site, ex. https://pseudo.github.io/desk */
-var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json"};
+var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json","/briefing":"/data/briefing.json"};
 function relay(path){if(C.data)return String(C.data).replace(/\/$/,"")+(DATA_FILE[path]||path);return C.relay?String(C.relay).replace(/\/$/,"")+path:null;}
 CK.relay=relay;
 function raf2(fn){requestAnimationFrame(function(){requestAnimationFrame(fn);});}
@@ -3724,6 +3734,21 @@ function lecture(){
   var bias=sc<=-2?["dn","prudent"]:sc>=2?["up","porteur"]:sc<0?["warn","plutôt prudent"]:sc>0?["up","plutôt porteur"]:["neu","neutre"];
   return {L:L,bias:bias,sc:sc,n:n};
 }
+function corrHTML(){
+  var c=FT.y&&FT.y.corr&&FT.y.corr.rows;if(!c||!c.length)return '';
+  function cell(v){return v==null?'—':'<span class="mono '+(v>=.3?'up':v<=-.3?'down':'')+'">'+(v>0?'+':v<0?'−':'')+nf(Math.abs(v),2)+'</span>';}
+  return '<div class="ctx-h"><span class="x-k">Corrélations mesurées (rendements quotidiens)</span></div><div class="ctx-cor"><div class="cc-h"><span>Paire</span><span>30 séances</span><span>90 séances</span><span>Attendue</span></div>'+
+    c.map(function(r){return '<div class="cc-r"><span>'+esc(r.nom)+'</span>'+cell(r.c30)+cell(r.c90)+'<span class="cc-a">'+esc(r.attendu)+'</span></div>';}).join("")+'</div><p class="x-n">Corrélation de +1 : les deux bougent ensemble ; −1 : en sens inverse ; autour de 0 : pas de lien. Yahoo Finance (futures NQ, Brent, or ; dollar, taux et VIX), calculée par le robot.</p>';
+}
+function briefHTML(){
+  var b=FT.brief;if(!b||!b.titre||!b.ts||Date.now()-b.ts>8*3600000)return '';
+  var cl={"porteur":"up","plutôt porteur":"up","prudent":"dn","plutôt prudent":"warn","neutre":"neu","mitigé":"warn"}[String(b.biais||"").toLowerCase()]||"neu";
+  return '<div class="ctx-h"><span class="x-k">Lecture du jour · actualités et monde</span><span class="ctx-bias '+cl+'">Biais : '+esc(b.biais||"—")+'</span></div>'+
+    '<div class="ctx-brief"><b>'+esc(b.titre)+'</b><p>'+esc(b.resume||"")+'</p>'+
+    ((b.points||[]).length?'<ul>'+b.points.slice(0,6).map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul>':'')+
+    ((b.risques||[]).length?'<p class="cb-r"><span class="x-k">À surveiller</span> '+b.risques.slice(0,4).map(esc).join(" · ")+'</p>':'')+
+    '<p class="x-n">Rédigé par une IA à partir des titres des dernières heures (Bloomberg, Investing, Maison Blanche, Fed, FinancialJuice…) et des prix du jour, mis à jour à '+hm(b.ts)+' (Paris). Une interprétation des nouvelles, pas une prévision ni un conseil : elle peut se tromper.</p></div>';
+}
 function renderCtx(){
   var host=u.$("ctx");if(!host)return;
   var sg=seg();if(!CX.ts){host.innerHTML=sg+'<div class="empty">Chargement du contexte…</div>';return;}
@@ -3734,8 +3759,8 @@ function renderCtx(){
   var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
   var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div><div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+
-    (function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
-    '<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
+    briefHTML()+(function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
+    corrHTML()+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
@@ -3745,7 +3770,7 @@ CK.plan={boot:function(){
   render();renderCtx();
   function lv(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadLevels(k);});}
   function op(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadOptions(k);});}
-  lv();op();BASES.forEach(loadPrev);FT.load(render);setInterval(function(){FT.load(function(){render();if(CK.xApi&&CK.xApi.renderAll)CK.xApi.renderAll();});},180000);
+  lv();op();BASES.forEach(loadPrev);FT.load(function(){render();renderCtx();});setInterval(function(){FT.load(function(){render();renderCtx();if(CK.xApi&&CK.xApi.renderAll)CK.xApi.renderAll();});},180000);
   setInterval(lv,120000);setInterval(op,600000);setInterval(function(){BASES.forEach(loadPrev);},600000);
   setInterval(function(){if(!document.hidden)loadPx(PL.sym);},10000);
   loadCtx();setInterval(loadCtx,60000);
