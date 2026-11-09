@@ -132,7 +132,13 @@ def lire_adjudications():
     longs.sort(key=lambda x: x["d"])
     if not longs:
         types = sorted({x["type"] for x in res})[:5]
-        raise RuntimeError("aucun titre long à venir (%s ; à venir : %d ; types : %s)" % (", ".join(notes), len(res), "/".join(types)))
+        ex = ""
+        try:
+            r0 = rows[0]
+            ex = " | clés : " + ",".join(list(r0.keys())[:8]) + " | ex : " + str(r0.get("auction_date")) + "/" + str(r0.get("security_type")) + "/" + str(r0.get("security_term"))
+        except Exception:
+            pass
+        raise RuntimeError("aucun titre long à venir (à venir : %d ; types : %s)%s" % (len(res), "/".join(types), ex))
     return {"rows": longs[:8]}
 
 
@@ -221,7 +227,7 @@ def main():
             etat[cle] = (True, len(d.get("rows") or d.get("comp") or [1]), "")
             print(cle, ": OK")
         except Exception as e:
-            etat[cle] = (False, 0, "%s: %s" % (type(e).__name__, str(e)[:120]))
+            etat[cle] = (False, 0, "%s: %s" % (type(e).__name__, str(e)[:320]))
             print(cle, ": ERREUR", etat[cle][2])
     with open(OUT + "/data/marche.json", "w", encoding="utf-8") as f:
         json.dump(res, f, separators=(",", ":"), ensure_ascii=False)
