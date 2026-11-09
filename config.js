@@ -22,5 +22,5 @@ window.COCKPIT_CONFIG = {
   screenerPreset: "compression", // préréglage du screener au lancement
   screenerMax: 150,              // nombre de coins analysés (les plus liquides d'OKX)
   newsLang: "fr",                // "fr" = headlines traduites, "vo" = version originale
-  data: "https://captaincryptotrading21.github.io/desk"                       // adresse du site GitHub du Desk (robot : agenda, news crypto, FinancialJuice)
+  data: "https://jeanted.github.io/desk"                       // adresse du site GitHub du Desk (robot : agenda, news crypto, FinancialJuice)
 };
