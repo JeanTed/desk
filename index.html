@@ -2295,6 +2295,19 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .cv-g{display:flex;gap:10px;align-items:flex-end;margin:6px 0;padding:10px 12px;border-radius:10px;background:var(--inset)}
 .cv-c{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end}
 .cv-c i{display:block;width:100%;max-width:90px;border-radius:6px 6px 2px 2px;background:var(--accent);opacity:.85}.cv-c b{font-size:16px}.cv-c span{font-size:13px;color:var(--muted)}
+
+/* News : une couleur par source */
+.nr-l{--s-bl:#B07CFF;--s-iv:#FF8A3D;--s-mb:#FF6B6B;--s-fe:#4CD28A;--s-cn:#4DA3FF;--s-mw:#2EC4B6;--s-fj:#F7B955;--s-tr:#8A94A6;--s-te:#F06292}
+.ns-leg{--s-bl:#B07CFF;--s-iv:#FF8A3D;--s-mb:#FF6B6B;--s-fe:#4CD28A;--s-cn:#4DA3FF;--s-mw:#2EC4B6;--s-fj:#F7B955;--s-tr:#8A94A6;--s-te:#F06292;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+:root[data-theme="light"] .nr-l,:root[data-theme="light"] .ns-leg{--s-bl:#7C4DCC;--s-iv:#C2531A;--s-mb:#C2453B;--s-fe:#1B8A55;--s-cn:#1F6FC9;--s-mw:#14897D;--s-fj:#A8700F;--s-tr:#5B6574;--s-te:#C2185B}
+.nr.s-bl:not(.br){--c:var(--s-bl)}.nr.s-iv:not(.br){--c:var(--s-iv)}.nr.s-mb:not(.br){--c:var(--s-mb)}.nr.s-fe:not(.br){--c:var(--s-fe)}.nr.s-cn:not(.br){--c:var(--s-cn)}
+.nr.s-mw:not(.br){--c:var(--s-mw)}.nr.s-fj:not(.br){--c:var(--s-fj)}.nr.s-tr:not(.br){--c:var(--s-tr)}.nr.s-te:not(.br){--c:var(--s-te)}
+.nr:not(.tw){border-left:4px solid var(--c)}
+.nr .nr-src{color:var(--c);font-weight:700;font-size:13.5px}
+.ns-chip{font:600 12px var(--font);padding:3px 10px;border-radius:999px;--c:var(--muted)}
+.ns-chip.s-bl{--c:var(--s-bl)}.ns-chip.s-iv{--c:var(--s-iv)}.ns-chip.s-mb{--c:var(--s-mb)}.ns-chip.s-fe{--c:var(--s-fe)}.ns-chip.s-cn{--c:var(--s-cn)}
+.ns-chip.s-mw{--c:var(--s-mw)}.ns-chip.s-fj{--c:var(--s-fj)}.ns-chip.s-tr{--c:var(--s-tr)}.ns-chip.s-te{--c:var(--s-te)}
+.ns-chip{color:var(--c);background:color-mix(in oklab,var(--c) 14%,transparent);border:1px solid color-mix(in oklab,var(--c) 40%,transparent)}
 </style>
 <script>
 /* ================================================================
@@ -2748,8 +2761,13 @@ function newsTout(){var seen={},L=[];
   return L.filter(function(x){if(!x||!x.title||!x.ts)return false;var k=x.title.slice(0,60).toLowerCase().replace(/[^a-z0-9]/g,"");if(seen[k])return false;seen[k]=1;return true;}).sort(function(a,b){return b.ts-a.ts;}).slice(0,70);}
 function initiales(n){var p=String(n||"?").replace(/[^A-Za-zÀ-ÿ0-9 ]/g,"").trim().split(/\s+/);return ((p[0]||"?")[0]+((p[1]||"")[0]||"")).toUpperCase();}
 function chrono(ts){var s=Math.max(0,Math.round((Date.now()-ts)/1000));return s<60?s+" s":s<3600?Math.floor(s/60)+" min":s<86400?Math.floor(s/3600)+" h":Math.floor(s/86400)+" j";}
+/* Couleur par source (hors tweets) : le nom avant « · » donne la clé (Bloomberg · Marchés → Bloomberg) */
+var NSRC=[[/^bloomberg/i,"bl","Bloomberg"],[/^investing/i,"iv","Investing.com"],[/^maison blanche/i,"mb","Maison Blanche"],[/^r[ée]serve f[ée]d[ée]rale/i,"fe","Réserve fédérale"],
+  [/^cnbc/i,"cn","CNBC"],[/^marketwatch/i,"mw","MarketWatch"],[/^financialjuice/i,"fj","FinancialJuice"],[/^tree/i,"tr","Tree News"],[/^trading economics/i,"te","Trading Economics"]];
+function nsrc(src){var t=String(src||"");for(var i=0;i<NSRC.length;i++){if(NSRC[i][0].test(t))return NSRC[i];}return null;}
 function newsRich(host,L,lang){
   var premier=!NSEEN;NSEEN=NSEEN||{};var n=0;
+  var usedSrc={};
   var html=L.map(function(x){
     var id=x.link+"|"+x.ts,neuf=!premier&&!NSEEN[id];NSEEN[id]=1;
     var t=(lang==="fr"&&x.lang!=="fr"&&TR[x.title])?TR[x.title]:x.title;t=t.replace(/^(RUPTURE|DERNI[ÈE]RE MINUTE|DERNI[ÈE]RES? (HEURE|NOUVELLES?)|FLASH INFO|URGENT)\s*:/i,"BREAKING :");var br=/^[^A-Za-z]*(BREAKING|JUST IN|URGENT|FLASH)(?![A-Za-z])/i.test(x.title),C=NCAT[x.kind]||NCAT.tree;
@@ -2761,10 +2779,12 @@ function newsRich(host,L,lang){
         '<span class="nr-av">'+av+'</span><div class="nr-b"><div class="nr-who"><b>'+esc(x.src)+'</b>'+(x.via==="tg"?'<em class="nr-tgb">Telegram</em>':'<span>@'+esc(x.h)+'</span>')+(x.vip?'<em class="nr-vip">VIP</em>':'')+(x.truth?'<em class="nr-truth">Truth Social</em>':'')+(!x.gros?'<em class="nr-proj">Projet</em>':'')+'<i class="nr-t" data-ts="'+x.ts+'">'+chrono(x.ts)+'</i>'+(x.truth||x.via==="tg"?'':'<svg class="nr-x" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8 8 10.2h-6.3l-4.9-6.4-5.6 6.4H2.2l7.3-8.3L1.8 3h6.4l4.4 5.9L17.8 3Zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5Z"/></svg>')+'</div>'+
         '<p class="nr-tx">'+esc(t)+'</p>'+sy+'</div>'+(x.img?'<span class="nr-img"><img src="'+esc(x.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer"></span>':'')+'</a>';
     }
-    return '<a class="nr '+C[1]+(neuf?" in":"")+(br?" br":"")+'"'+anim+' href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer"><div class="nr-who"><em class="nr-cat">'+(br?"Breaking":C[0])+'</em><span>'+esc(x.src||"")+'</span><i class="nr-t" data-ts="'+x.ts+'">'+chrono(x.ts)+'</i></div><p class="nr-tx">'+esc(t)+'</p>'+sy+'</a>';
+    var ns=nsrc(x.src);if(ns)usedSrc[ns[1]]=ns[2];
+    return '<a class="nr '+C[1]+(ns?" s-"+ns[1]:"")+(neuf?" in":"")+(br?" br":"")+'"'+anim+' href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer"><div class="nr-who"><em class="nr-cat">'+(br?"Breaking":C[0])+'</em><span class="nr-src">'+esc(x.src||"")+'</span><i class="nr-t" data-ts="'+x.ts+'">'+chrono(x.ts)+'</i></div><p class="nr-tx">'+esc(t)+'</p>'+sy+'</a>';
   }).join("");
   var fx=S.newsTab==="x"?'<div class="nr-f" role="group" aria-label="Filtrer les tweets">'+[["tous","Tous"],["macro","Macro"],["news","News"],["trump","Trump"]].map(function(z){return '<button type="button" data-xf="'+z[0]+'" aria-pressed="'+((S.xFiltre||"tous")===z[0])+'">'+z[1]+'</button>';}).join("")+'</div>':'';
-  host.innerHTML=fx+'<div class="nr-l">'+(html||'<p class="nr-vide">Aucun tweet pour ce filtre dans les dernières heures.</p>')+'</div>';
+  var lg=Object.keys(usedSrc).map(function(k){return '<span class="ns-chip s-'+k+'">'+esc(usedSrc[k])+'</span>';}).join("");
+  host.innerHTML=fx+(lg?'<div class="ns-leg">'+lg+'</div>':'')+'<div class="nr-l">'+(html||'<p class="nr-vide">Aucun tweet pour ce filtre dans les dernières heures.</p>')+'</div>';
 }
 /* Les « il y a » des cartes avancent tout seuls */
 setInterval(function(){document.querySelectorAll(".nr-t[data-ts]").forEach(function(e){e.textContent=chrono(+e.getAttribute("data-ts"));});},10000);
