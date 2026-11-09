@@ -210,8 +210,8 @@ function aucHTML(){
   var TY={Note:"Obligation (Note)",Bond:"Obligation longue (Bond)",TIPS:"Obligation indexée (TIPS)",FRN:"Taux variable (FRN)"};
   return '<div class="ctx-h"><span class="x-k">Prochaines adjudications du Trésor américain</span></div><div class="rs-g">'+L.map(function(x){
     var d=new Date(x.t).toLocaleDateString("fr-FR",{timeZone:"UTC",weekday:"short",day:"numeric",month:"short"}),r=x.r,w=x.j<=1?" rs-w":"";
-    return '<div class="rs-r'+w+'"><b>'+esc(r.term)+'</b><span>'+esc(TY[r.type]||r.type)+(r.re?" · réouverture":"")+'</span><span>'+esc(d)+(x.j===0?" · aujourd\'hui":x.j===1?" · demain":"")+'</span><span class="mono rs-e">'+(r.amt!=null?nf(r.amt,1)+" Md$":"")+'</span></div>';}).join("")+'</div>'+
-    '<p class="x-n">Source : Trésor américain (fiscaldata.treasury.gov). Une adjudication faible (demande insuffisante) fait monter les taux longs, ce qui pèse sur le Nasdaq. Les bons à court terme sont écartés.</p>';
+    return '<div class="rs-r'+w+'"><b>'+esc(r.term)+'</b><span>'+esc(TY[r.type]||r.type)+(r.re?" · réouverture":"")+'</span><span>'+(r.est?"≈ ":"")+esc(d)+(x.j===0?" · aujourd\'hui":x.j===1?" · demain":"")+'</span><span class="mono rs-e">'+(r.amt!=null?nf(r.amt,1)+" Md$":"")+'</span></div>';}).join("")+'</div>'+
+    '<p class="x-n">Source : Trésor américain (fiscaldata.treasury.gov). Une adjudication faible (demande insuffisante) fait monter les taux longs, ce qui pèse sur le Nasdaq. Les bons à court terme sont écartés. Le signe « ≈ » indique une date estimée à partir de la date d\'émission (± 1 jour).</p>';
 }
 function futHTML(){
   var C=[["MNQ","Nasdaq 100 · MNQ"],["MES","S&P 500 · MES"],["YM","Dow Jones · YM"],["RTY","Russell 2000 · RTY"]],any=false;
