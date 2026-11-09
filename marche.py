@@ -104,28 +104,35 @@ def lire_fng():
 
 
 # ---------------------------------------------------------------- Adjudications du Trésor
+def _norm(r):
+    """Clés en minuscules sans « _ » : auction_date, auctionDate et AuctionDate deviennent « auctiondate »."""
+    return {str(k).lower().replace("_", ""): v for k, v in (r or {}).items()}
+
+
 def adjudications_treasurydirect(today):
     """TreasuryDirect : adjudications annoncées ou à venir (source officielle du Trésor)."""
     res, notes = [], []
     for chemin in ("upcoming", "announced"):
         try:
             rows = get_json("https://www.treasurydirect.gov/TA_WS/securities/%s?format=json" % chemin, 25)
-            notes.append("td/%s: %d lignes" % (chemin, len(rows or [])))
         except Exception as e:
             notes.append("td/%s: %s %s" % (chemin, type(e).__name__, str(e)[:40]))
             print("treasurydirect", chemin, ":", type(e).__name__, str(e)[:80])
             continue
         if isinstance(rows, dict):
-            rows = rows.get("data") or rows.get("securities") or []
-        for r in rows or []:
-            d = str(r.get("auctionDate") or r.get("auction_date") or "")[:10]
+            rows = rows.get("data") or rows.get("securities") or rows.get("results") or []
+        rows = rows if isinstance(rows, list) else []
+        notes.append("td/%s: %d lignes%s" % (chemin, len(rows), (" clés " + ",".join(list(rows[0].keys())[:6])) if rows and isinstance(rows[0], dict) else ""))
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            n = _norm(r)
+            d = str(n.get("auctiondate") or "")[:10]
             if len(d) != 10 or d < today:
                 continue
-            amt = num(r.get("offeringAmount") or r.get("offering_amt"), 0)
-            res.append({"d": d, "type": str(r.get("securityType") or r.get("security_type") or "").strip(),
-                        "term": str(r.get("securityTerm") or r.get("security_term") or "").strip(),
-                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None,
-                        "re": str(r.get("reopening") or "").lower() in ("yes", "y", "true")})
+            amt = num(n.get("offeringamount") or n.get("offeringamt") or n.get("offeringamountmillions"), 0)
+            res.append({"d": d, "type": str(n.get("securitytype") or "").strip(), "term": str(n.get("securityterm") or "").strip(),
+                        "amt": round(amt / 1e9, 1) if amt > 1e6 else None, "re": str(n.get("reopening") or "").lower() in ("yes", "y", "true")})
     return res, notes
 
 
