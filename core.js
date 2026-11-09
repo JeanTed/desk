@@ -56,7 +56,7 @@ CK.reduce = reduce;
 var DEF = {
   id:"damour", name:"DAMOUR GLOBAL", tagline:"", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
   watchlist:[],
-  modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:true,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
+  modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:false,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
   layout:null,
   espaces:{plan:true,journee:true,news:true,net:true},   // false = espace masqué (accueil, navigation, raccourcis)
   moversMarket:"spot", moversMinVolume:2000000, liqMin:25000,

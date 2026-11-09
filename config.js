@@ -11,7 +11,7 @@ window.COCKPIT_CONFIG = {
   theme: "dark",                 // affichage au premier lancement : "dark" ou "light"
   beginner: false,               // true = boutons « ? » qui expliquent chaque module
   modules: {                     // false = module masqué
-    plan: true, ctx: true, day: true, events: true, deriv: true, news: true,
+    plan: true, ctx: true, day: true, events: true, deriv: false, news: true,
     levels: true, opts: true, net: true
   },
   layout: null,                  // disposition des blocs (réglée avec le bouton « Disposition »)

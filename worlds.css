@@ -1399,3 +1399,8 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .rs-r .rs-e{color:var(--muted);text-align:right}
 .rs-r.rs-w{background:var(--inset);border-left:3px solid var(--accent)}
 @media(max-width:560px){.rs-r{grid-template-columns:1fr 1fr;row-gap:0}}
+
+/* Journée : Niveaux clés occupe toute la hauteur à gauche, Options puis Agenda éco empilés à droite (pas de trou) */
+.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:span 2;align-self:stretch;display:flex;flex-direction:column}
+.grid.flow[data-w="journee"] .mod[data-mod="levels"] .card{flex:1}
+@media(max-width:860px){.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:auto}}

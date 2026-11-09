@@ -38,7 +38,7 @@ window.COCKPIT_CONFIG = {
   theme: "dark",                 // affichage au premier lancement : "dark" ou "light"
   beginner: false,               // true = boutons « ? » qui expliquent chaque module
   modules: {                     // false = module masqué
-    plan: true, ctx: true, day: true, events: true, deriv: true, news: true,
+    plan: true, ctx: true, day: true, events: true, deriv: false, news: true,
     levels: true, opts: true, net: true
   },
   layout: null,                  // disposition des blocs (réglée avec le bouton « Disposition »)
@@ -2231,6 +2231,11 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .rs-r .rs-e{color:var(--muted);text-align:right}
 .rs-r.rs-w{background:var(--inset);border-left:3px solid var(--accent)}
 @media(max-width:560px){.rs-r{grid-template-columns:1fr 1fr;row-gap:0}}
+
+/* Journée : Niveaux clés occupe toute la hauteur à gauche, Options puis Agenda éco empilés à droite (pas de trou) */
+.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:span 2;align-self:stretch;display:flex;flex-direction:column}
+.grid.flow[data-w="journee"] .mod[data-mod="levels"] .card{flex:1}
+@media(max-width:860px){.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:auto}}
 </style>
 <script>
 /* ================================================================
@@ -2291,7 +2296,7 @@ CK.reduce = reduce;
 var DEF = {
   id:"damour", name:"DAMOUR GLOBAL", tagline:"", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
   watchlist:[],
-  modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:true,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
+  modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:false,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
   layout:null,
   espaces:{plan:true,journee:true,news:true,net:true},   // false = espace masqué (accueil, navigation, raccourcis)
   moversMarket:"spot", moversMinVolume:2000000, liqMin:25000,
@@ -2876,13 +2881,13 @@ function viewOn(id){return VIEWS.some(function(v){return v.id===id;});}
 var DEFAULTS={
   home:[],
   plan:[{id:"plan",x:0,y:0,w:12,h:70},{id:"ctx",x:0,y:70,w:12,h:120}],
-  journee:[{id:"day",x:0,y:0,w:12,h:33},{id:"levels",x:0,y:33,w:5,h:50},{id:"opts",x:5,y:33,w:7,h:50},{id:"events",x:0,y:83,w:7,h:50},{id:"deriv",x:7,y:83,w:5,h:34}],
+  journee:[{id:"day",x:0,y:0,w:12,h:33},{id:"levels",x:0,y:33,w:5,h:50},{id:"opts",x:5,y:33,w:7,h:50},{id:"events",x:5,y:83,w:7,h:50}],
   news:[{id:"news",x:0,y:0,w:8,h:84},{id:"events",x:8,y:0,w:4,h:84}],
   net:[{id:"net",x:0,y:0,w:12,h:84}]
 };
 /* Où mène « Ouvrir » depuis un bloc */
 var DOOR={plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news"};
-var LAYV="13";
+var LAYV="15";
 var MIN={plan:[4,40],ctx:[4,40],veille:[6,40],corr:[3,30],levels:[3,30],opts:[3,30],book:[3,30],net:[6,40],day:[6,28],map:[3,36],events:[2,24],deriv:[3,16],movers:[3,26],liq:[3,40],news:[3,24],screener:[3,36]};
 var NAMES={plan:"Plan du jour",ctx:"Contexte de marché",veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
 var grid,all={},view="home",lay=[],editing=false,stacked=false,ph=null;
