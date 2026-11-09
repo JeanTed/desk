@@ -61,6 +61,31 @@ def session_window(tz, o, c, now):
     return None
 
 
+def seance(bars, now):
+    """Séance Globex en cours (ou la dernière terminée) : de 18 h à 18 h, heure de New York, dimanche soir à vendredi.
+    Retourne ouverture, plus haut, plus bas, dernier prix, clôture précédente et volume (bougies de 15 min)."""
+    ny = ZoneInfo("America/New_York")
+    d = now.astimezone(ny).date()
+    start = None
+    for _ in range(8):
+        cand = datetime(d.year, d.month, d.day, 18, 0, tzinfo=ny)
+        if cand <= now.astimezone(ny) and cand.weekday() in (6, 0, 1, 2, 3):  # dim. à jeu. soir
+            start = cand.astimezone(timezone.utc)
+            break
+        d -= timedelta(days=1)
+    if not start:
+        return None
+    sel = [b for b in bars if start <= b[0] < start + timedelta(hours=23)]
+    if not sel:
+        return None
+    before = [b for b in bars if b[0] < start]
+    out = {"o": round(sel[0][1], 2), "h": round(max(x[2] for x in sel), 2), "l": round(min(x[3] for x in sel), 2),
+           "c": round(sel[-1][4], 2), "v": int(sum((x[5] if len(x) > 5 else 0) for x in sel)), "t0": int(start.timestamp() * 1000)}
+    if before:
+        out["pc"] = round(before[-1][4], 2)
+    return out
+
+
 def niveaux(bars, now):
     """bars : liste de (datetime UTC, ouverture, haut, bas, clôture), triée. Retourne la liste des niveaux."""
     L = []
@@ -114,13 +139,23 @@ def lire(yf, cle, sym, okx):
         t = ts.to_pydatetime()
         t = t.astimezone(timezone.utc) if t.tzinfo else t.replace(tzinfo=timezone.utc)
         if r["High"] > 0 and r["Low"] > 0:
-            bars.append((t, float(r["Open"]), float(r["High"]), float(r["Low"]), float(r["Close"])))
+            try:
+                vol = float(r["Volume"]) if r["Volume"] == r["Volume"] else 0.0
+            except Exception:
+                vol = 0.0
+            bars.append((t, float(r["Open"]), float(r["High"]), float(r["Low"]), float(r["Close"]), vol))
     bars.sort(key=lambda b: b[0])
     now = datetime.now(timezone.utc)
     if (now - bars[-1][0]).total_seconds() > 5 * 86400:
         raise RuntimeError("dernières bougies trop anciennes")
     last = bars[-1][4]
     out = {"sym": sym, "last": round(last, 2), "bar": int(bars[-1][0].timestamp() * 1000), "L": niveaux(bars, now)}
+    try:
+        se = seance(bars, now)
+        if se:
+            out["S"] = se
+    except Exception as e:
+        print(cle, "séance : ERREUR", type(e).__name__, str(e)[:100])
     # écart avec le perpétuel OKX au même moment (seulement si la bougie est récente)
     try:
         if okx and (now - bars[-1][0]).total_seconds() < 3600:

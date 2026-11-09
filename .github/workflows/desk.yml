@@ -56,6 +56,14 @@ jobs:
         run: python resultats.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      # Positionnement COT, Peur & Cupidité, adjudications du Trésor, largeur de marché. Chaque partie est indépendante.
+      - name: Marché (COT, sentiment, Trésor, largeur)
+        continue-on-error: true
+        run: |
+          pip install --quiet lxml
+          python marche.py
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       # Sentiment des news (Alpha Vantage, clé gratuite dans le secret ALPHAVANTAGE_KEY). Sans clé, rien ne change.
       - name: Sentiment des news
         continue-on-error: true

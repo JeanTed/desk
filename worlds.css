@@ -1400,10 +1400,12 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .rs-r.rs-w{background:var(--inset);border-left:3px solid var(--accent)}
 @media(max-width:560px){.rs-r{grid-template-columns:1fr 1fr;row-gap:0}}
 
-/* Journée : Niveaux clés occupe toute la hauteur à gauche, Options puis Agenda éco empilés à droite (pas de trou) */
-.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:span 2;align-self:stretch;display:flex;flex-direction:column}
-.grid.flow[data-w="journee"] .mod[data-mod="levels"] .card{flex:1}
-@media(max-width:860px){.grid.flow[data-w="journee"] .mod[data-mod="levels"]{grid-row:auto}}
+/* Journée : Niveaux clés compact (deux colonnes), Options à droite, Agenda éco pleine largeur dessous */
+.grid.flow[data-w="journee"] .mod[data-mod="levels"],.grid.flow[data-w="journee"] .mod[data-mod="opts"]{align-self:stretch;display:flex;flex-direction:column}
+.grid.flow[data-w="journee"] .mod[data-mod="levels"] .card,.grid.flow[data-w="journee"] .mod[data-mod="opts"] .card{flex:1}
+.grid.flow[data-w="journee"] #levels .lv-list:not(:has(.lv-fu)){display:block;column-count:2;column-gap:18px}
+.grid.flow[data-w="journee"] #levels .lv-r,.grid.flow[data-w="journee"] #levels .lv-now{break-inside:avoid}
+@media(max-width:860px){.grid.flow[data-w="journee"] #levels .lv-list{column-count:1!important}}
 
 /* Plan Futures : Plan du jour et Options côte à côte, même hauteur (pas de trou) ; Contexte de marché dessous */
 .grid.flow[data-w="plan"] .mod[data-mod="plan"],.grid.flow[data-w="plan"] .mod[data-mod="opts"]{align-self:stretch;display:flex;flex-direction:column}
@@ -1435,3 +1437,29 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .crow .ty-tag{display:block;font:700 10.5px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ty);margin-bottom:1px}
 .ty-leg{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
 .ty-chip{--ty:var(--muted);font:600 11.5px var(--font);letter-spacing:.04em;padding:3px 10px;border-radius:999px;color:var(--ty);background:color-mix(in oklab,var(--ty) 14%,transparent);border:1px solid color-mix(in oklab,var(--ty) 40%,transparent)}
+
+/* Cours des futures (séance) */
+.ft-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:4px 0 6px}
+.ft-c{padding:10px 12px;border-radius:10px;background:var(--inset)}
+.ft-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.ft-h b{font-size:15px}.ft-p{font-size:22px;font-weight:700}
+.ft-v{font-size:15px;margin:2px 0 8px}
+.ft-r{display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:14.5px;border-top:1px solid var(--line,rgba(255,255,255,.07))}.ft-r span{color:var(--muted)}
+
+/* COT, Peur & Cupidité, largeur, courbe des taux */
+.ft-d{font-size:13px;color:var(--muted)}
+.cot-g{display:grid;gap:2px;margin:4px 0 6px}
+.cot-h,.cot-r{display:grid;grid-template-columns:minmax(0,1.4fr) 1fr 1fr;gap:8px;padding:6px 10px;font-size:16px;align-items:center}
+.cot-h{font:600 12px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cot-r{border-top:1px solid var(--line)}.cot-h span:nth-child(n+2),.cot-r b,.cot-r span:last-child{text-align:right}.cot-r span:first-child{color:var(--text)}
+.fg-b{position:relative;height:12px;border-radius:7px;margin:8px 0 2px;background:linear-gradient(90deg,#e5534b 0%,#e5a04b 25%,#9aa4b2 50%,#8fcf6a 75%,#2fbf71 100%)}
+.fg-b i{position:absolute;top:-4px;width:6px;height:20px;border-radius:3px;background:var(--text);transform:translateX(-50%);box-shadow:0 0 0 2px var(--panel,#111)}
+.fg-s{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+.fg-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px;margin:4px 0 6px}
+.fg-r{display:grid;grid-template-columns:minmax(0,1fr) 34px auto;gap:8px;font-size:14.5px;padding:3px 0;border-top:1px solid var(--line)}.fg-r span:last-child{color:var(--muted)}
+.br-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:4px 0 6px}
+.br-c{padding:10px 12px;border-radius:10px;background:var(--inset)}.br-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.br-h b{font-size:16px}.br-h span{color:var(--muted);font-size:13px}
+.br-r{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:14.5px;border-top:1px solid var(--line,rgba(255,255,255,.07))}.br-r span:first-child{color:var(--muted)}
+.br-r .up{color:var(--up)}.br-r .down{color:var(--down)}
+.cv-g{display:flex;gap:10px;align-items:flex-end;margin:6px 0;padding:10px 12px;border-radius:10px;background:var(--inset)}
+.cv-c{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end}
+.cv-c i{display:block;width:100%;max-width:90px;border-radius:6px 6px 2px 2px;background:var(--accent);opacity:.85}.cv-c b{font-size:16px}.cv-c span{font-size:13px;color:var(--muted)}

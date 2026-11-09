@@ -104,6 +104,7 @@ function render(){
 
 /* ---------------- 2. Contexte : volatilité, taux, poids lourds ---------------- */
 var CTX=[["VIX","VIX","TVC:VIX"],["VXN","VXN (volatilité Nasdaq)","CBOE:VXN"],["US05Y","Taux 5 ans","TVC:US05Y"],["US10Y","Taux 10 ans","TVC:US10Y"],["DXY","Dollar (DXY)","TVC:DXY"],["DJI","Dow Jones","TVC:DJI"],["RUT","Russell 2000","TVC:RUT"],["BRENT","Brent (pétrole, $)","TVC:UKOIL"],["GOLD","Or (once, $)","TVC:GOLD"],["NQ","Future NQ","CME_MINI:NQ1!"],["ES","Future ES","CME_MINI:ES1!"]];
+var CURVE=[["2 ans","TVC:US02Y"],["5 ans","TVC:US05Y"],["10 ans","TVC:US10Y"],["30 ans","TVC:US30Y"]];
 /* poids lourds de chaque indice : [code, nom, symbole TradingView] */
 var BIGS={
   NDX:[["NVDA","Nvidia","NASDAQ:NVDA"],["MSFT","Microsoft","NASDAQ:MSFT"],["AAPL","Apple","NASDAQ:AAPL"],["AMZN","Amazon","NASDAQ:AMZN"],["META","Meta","NASDAQ:META"],["GOOGL","Alphabet","NASDAQ:GOOGL"],["AVGO","Broadcom","NASDAQ:AVGO"],["TSLA","Tesla","NASDAQ:TSLA"],["COST","Costco","NASDAQ:COST"],["NFLX","Netflix","NASDAQ:NFLX"]],
@@ -111,7 +112,7 @@ var BIGS={
 };
 var IDXT={NDX:["NASDAQ:NDX","Nasdaq 100"],SPX:["SP:SPX","S&P 500"],MNQ:["CME_MINI:MNQ1!","Micro Nasdaq 100 (MNQ)"],MES:["CME_MINI:MES1!","Micro S&P 500 (MES)"]};
 function loadCtx(){
-  var seen={},tk=[];CTX.map(function(x){return x[2];}).concat(Object.keys(IDXT).map(function(k){return IDXT[k][0];}),BIGS.NDX.concat(BIGS.SPX).map(function(x){return x[2];})).forEach(function(t){if(!seen[t]){seen[t]=1;tk.push(t);}});
+  var seen={},tk=[];CTX.map(function(x){return x[2];}).concat(CURVE.map(function(x){return x[1];}),Object.keys(IDXT).map(function(k){return IDXT[k][0];}),BIGS.NDX.concat(BIGS.SPX).map(function(x){return x[2];})).forEach(function(t){if(!seen[t]){seen[t]=1;tk.push(t);}});
   return q(u.fetchJSON(TV,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({symbols:{tickers:tk},columns:["close","change"]})},12000)).then(function(j){
     if(!j||!j.data)return;j.data.forEach(function(o){CX.rows[o.s]={c:o.d[0],ch:o.d[1]};});FT.rows=CX.rows;CX.ts=Date.now();render();renderCtx();});
 }
@@ -158,6 +159,71 @@ function corrHTML(){
     c.map(function(r){return '<div class="cc-r"><span>'+esc(r.nom)+'</span>'+cell(r.c30)+cell(r.c90)+'<span class="cc-a">'+esc(r.attendu)+'</span></div>';}).join("")+'</div><p class="x-n">Corrélation de +1 : les deux bougent ensemble ; −1 : en sens inverse ; autour de 0 : pas de lien. Yahoo Finance (futures NQ, Brent, or ; dollar, taux et VIX), calculée par le robot.</p>';
 }
 var LBL={PDC:"Clôture hier",DO:"Ouverture jour",PDH:"Haut hier",PDL:"Bas hier",WO:"Ouverture semaine",PWH:"Haut sem. dern.",PWL:"Bas sem. dern.",MO:"Ouverture mois",TKH:"Haut Tokyo",TKL:"Bas Tokyo",LDH:"Haut Londres",LDL:"Bas Londres",NYH:"Haut New York",NYL:"Bas New York"};
+function nfs(v,d){return (v>0?"+":v<0?"−":"")+nf(Math.abs(v),d||0);}
+function kfmt(v){return (v<0?"−":v>0?"+":"")+nf(Math.abs(v),0);}
+function mkOld(p,h){return !p||!p.ts||Date.now()-p.ts*1000>h*3600000;}
+function cotHTML(){
+  var M=FT.mk&&FT.mk.cot;if(!M||!M.rows||!M.rows.length||mkOld(M,24*10))return '';
+  var w={NDX:"209742",SPX:"13874A"},cur=M.rows.filter(function(r){return r.code===w[FT.base(PL.sym)];})[0]||M.rows[0];
+  var rows=["asset","lev","dealer","other"].map(function(k){var g=cur.g[k];if(!g)return '';
+    return '<div class="cot-r"><span>'+esc(g.n)+'</span><b class="mono '+u.cls(g.net)+'">'+kfmt(g.net)+'</b><span class="mono '+(g.chg==null?"":u.cls(g.chg))+'">'+(g.chg==null?"—":kfmt(g.chg))+'</span></div>';}).join("");
+  return '<div class="ctx-h"><span class="x-k">Positionnement des fonds · '+esc(cur.nom)+'</span><span class="mono ft-d">rapport du '+esc(cur.date.split("-").reverse().join("/"))+'</span></div>'+
+    '<div class="cot-g"><div class="cot-h"><span>Catégorie</span><span>Position nette (contrats)</span><span>Variation sur 1 sem.</span></div>'+rows+'</div>'+
+    '<p class="x-n">Source : rapport « Traders in Financial Futures » de la CFTC (régulateur américain), publié chaque vendredi pour le mardi précédent, donc toujours en retard de 3 jours. Position nette = acheteurs − vendeurs. Les gérants d\'actifs sont les gros institutionnels ; les fonds spéculatifs (hedge funds) jouent la tendance. Ouvert : '+nf(cur.oi,0)+' contrats.</p>';
+}
+function fngHTML(){
+  var F=FT.mk&&FT.mk.fng;if(!F||typeof F.score!=="number"||mkOld(F,6))return '';
+  var sc=F.score,cl=sc>=60?"up":sc<=40?"dn":"warn";
+  var comp=(F.comp||[]).map(function(c){return '<div class="fg-r"><span>'+esc(c.n)+'</span><b class="mono">'+nf(c.s,0)+'</b><span>'+esc(c.r)+'</span></div>';}).join("");
+  return '<div class="ctx-h"><span class="x-k">Peur &amp; Cupidité du marché actions</span><span class="ctx-bias '+cl+'">'+esc(F.rating||"")+' · '+nf(sc,0)+' / 100</span></div>'+
+    '<div class="fg-b"><i style="left:'+Math.max(0,Math.min(100,sc))+'%"></i></div><div class="fg-s"><span>Peur extrême</span><span>Neutre</span><span>Cupidité extrême</span></div>'+
+    '<p class="x-n">Veille : '+nf(F.prev,0)+' · il y a 1 semaine : '+nf(F.week,0)+' · 1 mois : '+nf(F.month,0)+' · 1 an : '+nf(F.year,0)+(F.pc!=null?' · ratio put/call (moyenne 5 jours) : <b>'+nf(F.pc,2)+'</b> (au-dessus de 1 : plus de protection achetée, marché inquiet ; sous 0,7 : euphorie)':'')+'.</p>'+
+    (comp?'<div class="fg-g">'+comp+'</div>':'')+
+    '<p class="x-n">Indice calculé par CNN à partir de 7 indicateurs. Un marché en « cupidité extrême » peut continuer à monter, mais devient fragile ; en « peur extrême », c\'est souvent là que se forment les creux. Une lecture d\'ambiance, pas un signal.</p>';
+}
+function brdHTML(){
+  var B=FT.mk&&FT.mk.breadth;if(!B||!B.rows||!B.rows.length||mkOld(B,6))return '';
+  var rows=B.rows.map(function(r){var t=Math.max(1,r.adv+r.dec),pa=r.adv/t*100;
+    return '<div class="br-c"><div class="br-h"><b>'+esc(r.nom)+'</b><span class="mono">'+nf(r.n,0)+' valeurs</span></div>'+
+      '<div class="sn-b"><i class="up" style="width:'+pa.toFixed(1)+'%"></i><i class="down" style="width:'+(100-pa).toFixed(1)+'%"></i></div>'+
+      '<div class="br-r"><span>Hausse / baisse</span><b class="mono"><span class="up">'+r.adv+'</span> / <span class="down">'+r.dec+'</span></b></div>'+
+      '<div class="br-r"><span>Au-dessus de la moyenne 20 j</span><b class="mono">'+nf(r.p20,0)+' %</b></div>'+
+      '<div class="br-r"><span>Au-dessus de la moyenne 50 j</span><b class="mono">'+nf(r.p50,0)+' %</b></div>'+
+      '<div class="br-r"><span>Au-dessus de la moyenne 200 j</span><b class="mono">'+nf(r.p200,0)+' %</b></div>'+
+      '<div class="br-r"><span>Plus hauts / plus bas 52 sem.</span><b class="mono"><span class="up">'+r.nh+'</span> / <span class="down">'+r.nl+'</span></b></div></div>';}).join("");
+  return '<div class="ctx-h"><span class="x-k">Largeur de marché</span></div><div class="br-g">'+rows+'</div>'+
+    '<p class="x-n">Combien de valeurs participent à la hausse. Un indice qui monte avec moins de la moitié des valeurs au-dessus de leur moyenne 50 jours est porté par quelques géants : signe de fragilité. Données Yahoo Finance, séance du '+esc(B.rows[0].date.split("-").reverse().join("/"))+'.</p>';
+}
+function curveHTML(){
+  var P=CURVE.map(function(c){var r=CX.rows[c[1]];return r&&r.c>0?{n:c[0],v:r.c}:null;});
+  if(P.some(function(x){return !x;}))return '';
+  var sp=(P[2].v-P[0].v)*100,inv=sp<0,max=Math.max.apply(null,P.map(function(x){return x.v;})),min=Math.min.apply(null,P.map(function(x){return x.v;}));
+  return '<div class="ctx-h"><span class="x-k">Courbe des taux américains</span><span class="ctx-bias '+(inv?"dn":"up")+'">Écart 2 – 10 ans : '+nfs(sp,0)+' pb'+(inv?" · inversée":"")+'</span></div>'+
+    '<div class="cv-g">'+P.map(function(x){var h=18+(max>min?(x.v-min)/(max-min):.5)*52;return '<div class="cv-c"><i style="height:'+h.toFixed(0)+'px"></i><b class="mono">'+nf(x.v,2)+' %</b><span>'+x.n+'</span></div>';}).join("")+'</div>'+
+    '<p class="x-n">Une courbe inversée (taux courts supérieurs aux taux longs) a historiquement précédé des ralentissements. Des taux longs qui montent vite pèsent sur les valeurs de croissance du Nasdaq. TradingView, prix différés.</p>';
+}
+function aucHTML(){
+  var A=FT.mk&&FT.mk.auctions;if(!A||!A.rows||!A.rows.length||mkOld(A,24))return '';
+  var t0=new Date();t0=Date.UTC(t0.getFullYear(),t0.getMonth(),t0.getDate());
+  var L=A.rows.map(function(r){var p=r.d.split("-"),t=Date.UTC(+p[0],+p[1]-1,+p[2]);return {r:r,t:t,j:Math.round((t-t0)/86400000)};}).filter(function(x){return x.j>=0&&x.j<=21;}).slice(0,6);
+  if(!L.length)return '';
+  var TY={Note:"Obligation (Note)",Bond:"Obligation longue (Bond)",TIPS:"Obligation indexée (TIPS)",FRN:"Taux variable (FRN)"};
+  return '<div class="ctx-h"><span class="x-k">Prochaines adjudications du Trésor américain</span></div><div class="rs-g">'+L.map(function(x){
+    var d=new Date(x.t).toLocaleDateString("fr-FR",{timeZone:"UTC",weekday:"short",day:"numeric",month:"short"}),r=x.r,w=x.j<=1?" rs-w":"";
+    return '<div class="rs-r'+w+'"><b>'+esc(r.term)+'</b><span>'+esc(TY[r.type]||r.type)+(r.re?" · réouverture":"")+'</span><span>'+esc(d)+(x.j===0?" · aujourd\'hui":x.j===1?" · demain":"")+'</span><span class="mono rs-e">'+(r.amt!=null?nf(r.amt,1)+" Md$":"")+'</span></div>';}).join("")+'</div>'+
+    '<p class="x-n">Source : Trésor américain (fiscaldata.treasury.gov). Une adjudication faible (demande insuffisante) fait monter les taux longs, ce qui pèse sur le Nasdaq. Les bons à court terme sont écartés.</p>';
+}
+function futHTML(){
+  var C=[["MNQ","Nasdaq 100 · MNQ"],["MES","S&P 500 · MES"],["YM","Dow Jones · YM"],["RTY","Russell 2000 · RTY"]],any=false;
+  var out=C.map(function(c){var d=FT.fresh(c[0]);if(!d||!d.S||!(d.S.c>0))return '';any=true;var S=d.S,ch=S.pc>0?S.c-S.pc:null,pc=S.pc>0?(S.c/S.pc-1)*100:null,cl=pc==null?"":u.cls(pc);
+    function r(k,v){return '<div class="ft-r"><span>'+k+'</span><b class="mono">'+(v>0?px(v):"—")+'</b></div>';}
+    return '<div class="ft-c"><div class="ft-h"><b>'+esc(c[1])+'</b><span class="mono ft-p">'+px(S.c)+'</span></div>'+
+      '<div class="ft-v mono '+cl+'">'+(ch==null?"—":(ch>=0?"+":"−")+px(Math.abs(ch))+" pts · "+pct(pc))+'</div>'+
+      r("Ouverture séance",S.o)+r("Plus haut",S.h)+r("Plus bas",S.l)+r("Clôture veille",S.pc)+
+      '<div class="ft-r"><span>Volume</span><b class="mono">'+(S.v>0?nf(S.v,0):"—")+'</b></div></div>';}).join("");
+  if(!any)return '';
+  return '<div class="ctx-h"><span class="x-k">Cours des futures · séance en cours</span></div><div class="ft-g">'+out+'</div><p class="x-n">Séance Globex du CME (18 h – 17 h, heure de New York). Cours lus par le robot sur Yahoo Finance, avec environ 10 minutes de retard : à utiliser pour le contexte, pas pour exécuter. Dernière lecture à '+hm(FT.y&&FT.y.ts||Date.now())+' (Paris).</p>';
+}
 function dowHTML(){
   var out=[["YM","Dow Jones (YM)",5],["RTY","Russell 2000 (RTY)",5]].map(function(c){
     var d=FT.fresh(c[0]);if(!d||!d.L||!d.L.length||!(d.last>0))return '';
@@ -205,7 +271,7 @@ function renderCtx(){
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
   var it=IDXT[PL.sym],out=sg+'<div class="ctx-grid">'+tile([PL.sym,it[1],(CX.rows[it[0]]||!FT.is(PL.sym))?it[0]:FT.M[PL.sym].big])+CTX.map(tile).join("")+'</div>'+
     briefHTML()+(function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
-    sentiHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+resHTML()+
+    futHTML()+fngHTML()+sentiHTML()+brdHTML()+curveHTML()+cotHTML()+aucHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(PL.sym)][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+resHTML()+
     '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
