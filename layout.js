@@ -32,7 +32,7 @@ var DEFAULTS={
 var DOOR={plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news"};
 var LAYV="12";
 var MIN={plan:[4,40],ctx:[4,40],veille:[6,40],corr:[3,30],levels:[3,30],opts:[3,30],book:[3,30],net:[6,40],day:[6,28],map:[3,36],events:[2,24],deriv:[3,16],movers:[3,26],liq:[3,40],news:[3,24],screener:[3,36]};
-var NAMES={plan:"Plan du jour NDX",ctx:"Contexte de marché",veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
+var NAMES={plan:"Plan du jour",ctx:"Contexte de marché",veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
 var grid,all={},view="home",lay=[],editing=false,stacked=false,ph=null;
 var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 
