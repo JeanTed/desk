@@ -68,14 +68,14 @@ jobs:
           python marche.py
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-      # Sentiment des news (Alpha Vantage, clé gratuite dans le secret ALPHAVANTAGE_KEY). Sans clé, rien ne change.
+      # Sentiment des news noté par Gemini (même secret GEMINI_KEY que la lecture du jour). Sans clé, rien ne change.
       - name: Sentiment des news
         continue-on-error: true
         timeout-minutes: 4
         run: node sentiment.mjs
         env:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-          ALPHAVANTAGE_KEY: ${{ secrets.ALPHAVANTAGE_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
       # Lecture du jour (actualités + prix) écrite par Gemini. Sans le secret GEMINI_KEY, cette étape ne fait rien.
       - name: Lecture du jour
         continue-on-error: true

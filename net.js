@@ -130,7 +130,7 @@ function paint(){
 var BN={calendar:"Agenda économique (flux principal)",calendrier_tv:"Calendrier détaillé TradingView (actuel, prévision, description)",fj:"FinancialJuice (copie)",
   options:"Options Nasdaq 100 / S&P 500",fut_mnq:"Contrat MNQ",fut_mes:"Contrat MES",fut_ym:"Contrat YM (Dow)",fut_rty:"Contrat RTY (Russell)",fut_corr:"Corrélations",
   resultats:"Dates des résultats d'entreprises",marche_cot:"Positionnement des fonds (CFTC)",marche_fng:"Peur & Cupidité (CNN)",marche_auctions:"Adjudications du Trésor",marche_breadth:"Largeur de marché",
-  sentiment:"Sentiment des news (Alpha Vantage)",briefing:"Lecture du jour (Gemini)"};
+  sentiment:"Sentiment des news (noté par Gemini)",briefing:"Lecture du jour (Gemini)"};
 var RB={rows:null,ts:0,err:""};
 function bname(k){if(BN[k])return BN[k];if(/^news|^nw|futures/i.test(k)||k.indexOf(" ")>0||k.indexOf("·")>0)return k;return k;}
 function loadRobot(){

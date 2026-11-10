@@ -4113,7 +4113,7 @@ function sentiHTML(){
   var cl={"porteur":"up","plutôt porteur":"up","prudent":"dn","plutôt prudent":"warn","neutre":"neu"}[s.label]||"neu",t=Math.max(1,(s.bull||0)+(s.neutral||0)+(s.bear||0));
   return '<div class="ctx-h"><span class="x-k">Sentiment des news financières</span><span class="ctx-bias '+cl+'">'+esc(s.label||"neutre")+'</span></div>'+
     '<div class="sn-b"><i class="up" style="width:'+(s.bull/t*100).toFixed(1)+'%"></i><i class="neu" style="width:'+(s.neutral/t*100).toFixed(1)+'%"></i><i class="down" style="width:'+(s.bear/t*100).toFixed(1)+'%"></i></div>'+
-    '<p class="kc-d">'+(+s.bull||0)+' articles haussiers · '+(+s.neutral||0)+' neutres · '+(+s.bear||0)+' baissiers (sur '+(+s.n||0)+'). Score moyen '+(s.score>0?"+":s.score<0?"−":"")+nf(Math.abs(+s.score||0),2)+' sur une échelle de −1 à +1.</p><p class="x-n">Le sentiment mesure si les articles financiers récents sont plutôt positifs ou négatifs. Source : Alpha Vantage, mis à jour à '+hm(s.ts)+' (Paris). Un indicateur d\'ambiance, pas une prévision.</p>';
+    '<p class="kc-d">'+(+s.bull||0)+' articles haussiers · '+(+s.neutral||0)+' neutres · '+(+s.bear||0)+' baissiers (sur '+(+s.n||0)+'). Score moyen '+(s.score>0?"+":s.score<0?"−":"")+nf(Math.abs(+s.score||0),2)+' sur une échelle de −1 (défavorable) à +1 (favorable).</p><p class="x-n">Le sentiment mesure si les articles financiers récents sont plutôt positifs ou négatifs. Chaque titre récent (Bloomberg, Investing, Fed, FinancialJuice…) est noté par l\'IA Gemini selon son effet probable sur le Nasdaq. Mis à jour à '+hm(s.ts)+' (Paris). Un indicateur d\'ambiance, pas une prévision.</p>';
 }
 function briefHTML(){
   var b=FT.brief;if(!b||!b.titre||!b.ts||Date.now()-b.ts>8*3600000)return '';
@@ -4625,7 +4625,7 @@ function paint(){
 var BN={calendar:"Agenda économique (flux principal)",calendrier_tv:"Calendrier détaillé TradingView (actuel, prévision, description)",fj:"FinancialJuice (copie)",
   options:"Options Nasdaq 100 / S&P 500",fut_mnq:"Contrat MNQ",fut_mes:"Contrat MES",fut_ym:"Contrat YM (Dow)",fut_rty:"Contrat RTY (Russell)",fut_corr:"Corrélations",
   resultats:"Dates des résultats d'entreprises",marche_cot:"Positionnement des fonds (CFTC)",marche_fng:"Peur & Cupidité (CNN)",marche_auctions:"Adjudications du Trésor",marche_breadth:"Largeur de marché",
-  sentiment:"Sentiment des news (Alpha Vantage)",briefing:"Lecture du jour (Gemini)"};
+  sentiment:"Sentiment des news (noté par Gemini)",briefing:"Lecture du jour (Gemini)"};
 var RB={rows:null,ts:0,err:""};
 function bname(k){if(BN[k])return BN[k];if(/^news|^nw|futures/i.test(k)||k.indexOf(" ")>0||k.indexOf("·")>0)return k;return k;}
 function loadRobot(){
