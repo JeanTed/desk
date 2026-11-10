@@ -10,8 +10,8 @@
 var CK=window.CK,u=CK.u,esc=u.esc;
 var DEST=[
   {id:"bandeau",name:"Bandeau",sub:"indices, taux, dollar, VIX",c:"#C4C8CF"},
-  {id:"plan",name:"Plan Futures",sub:"niveaux, contexte, annonces",c:"#B8F36B"},
-  {id:"journee",name:"Journée",sub:"sessions, agenda, dérivés",c:"#E9C46A"},
+  {id:"plan",name:"Plan Futures",sub:"biais, niveaux, contexte",c:"#B8F36B"},
+  {id:"journee",name:"Journée",sub:"sessions, semaine, agenda",c:"#E9C46A"},
   {id:"opts",name:"Options",sub:"murs, max pain, put/call",c:"#7FA8F0"},
   {id:"news",name:"News",sub:"flux macro, agenda",c:"#A99BEA"}
 ];
@@ -27,7 +27,7 @@ var SRC=[
    ep:["embed-widget-events.js","tv.js"],data:"Calendrier économique officiel (secours de l'agenda) et graphiques au clic.",freq:"À l'affichage"},
   {id:"fj",name:"FinancialJuice",p:"RSS",kind:"http",exp:600000,to:["news"],ep:["www.financialjuice.com/feed.ashx?xy=rss"],data:"News macro en quasi temps réel.",freq:"Toutes les minutes ; copie du robot si le site bloque"},
   {id:"tree",name:"Tree of Alpha",p:"JSON",kind:"http",exp:120000,to:["news"],ep:["news.treeofalpha.com/api/news"],data:"Fil des gros comptes macro et politiques (Maison-Blanche, Trump, Fed…), sans les sujets crypto.",freq:"Toutes les 20 s"},
-  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/futures.json","…github.io/desk/data/calendar.json","…/data/fj.json","…/data/options.json","…/data/futpx.json"],data:"Agenda économique de la semaine et de la suivante (prévisions, chiffres précédents), news futures traduites en français, copie de secours de FinancialJuice, options Nasdaq 100 et S&P 500 et prix des contrats MNQ et MES (Yahoo Finance, lus par options.py et futpx.py).",freq:"Mis à jour toutes les 10 min par GitHub"},
+  {id:"robot",name:"Robot GitHub",p:"JSON",kind:"http",exp:1800000,to:["journee","news","opts","plan"],ep:["…github.io/desk/data/futures.json","…/data/calendar.json","…/data/calendrier.json","…/data/fj.json","…/data/options.json","…/data/futpx.json","…/data/resultats.json","…/data/marche.json","…/data/sentiment.json","…/data/briefing.json"],data:"Tout ce que le navigateur ne peut pas lire seul : agenda économique et calendrier détaillé (actuel, prévision, précédent), news futures traduites, copie de FinancialJuice, options des indices, contrats MNQ, MES, YM et RTY (Yahoo Finance), dates de résultats, positionnement des fonds (CFTC), Peur & Cupidité (CNN), adjudications du Trésor, largeur de marché, sentiment des news (Alpha Vantage) et lecture du jour (Gemini). Le détail de chaque étape est dans le tableau « Étapes du robot » ci-dessus.",freq:"Mis à jour toutes les 10 min par GitHub (certaines étapes toutes les 1 à 6 h)"},
 ];
 CK.NETSRC=SRC;
 
@@ -65,7 +65,7 @@ function build(){
   host.innerHTML='<div class="nt-sum" id="ntSum"></div>'+
     '<div class="nt-mapbox"><div class="nt-legend"><span><i class="ok"></i>actif</span><span><i class="warn"></i>à surveiller</span><span><i class="down"></i>en panne</span><span><i class="idle"></i>en attente</span><span class="nt-flow"><i></i>donnée reçue à l\'instant</span></div>'+
     '<div class="nt-scroll"><svg class="nt-map" id="ntMap" viewBox="0 0 1000 '+VH+'" role="img" aria-label="Carte des connexions : sources de données reliées aux espaces"></svg></div></div>'+
-    '<div class="nt-cards" id="ntCards"></div>';
+    '<div class="ntb" id="ntRobot"></div><div class="nt-cards" id="ntCards"></div>';
   svg=u.$("ntMap");
   var SX=16,SW=300,SH=36,SY0=12,SG=45,DX=690,DW=294,DH=54,DY0=20,DG=(VH-2*DY0-DH)/(DEST.length-1),dIdx={};DEST.forEach(function(d,i){dIdx[d.id]=i;});
   var gl=el("g",{},svg),gn=el("g",{},svg),gd=el("g",{},svg);
@@ -126,6 +126,31 @@ function paint(){
     set(c.querySelector("[data-d]"),st.d);
   });
 }
+/* ---------- Étapes du robot GitHub : lues dans meta.json (plus besoin de le copier à la main) ---------- */
+var BN={calendar:"Agenda économique (flux principal)",calendrier_tv:"Calendrier détaillé TradingView (actuel, prévision, description)",fj:"FinancialJuice (copie)",
+  options:"Options Nasdaq 100 / S&P 500",fut_mnq:"Contrat MNQ",fut_mes:"Contrat MES",fut_ym:"Contrat YM (Dow)",fut_rty:"Contrat RTY (Russell)",fut_corr:"Corrélations",
+  resultats:"Dates des résultats d'entreprises",marche_cot:"Positionnement des fonds (CFTC)",marche_fng:"Peur & Cupidité (CNN)",marche_auctions:"Adjudications du Trésor",marche_breadth:"Largeur de marché",
+  sentiment:"Sentiment des news (Alpha Vantage)",briefing:"Lecture du jour (Gemini)"};
+var RB={rows:null,ts:0,err:""};
+function bname(k){if(BN[k])return BN[k];if(/^news|^nw|futures/i.test(k)||k.indexOf(" ")>0||k.indexOf("·")>0)return k;return k;}
+function loadRobot(){
+  var url=CK.relay&&CK.relay("/meta");if(!url){RB.err="Adresse du robot non configurée.";paintRobot();return;}
+  u.fetchJSON(url+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(j){
+    var S=j&&j.sources;if(!S)throw new Error("meta.json vide");RB.rows=Object.keys(S).map(function(k){return {k:k,v:S[k]};});RB.ts=+j.ts||0;RB.err="";paintRobot();
+  }).catch(function(e){RB.err=String(e&&e.message||e);paintRobot();});
+}
+function paintRobot(){
+  var h=u.$("ntRobot");if(!h)return;
+  var out;
+  if(!RB.rows)out='<div class="ntb-h"><b>Étapes du robot</b></div><p class="ntb-n">'+esc(RB.err||"Lecture de meta.json…")+'</p>';
+  else{
+    var bad=0,rows=RB.rows.slice().sort(function(a,b){return (a.v.ok?1:0)-(b.v.ok?1:0)||String(a.k).localeCompare(String(b.k));}).map(function(x){
+      var v=x.v||{},ts=+v.ts||0;if(ts&&ts<1e12)ts*=1000;var old=ts&&Date.now()-ts>26*3600000,k=v.ok?(old?"warn":"ok"):"down";if(k==="down")bad++;
+      return '<div class="ntb-r '+k+'"><i></i><span class="ntb-n1">'+esc(bname(x.k))+'</span><span class="ntb-c mono">'+(v.n!=null?esc(v.n)+" éléments":"")+'</span><span class="ntb-a">'+(ts?u.ago(ts):"—")+'</span><span class="ntb-e">'+(v.ok?(old?"Pas de mise à jour depuis plus d'un jour":""):esc(String(v.err||"En erreur").slice(0,160)))+'</span></div>';}).join("");
+    out='<div class="ntb-h"><b>Étapes du robot</b><span class="ntb-s '+(bad?"down":"ok")+'">'+(bad?bad+" en erreur":"toutes réussies")+'</span><span class="ntb-n">Dernier passage : '+(RB.ts?u.ago(RB.ts):"—")+' · lu dans meta.json</span></div><div class="ntb-g">'+rows+'</div>';
+  }
+  if(h._h!==out){h.innerHTML=out;h._h=out;}
+}
 var loopT=null;
-CK.net={boot:function(){build();clearInterval(loopT);loopT=setInterval(function(){if(document.body.getAttribute("data-view")==="net")paint();},1000);},paint:paint};
+CK.net={boot:function(){build();loadRobot();setInterval(function(){if(document.body.getAttribute("data-view")==="net")loadRobot();},60000);clearInterval(loopT);loopT=setInterval(function(){if(document.body.getAttribute("data-view")==="net")paint();},1000);},paint:paint};
 })();
