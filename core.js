@@ -57,7 +57,7 @@ CK.reduce = reduce;
 var DEF = {
   id:"damour", name:"DAMOUR GLOBAL", tagline:"", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
   watchlist:[],
-  modules:{bias:true,week:true,plan:true,ctx:true,day:true,map:false,events:true,deriv:false,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
+  modules:{hmap:true,bias:true,week:true,plan:true,ctx:true,day:true,map:false,events:true,deriv:false,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
   layout:null,
   espaces:{plan:true,journee:true,news:true,net:true},   // false = espace masqué (accueil, navigation, raccourcis)
   moversMarket:"spot", moversMinVolume:2000000, liqMin:25000,
@@ -186,7 +186,7 @@ function applyIdentity(){
   if(LOGO.fav){var fav=document.querySelector('link[rel="icon"]');if(!fav){fav=document.createElement("link");fav.rel="icon";fav.type="image/png";fav.href=LOGO.fav;document.head.appendChild(fav);}}
   document.body.classList.toggle("beginner",!!C.beginner);
   /* Un bloc disparaît aussi si son espace est décoché dans le Studio (ex. Screener) */
-  var ESPM={bias:"plan",week:"journee",plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news",net:"net"},E=C.espaces||{};
+  var ESPM={hmap:"plan",bias:"plan",week:"journee",plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news",net:"net"},E=C.espaces||{};
   Object.keys(DEF.modules).forEach(function(k){var on=(!C.modules||C.modules[k]!==false)&&!(ESPM[k]&&E[ESPM[k]]===false);document.querySelectorAll('[data-mod="'+k+'"]').forEach(function(el){el.hidden=!on;});});
   if(CK.layout)CK.layout.refresh();
 }
@@ -594,7 +594,7 @@ function safe(fn){try{fn();}catch(e){if(window.console)console.error("[cockpit]"
 CK.boot=function(){
   applyIdentity();syncThemeBtns();buildStrip();wire();
   S.moversMkt=C.moversMarket;S.newsLang=C.newsLang;
-  [function(){if(CK.bg)CK.bg.boot();},function(){if(CK.layout)CK.layout.boot();},function(){if(CK.day)CK.day.boot();},function(){if(CK.pos)CK.pos.boot();},function(){if(CK.extra)CK.extra.boot();},function(){if(CK.plan)CK.plan.boot();},function(){if(CK.ui)CK.ui.boot();},function(){if(CK.hub)CK.hub.boot();},function(){if(CK.worlds)CK.worlds.boot();},function(){if(CK.sound)CK.sound.boot();},function(){if(CK.net)CK.net.boot();}].forEach(safe);
+  [function(){if(CK.bg)CK.bg.boot();},function(){if(CK.layout)CK.layout.boot();},function(){if(CK.day)CK.day.boot();},function(){if(CK.pos)CK.pos.boot();},function(){if(CK.extra)CK.extra.boot();},function(){if(CK.plan)CK.plan.boot();},function(){if(CK.hmap)CK.hmap.boot();},function(){if(CK.ui)CK.ui.boot();},function(){if(CK.hub)CK.hub.boot();},function(){if(CK.worlds)CK.worlds.boot();},function(){if(CK.sound)CK.sound.boot();},function(){if(CK.net)CK.net.boot();}].forEach(safe);
   renderNews();
   loadMacro();
   
