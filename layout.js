@@ -23,16 +23,16 @@ function viewOn(id){return VIEWS.some(function(v){return v.id===id;});}
 /* « Mondes » = l'écran de sélection (aucun bloc) ; chaque monde a sa grille */
 var DEFAULTS={
   home:[],
-  plan:[{id:"plan",x:0,y:0,w:6,h:70},{id:"opts",x:6,y:0,w:6,h:70},{id:"ctx",x:0,y:70,w:12,h:120}],
-  journee:[{id:"day",x:0,y:0,w:12,h:33},{id:"levels",x:0,y:33,w:7,h:50},{id:"opts",x:7,y:33,w:5,h:50},{id:"events",x:0,y:83,w:12,h:50}],
+  plan:[{id:"bias",x:0,y:0,w:12,h:40},{id:"plan",x:0,y:40,w:6,h:70},{id:"opts",x:6,y:40,w:6,h:70},{id:"ctx",x:0,y:110,w:12,h:120}],
+  journee:[{id:"day",x:0,y:0,w:12,h:33},{id:"week",x:0,y:33,w:12,h:50},{id:"events",x:0,y:83,w:12,h:50}],
   news:[{id:"news",x:0,y:0,w:8,h:84},{id:"events",x:8,y:0,w:4,h:84}],
   net:[{id:"net",x:0,y:0,w:12,h:84}]
 };
 /* Où mène « Ouvrir » depuis un bloc */
-var DOOR={plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news"};
-var LAYV="17";
-var MIN={plan:[4,40],ctx:[4,40],veille:[6,40],corr:[3,30],levels:[3,30],opts:[3,30],book:[3,30],net:[6,40],day:[6,28],map:[3,36],events:[2,24],deriv:[3,16],movers:[3,26],liq:[3,40],news:[3,24],screener:[3,36]};
-var NAMES={plan:"Plan du jour",ctx:"Contexte de marché",veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
+var DOOR={plan:"plan",ctx:"plan",bias:"plan",week:"journee",day:"journee",events:"journee",news:"news"};
+var LAYV="18";
+var MIN={bias:[4,24],week:[4,30],plan:[4,40],ctx:[4,40],veille:[6,40],corr:[3,30],levels:[3,30],opts:[3,30],book:[3,30],net:[6,40],day:[6,28],map:[3,36],events:[2,24],deriv:[3,16],movers:[3,26],liq:[3,40],news:[3,24],screener:[3,36]};
+var NAMES={bias:"Biais du jour",week:"Cette semaine",plan:"Plan du jour",ctx:"Contexte de marché",veille:"Agent de veille",corr:"Corrélations du BTC",levels:"Niveaux clés",opts:"Options",book:"Carnet d'ordres agrégé",net:"Connexions",day:"Journée de trading",map:"Signaux",events:"Agenda éco",deriv:"Dérivés",liq:"Liquidations",movers:"Top mouvements",screener:"Screener",news:"News"};
 var grid,all={},view="home",lay=[],editing=false,stacked=false,ph=null;
 var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 

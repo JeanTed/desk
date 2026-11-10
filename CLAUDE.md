@@ -46,6 +46,12 @@ Un petit robot GitHub (`robot.mjs`, `options.py`, `futpx.py`) publie toutes les 
 
 Tout le code partage l'objet global `window.CK`. Chaque fichier est une fonction auto-exécutée qui ajoute son module (`CK.day`, `CK.map`, `CK.layout`…).
 
+## Biais du jour, cartes et semaine
+
+- **Biais du jour** (bloc `bias`, en haut de Plan Futures) : `biasDay()` / `renderBias()` dans `plan.js`. Chaque indicateur vote acheteur (+), vendeur (−) ou neutre : prix par rapport aux niveaux d'hier et inter-marchés (pétrole, taux, dollar, or, VIX) comptent double (−2 à +2), news, Peur & Cupidité, largeur de marché et COT une fois. Résultat ACHETEUR / NEUTRE / VENDEUR (seuil ±25 % du score maximum), à côté de la lecture IA de Gemini. Résumé de données, pas un conseil.
+- **Cartes du Contexte** : la fonction `K(clé, html, options)` de `plan.js` enveloppe chaque information dans une carte `.kc` (contour coloré en haut : vert, rouge, orange, gris ; `.kc-w` = pleine largeur). Les paragraphes `<p class="x-n">` sont déplacés derrière le bouton « ? » de la carte ; un texte qui contient des chiffres doit utiliser la classe `kc-d` pour rester visible. Ordre des cartes : liste dans `renderCtx`.
+- **Journée** : frise, bloc `week` « Cette semaine » (`renderWeek` dans `plan.js` : annonces, résultats et adjudications, lundi–vendredi) et Agenda éco. Les niveaux clés et les options ne sont plus dans Journée (ils sont dans Plan Futures).
+
 ## Contrats micro MNQ et MES
 
 `CK.fut` (début de `core.js`) décrit MNQ (base NDX, 2 $ le point) et MES (base SPX, 5 $ le point), tick 0,25. Leurs niveaux = niveaux de l'indice + écart contrat/indice (`CK.fut.info`) : mesuré avec les futures NQ/ES de TradingView (`CK.fut.rows`, rempli par `loadCtx` dans `plan.js`), sinon estimé par le coût de portage jusqu'au prochain trimestriel. Quand le robot Yahoo est à jour (`futpx.py`), les niveaux MNQ/MES sont ceux du vrai contrat et l'écart vient du robot. Le Plan du jour propose aussi DOW (YM) et RUSSELL (RTY) (niveaux du robot `futpx.py`, fonction `renderY` dans `plan.js` ; pas d'options ni de perpétuel pour eux). Les boutons MNQ/MES existent dans Plan Futures, Contexte, Niveaux clés, Options et Dérivés, et le calculateur de position raisonne en contrats (MNQ, MES, NQ, ES) ; les données restent chargées sur NDX/SPX. Colonnes « Points » et « $ / contrat » dans les listes de niveaux.

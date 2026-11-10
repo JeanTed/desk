@@ -89,7 +89,7 @@ function renderY(host){
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 function render(){
-  var host=u.$("plan");if(!host)return;
+  var host=u.$("plan");if(!host)return;renderBias();
   if(YONLY[PL.sym]){renderY(host);return;}
   var B=FT.base(PL.sym),fu=FT.is(PL.sym),M=fu?FT.M[PL.sym]:null,L=levelsOf(),p0=CK.levels&&CK.levels.px&&CK.levels.px[B],now=Date.now(),I=IDX[PL.sym],sg=seg(true);
   if(!p0||!Object.keys(L).length){host.innerHTML=sg+'<div class="empty">Calcul du plan…</div>';return;}
@@ -191,7 +191,7 @@ function corrHTML(){
   var c=FT.y&&FT.y.corr&&FT.y.corr.rows;if(!c||!c.length)return '';
   function cell(v){return v==null?'—':'<span class="mono '+(v>=.3?'up':v<=-.3?'down':'')+'">'+(v>0?'+':v<0?'−':'')+nf(Math.abs(v),2)+'</span>';}
   return '<div class="ctx-h"><span class="x-k">Corrélations mesurées (rendements quotidiens)</span></div><div class="ctx-cor"><div class="cc-h"><span>Paire</span><span>30 séances</span><span>90 séances</span><span>Attendue</span></div>'+
-    c.map(function(r){return '<div class="cc-r"><span>'+esc(r.nom)+'</span>'+cell(r.c30)+cell(r.c90)+'<span class="cc-a">'+esc(r.attendu)+'</span></div>';}).join("")+'</div><p class="x-n">Corrélation de +1 : les deux bougent ensemble ; −1 : en sens inverse ; autour de 0 : pas de lien. Yahoo Finance (futures NQ, Brent, or ; dollar, taux et VIX), calculée par le robot.</p>';
+    c.map(function(r){return '<div class="cc-r"><span>'+esc(r.nom)+'</span>'+cell(r.c30)+cell(r.c90)+'<span class="cc-a">'+esc(r.attendu)+'</span></div>';}).join("")+'</div><p class="x-n">Une corrélation mesure si deux marchés bougent ensemble. +1 : toujours dans le même sens ; −1 : toujours en sens inverse ; autour de 0 : aucun lien. Exemple : si le Nasdaq est habituellement à −0,5 avec le dollar, un dollar qui monte avec un Nasdaq qui monte est inhabituel, donc méfiance. Compare la colonne « 30 séances » (récent) à « 90 séances » (habituel) : un écart important signale que la relation change. Yahoo Finance (futures NQ, Brent, or ; dollar, taux et VIX), calculée par le robot.</p>';
 }
 var LBL={PDC:"Clôture hier",DO:"Ouverture jour",PDH:"Haut hier",PDL:"Bas hier",WO:"Ouverture semaine",PWH:"Haut sem. dern.",PWL:"Bas sem. dern.",MO:"Ouverture mois",TKH:"Haut Tokyo",TKL:"Bas Tokyo",LDH:"Haut Londres",LDL:"Bas Londres",NYH:"Haut New York",NYL:"Bas New York"};
 function nfs(v,d){return (v>0?"+":v<0?"−":"")+nf(Math.abs(v),d||0);}
@@ -212,7 +212,7 @@ function fngHTML(){
   var comp=(F.comp||[]).map(function(c){return '<div class="fg-r"><span>'+esc(c.n)+'</span><b class="mono">'+nf(c.s,0)+'</b><span>'+esc(c.r)+'</span></div>';}).join("");
   return '<div class="ctx-h"><span class="x-k">Peur &amp; Cupidité du marché actions</span><span class="ctx-bias '+cl+'">'+esc(F.rating||"")+' · '+nf(sc,0)+' / 100</span></div>'+
     '<div class="fg-b"><i style="left:'+Math.max(0,Math.min(100,sc))+'%"></i></div><div class="fg-s"><span>Peur extrême</span><span>Neutre</span><span>Cupidité extrême</span></div>'+
-    '<p class="x-n">Veille : '+nf(F.prev,0)+' · il y a 1 semaine : '+nf(F.week,0)+' · 1 mois : '+nf(F.month,0)+' · 1 an : '+nf(F.year,0)+(F.pc!=null?' · ratio put/call (moyenne 5 jours) : <b>'+nf(F.pc,2)+'</b> (au-dessus de 1 : plus de protection achetée, marché inquiet ; sous 0,7 : euphorie)':'')+'.</p>'+
+    '<p class="kc-d">Veille : '+nf(F.prev,0)+' · il y a 1 semaine : '+nf(F.week,0)+' · 1 mois : '+nf(F.month,0)+' · 1 an : '+nf(F.year,0)+(F.pc!=null?' · ratio put/call (moyenne 5 jours) : <b>'+nf(F.pc,2)+'</b> (au-dessus de 1 : plus de protection achetée, marché inquiet ; sous 0,7 : euphorie)':'')+'.</p>'+
     (comp?'<div class="fg-g">'+comp+'</div>':'')+
     '<p class="x-n">Indice calculé par CNN à partir de 7 indicateurs. Un marché en « cupidité extrême » peut continuer à monter, mais devient fragile ; en « peur extrême », c\'est souvent là que se forment les creux. Une lecture d\'ambiance, pas un signal.</p>';
 }
@@ -284,7 +284,7 @@ function sentiHTML(){
   var cl={"porteur":"up","plutôt porteur":"up","prudent":"dn","plutôt prudent":"warn","neutre":"neu"}[s.label]||"neu",t=Math.max(1,(s.bull||0)+(s.neutral||0)+(s.bear||0));
   return '<div class="ctx-h"><span class="x-k">Sentiment des news financières</span><span class="ctx-bias '+cl+'">'+esc(s.label||"neutre")+'</span></div>'+
     '<div class="sn-b"><i class="up" style="width:'+(s.bull/t*100).toFixed(1)+'%"></i><i class="neu" style="width:'+(s.neutral/t*100).toFixed(1)+'%"></i><i class="down" style="width:'+(s.bear/t*100).toFixed(1)+'%"></i></div>'+
-    '<p class="x-n">'+(+s.bull||0)+' articles haussiers · '+(+s.neutral||0)+' neutres · '+(+s.bear||0)+' baissiers (sur '+(+s.n||0)+'). Score moyen '+(s.score>0?"+":s.score<0?"−":"")+nf(Math.abs(+s.score||0),2)+' sur une échelle de −1 à +1. Source : Alpha Vantage, mis à jour à '+hm(s.ts)+' (Paris). Un indicateur d\'ambiance, pas une prévision.</p>';
+    '<p class="kc-d">'+(+s.bull||0)+' articles haussiers · '+(+s.neutral||0)+' neutres · '+(+s.bear||0)+' baissiers (sur '+(+s.n||0)+'). Score moyen '+(s.score>0?"+":s.score<0?"−":"")+nf(Math.abs(+s.score||0),2)+' sur une échelle de −1 à +1.</p><p class="x-n">Le sentiment mesure si les articles financiers récents sont plutôt positifs ou négatifs. Source : Alpha Vantage, mis à jour à '+hm(s.ts)+' (Paris). Un indicateur d\'ambiance, pas une prévision.</p>';
 }
 function briefHTML(){
   var b=FT.brief;if(!b||!b.titre||!b.ts||Date.now()-b.ts>8*3600000)return '';
@@ -295,8 +295,98 @@ function briefHTML(){
     ((b.risques||[]).length?'<p class="cb-r"><span class="x-k">À surveiller</span> '+b.risques.slice(0,4).map(esc).join(" · ")+'</p>':'')+
     '<p class="x-n">Rédigé par une IA à partir des titres des dernières heures (Bloomberg, Investing, Maison Blanche, Fed, FinancialJuice…) et des prix du jour, mis à jour à '+hm(b.ts)+' (Paris). Une interprétation des nouvelles, pas une prévision ni un conseil : elle peut se tromper.</p></div>';
 }
+/* ---- Cartes du Contexte : chaque information dans sa case, contour coloré en haut, explication derrière le « ? » ---- */
+var KOPEN={};
+function K(key,html,o){
+  if(!html)return '';o=o||{};
+  var m=/ctx-bias (up|dn|warn|neu)/.exec(html),tone=o.tone||(m?m[1]:"acc"),note=[];
+  html=html.replace(/<p class="x-n">([\s\S]*?)<\/p>/g,function(_,t){note.push(t);return '';});
+  return '<div class="kc kc-'+tone+(o.wide?' kc-w':'')+(KOPEN[key]?' open':'')+'" data-k="'+key+'">'+html+
+    (note.length?'<button type="button" class="kc-q" data-kq="'+key+'" aria-expanded="'+(!!KOPEN[key])+'" title="À quoi ça sert ?">?</button><div class="kc-help"><span class="x-k">À quoi ça sert</span><p>'+note.join('</p><p>')+'</p></div>':'')+'</div>';
+}
+function lectHTML(){
+  var z=lecture();if(!z)return '';
+  return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';
+}
+function bigHTML(big,avg,maxA){
+  if(!big.length)return '';
+  return '<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(ctxSym())][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div><p class="x-n">Les dix plus gros poids de l\'indice, classés par variation du jour. Quand les géants montent ensemble, l\'indice suit ; quand ils divergent, le mouvement est fragile. Source : scanner public de TradingView, prix différés.</p>';
+}
+/* couleur d'une carte selon ce qu'elle dit (vert acheteur, rouge vendeur, orange prudence) */
+function toneFut(){var d=FT.fresh("MNQ");if(!d||!d.S||!(d.S.pc>0))return "acc";var c=(d.S.c/d.S.pc-1)*100;return c>=.15?"up":c<=-.15?"dn":"neu";}
+function toneBrd(){var B=FT.mk&&FT.mk.breadth;if(!B||!B.rows||!B.rows.length)return "acc";var r=B.rows[0];return r.p50>=60?"up":r.p50<=40?"dn":"warn";}
+function toneCot(){var M=FT.mk&&FT.mk.cot;if(!M||!M.rows||!M.rows.length)return "acc";var g=M.rows[0].g&&M.rows[0].g.asset;return g&&g.chg!=null?(g.chg>0?"up":g.chg<0?"dn":"neu"):"acc";}
+function toneAuc(){var A=FT.mk&&FT.mk.auctions;if(!A||!A.rows)return "acc";var t0=new Date();t0=Date.UTC(t0.getFullYear(),t0.getMonth(),t0.getDate());return A.rows.some(function(r){var p=r.d.split("-"),j=Math.round((Date.UTC(+p[0],+p[1]-1,+p[2])-t0)/864e5);return j>=0&&j<=1;})?"warn":"acc";}
+function toneRes(){var R=FT.res;if(!R||!R.rows)return "acc";var t0=new Date();t0=Date.UTC(t0.getFullYear(),t0.getMonth(),t0.getDate());return R.rows.some(function(r){if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date))return false;var p=r.date.split("-"),j=Math.round((Date.UTC(+p[0],+p[1]-1,+p[2])-t0)/864e5);return j>=0&&j<=3;})?"warn":"acc";}
+
+/* ---------------- 3. Biais du jour : synthèse de tous les indicateurs (acheteur / neutre / vendeur) ---------------- */
+function curLvl(){
+  var sym=PL.sym,L={},p;
+  if(YONLY[sym]){var d=FT.fresh(sym);if(!d||!d.L||!(d.last>0))return null;d.L.forEach(function(x){L[x.k]=x.px;});return {p:d.last,L:L};}
+  var B=FT.base(sym),p0=CK.levels&&CK.levels.px&&CK.levels.px[B],lv=levelsOf();if(!p0||!Object.keys(lv).length)return null;
+  var off=FT.is(sym)?FT.info(sym,p0).v:0,yl=!!lv._y;delete lv._y;if(!yl)Object.keys(lv).forEach(function(k){lv[k]+=off;});
+  return {p:p0+off,L:lv};
+}
+function biasDay(){
+  var I=[];
+  function add(nom,w,v,txt){I.push({nom:nom,w:w,v:v,txt:txt});}
+  var c=curLvl();
+  if(c&&c.L.DO>0){
+    var p=c.p,L=c.L,v=p>=L.DO?1:-1,t=p>=L.DO?"au-dessus de l'ouverture du jour":"sous l'ouverture du jour";
+    if(L.PDH>0&&p>L.PDH){v=2;t="au-dessus du plus haut d'hier";}else if(L.PDL>0&&p<L.PDL){v=-2;t="sous le plus bas d'hier";}
+    add("Prix et niveaux",2,v,"Le prix est "+t+".");
+  }
+  var z=lecture();if(z)add("Inter-marchés",2,Math.max(-2,Math.min(2,z.sc)),"Pétrole, taux, dollar, or et VIX : "+z.bias[1]+".");
+  var s=FT.senti;if(s&&s.ts&&Date.now()-s.ts<8*3600000&&isFinite(+s.score))add("News",1,s.score>=.15?1:s.score<=-.15?-1:0,"Sentiment des articles : "+(s.label||"neutre")+".");
+  var F=FT.mk&&FT.mk.fng;if(F&&typeof F.score==="number"&&!mkOld(F,6))add("Peur & Cupidité",1,F.score>=60?1:F.score<=40?-1:0,(F.rating||"")+" ("+nf(F.score,0)+" / 100)"+(F.score>=80?", attention : zone d'euphorie fragile":F.score<=20?", attention : zone de panique, rebond possible":"")+".");
+  var B=FT.mk&&FT.mk.breadth;if(B&&B.rows&&B.rows.length&&!mkOld(B,6)){var r=B.rows[0];add("Largeur de marché",1,r.p50>=60?1:r.p50<=40?-1:0,nf(r.p50,0)+" % des valeurs "+r.nom+" sont au-dessus de leur moyenne 50 jours.");}
+  var M=FT.mk&&FT.mk.cot;if(M&&M.rows&&M.rows.length&&!mkOld(M,240)){var g=M.rows[0].g&&M.rows[0].g.asset;if(g&&g.chg!=null)add("Positionnement des fonds",1,g.chg>0?1:g.chg<0?-1:0,"Les gérants d'actifs ont "+(g.chg>0?"augmenté":g.chg<0?"réduit":"gardé")+" leur position nette sur la semaine.");}
+  if(!I.length)return null;
+  /* score = somme des votes (−2…+2 pour les deux gros indicateurs, −1…+1 pour les autres) */
+  var sc=0,mx=0;I.forEach(function(x){sc+=x.v;mx+=x.w;});
+  var ratio=sc/mx,lab=ratio>=.25?["up","ACHETEUR","Les indicateurs penchent plutôt du côté des acheteurs."]:ratio<=-.25?["dn","VENDEUR","Les indicateurs penchent plutôt du côté des vendeurs."]:["neu","NEUTRE","Les indicateurs se contredisent ou restent mitigés : pas de biais net."];
+  return {I:I,sc:sc,mx:mx,lab:lab,ratio:ratio};
+}
+function renderBias(){
+  var host=u.$("bias");if(!host)return;
+  var b=biasDay();
+  if(!b){host.innerHTML='<div class="empty">Calcul du biais du jour…</div>';return;}
+  var pos=Math.max(0,Math.min(100,50+b.ratio*50)),gm=FT.brief&&FT.brief.titre&&FT.brief.ts&&Date.now()-FT.brief.ts<8*3600000?FT.brief:null;
+  var gcl=gm?({"porteur":"up","plutôt porteur":"up","prudent":"dn","plutôt prudent":"warn","neutre":"neu","mitigé":"warn"}[String(gm.biais||"").toLowerCase()]||"neu"):"neu";
+  var chips=b.I.map(function(x){var t=x.v>0?"up":x.v<0?"dn":"neu";return '<div class="bi-c '+t+'"><b>'+esc(x.nom)+'</b><span class="bi-v">'+(x.v>0?"▲ acheteur":x.v<0?"▼ vendeur":"● neutre")+'</span><span class="bi-t">'+esc(x.txt)+'</span></div>';}).join("");
+  var out='<div class="bi kc kc-'+b.lab[0]+'"><div class="bi-top"><div class="bi-main"><span class="x-k">Biais du jour · '+esc(IDX[PL.sym].n)+'</span><b class="bi-lab '+b.lab[0]+'">'+b.lab[1]+'</b><span class="bi-sub">'+b.lab[2]+'</span></div>'+
+    '<div class="bi-gauge"><div class="bi-g"><i style="left:'+pos.toFixed(1)+'%"></i></div><div class="bi-gl"><span>Vendeur</span><span>Neutre</span><span>Acheteur</span></div><span class="mono bi-sc">Score '+(b.sc>0?"+":b.sc<0?"−":"")+Math.abs(b.sc)+' sur '+b.mx+' possibles</span></div>'+
+    (gm?'<div class="bi-ai"><span class="x-k">Lecture IA du jour</span><span class="ctx-bias '+gcl+'">'+esc(gm.biais||"—")+'</span><span class="bi-t">'+esc(gm.titre)+'</span></div>':'')+'</div>'+
+    '<div class="bi-cs">'+chips+'</div>'+
+    '<p class="x-n bi-n">Comment ça marche : chaque indicateur vote acheteur (▲), vendeur (▼) ou neutre (●). Le prix par rapport aux niveaux d\'hier et les marchés liés (pétrole, taux, dollar, VIX) comptent double, les autres une fois. Le biais est la somme des votes. C\'est un résumé de données pour t\'aider à cadrer ta journée, pas un signal d\'achat ou de vente : à toi de confirmer avec ton propre plan.</p></div>';
+  if(host._h!==out){host.innerHTML=out;host._h=out;}
+}
+
+/* ---------------- 4. Cette semaine : annonces, résultats et adjudications jour par jour ---------------- */
+function dkey(ms){return new Date(ms).toLocaleDateString("en-CA",{timeZone:"Europe/Paris"});}
+function renderWeek(){
+  var host=u.$("week");if(!host)return;
+  var now=Date.now(),wd=new Date(now).toLocaleDateString("en-US",{timeZone:"Europe/Paris",weekday:"short"}),back={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:-2,Sun:-1}[wd],days=[];
+  for(var i=0;i<5;i++)days.push(now+(i-back)*864e5);
+  var today=dkey(now),cal=S.cal||[],R=FT.res&&FT.res.rows||[],A=FT.mk&&FT.mk.auctions&&FT.mk.auctions.rows||[],keep={};
+  BIGS.NDX.concat(BIGS.SPX).forEach(function(x){keep[x[0]]=1;});
+  if(!cal.length&&!R.length&&!A.length){host.innerHTML='<div class="empty">Chargement de la semaine…</div>';return;}
+  var out='<div class="wk-g">'+days.map(function(ms){
+    var k=dkey(ms),ev=cal.filter(function(e){return dkey(e.ts)===k&&(e.imp==="hi"||e.imp==="md");}).sort(function(a,b){return a.ts-b.ts;}),
+      rs=R.filter(function(r){return r.date===k&&keep[r.s];}),au=A.filter(function(r){return r.d===k;}),
+      hi=ev.some(function(e){return e.imp==="hi";}),tone=hi?"warn":k===today?"up":"acc",
+      nm=new Date(ms).toLocaleDateString("fr-FR",{timeZone:"Europe/Paris",weekday:"long",day:"numeric",month:"short"});
+    var body=ev.slice(0,7).map(function(e){return '<div class="wk-e'+(e.ts<now?" past":"")+'"><span class="mono">'+hm(e.ts)+'</span><span class="plan-i '+(e.imp==="hi"?"hi":"md")+'" aria-hidden="true"></span><span>'+esc(e.fr||e.t)+'</span></div>';}).join("")+(ev.length>7?'<div class="wk-m">+ '+(ev.length-7)+' autres annonces</div>':'')+
+      rs.map(function(r){return '<div class="wk-e wk-r"><span class="mono">résultats</span><span class="plan-i rs" aria-hidden="true"></span><span>'+esc(r.n)+(r.eps!=null&&isFinite(r.eps)?' · BPA att. '+nf(r.eps,2):'')+'</span></div>';}).join("")+
+      au.map(function(r){return '<div class="wk-e wk-a"><span class="mono">Trésor</span><span class="plan-i au" aria-hidden="true"></span><span>Adjudication '+esc(r.term)+(r.amt!=null?' · '+nf(r.amt,1)+' Md$':'')+'</span></div>';}).join("");
+    return '<div class="kc kc-'+tone+' wk-d'+(k===today?' wk-t':'')+'"><div class="wk-h"><b>'+esc(nm)+'</b>'+(k===today?'<span class="ctx-bias up">Aujourd\'hui</span>':hi?'<span class="ctx-bias warn">Jour chargé</span>':'')+'</div>'+(body||'<div class="wk-q">Rien d\'important au programme.</div>')+'</div>';
+  }).join("")+'</div><p class="x-n">Heures de Paris. Les annonces sont celles de l\'agenda économique du Desk (impact fort ou moyen), les résultats ceux des poids lourds (Yahoo Finance) et les adjudications celles du Trésor américain ; une date d\'adjudication peut être décalée d\'un jour. Le détail complet est dans l\'agenda juste en dessous.</p>';
+  if(host._h!==out){host.innerHTML=out;host._h=out;}
+}
+
 function renderCtx(){
   var host=u.$("ctx");if(!host)return;
+  renderBias();renderWeek();
   var sg=seg();if(!CX.ts){host.innerHTML=sg+'<div class="empty">Chargement du contexte…</div>';return;}
   function tile(x){var r=CX.rows[x[2]];if(!r)return '<div class="ctx-t"><span class="x-k">'+esc(x[1])+'</span><b class="mono">—</b></div>';
     var isY=x[0]==="US10Y"||x[0]==="US05Y",v=isY?nf(r.c,3)+" %":px(r.c),c=isY?(function(){var bp=r.c-r.c/(1+(r.ch||0)/100);return (bp>=0?"+":"−")+nf(Math.abs(bp*100),1)+" pb";})():pct(r.ch);
@@ -305,13 +395,18 @@ function renderCtx(){
   var maxA=Math.max.apply(null,big.map(function(x){return Math.abs(x.r.ch);}).concat([.5]));
   var avg=big.length?big.reduce(function(s,x){return s+x.r.ch;},0)/big.length:null;
   var it=IDXT[ctxSym()],out=sg+'<div class="ctx-grid">'+tile([ctxSym(),it[1],(CX.rows[it[0]]||!FT.is(ctxSym()))?it[0]:FT.M[ctxSym()].big])+CTX.map(tile).join("")+'</div>'+
-    briefHTML()+(function(){var z=lecture();if(!z)return '';return '<div class="ctx-h"><span class="x-k">Lecture inter-marchés du jour</span><span class="ctx-bias '+z.bias[0]+'">Biais mécanique : '+z.bias[1]+'</span></div><ul class="ctx-lec">'+z.L.map(function(x){return '<li class="'+x[0]+'">'+esc(x[1])+'</li>';}).join("")+'</ul><p class="x-n">Règles classiques : pétrole et taux qui montent pèsent sur le Nasdaq, dollar fort et VIX en hausse aussi, l\'or est la valeur refuge. Variations du jour (TradingView, différées), seuils minimums pour éviter le bruit. Lecture mécanique, pas une prévision.</p>';})()+
-    futHTML()+fngHTML()+sentiHTML()+brdHTML()+curveHTML()+cotHTML()+aucHTML()+dowHTML()+corrHTML()+'<div class="ctx-h"><span class="x-k">Poids lourds du '+IDXT[FT.base(ctxSym())][1]+'</span>'+(avg==null?"":'<span class="mono '+u.cls(avg)+'">moyenne '+pct(avg)+'</span>')+'</div>'+'<div class="ctx-big">'+big.map(function(x){var w=Math.max(3,Math.abs(x.r.ch)/maxA*100);return '<div class="ctx-b"><span class="ctx-n">'+esc(x.n)+'</span><span class="ctx-bar"><i class="'+(x.r.ch>=0?"up":"down")+'" style="width:'+w.toFixed(0)+'%"></i></span><b class="mono">'+px(x.r.c)+'</b><span class="mono '+u.cls(x.r.ch)+'">'+pct(x.r.ch)+'</span></div>';}).join("")+'</div>'+resHTML()+
-    '<p class="x-n">Source : scanner public de TradingView, prix différés. VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension.</p>';
+    '<div class="ctx-cards">'+
+    K("brief",briefHTML(),{wide:1})+K("lect",lectHTML(),{wide:1})+
+    K("fut",futHTML(),{wide:1,tone:toneFut()})+K("fng",fngHTML())+K("senti",sentiHTML())+K("curve",curveHTML())+
+    K("brd",brdHTML(),{wide:1,tone:toneBrd()})+K("cot",cotHTML(),{tone:toneCot()})+
+    K("auc",aucHTML(),{tone:toneAuc()})+K("dow",dowHTML(),{wide:1})+K("corr",corrHTML(),{wide:1})+
+    K("big",bigHTML(big,avg,maxA),{wide:1,tone:avg==null?"acc":avg>=.3?"up":avg<=-.3?"dn":"neu"})+K("res",resHTML(),{tone:toneRes()})+
+    '</div><p class="x-n">VIX et VXN en points ; un VIX qui monte avec l\'indice qui baisse signale un marché sous tension. Le « ? » de chaque carte explique à quoi elle sert.</p>';
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 
-CK.plan={boot:function(){
+CK.plan={week:function(){renderWeek();renderBias();},boot:function(){
+  var cx=u.$("ctx");if(cx)cx.addEventListener("click",function(e){var q=e.target.closest("[data-kq]");if(!q)return;var k=q.getAttribute("data-kq");KOPEN[k]=!KOPEN[k];var card=q.closest(".kc");if(card)card.classList.toggle("open",!!KOPEN[k]);q.setAttribute("aria-expanded",!!KOPEN[k]);cx._h=null;});
   ["plan","ctx"].forEach(function(id){var host=u.$(id);if(host)host.addEventListener("click",function(e){var b=e.target.closest("[data-pl]");if(!b)return;PL.sym=b.getAttribute("data-pl");CK.ls("plSym",PL.sym);var p=u.$("plan"),c=u.$("ctx");if(p)p._h=null;if(c)c._h=null;render();renderCtx();});});
   render();renderCtx();
   function lv(){if(CK.xApi)BASES.forEach(function(k){CK.xApi.loadLevels(k);});}

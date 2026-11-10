@@ -57,7 +57,7 @@ CK.reduce = reduce;
 var DEF = {
   id:"damour", name:"DAMOUR GLOBAL", tagline:"", data:"", accent:"#FF8A3D", theme:"dark", beginner:false,
   watchlist:[],
-  modules:{plan:true,ctx:true,day:true,map:false,events:true,deriv:false,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
+  modules:{bias:true,week:true,plan:true,ctx:true,day:true,map:false,events:true,deriv:false,liq:false,movers:false,screener:false,news:true,levels:true,opts:true,book:false,corr:false,net:true,veille:false},
   layout:null,
   espaces:{plan:true,journee:true,news:true,net:true},   // false = espace masqué (accueil, navigation, raccourcis)
   moversMarket:"spot", moversMinVolume:2000000, liqMin:25000,
@@ -186,7 +186,7 @@ function applyIdentity(){
   if(LOGO.fav){var fav=document.querySelector('link[rel="icon"]');if(!fav){fav=document.createElement("link");fav.rel="icon";fav.type="image/png";fav.href=LOGO.fav;document.head.appendChild(fav);}}
   document.body.classList.toggle("beginner",!!C.beginner);
   /* Un bloc disparaît aussi si son espace est décoché dans le Studio (ex. Screener) */
-  var ESPM={plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news",net:"net"},E=C.espaces||{};
+  var ESPM={bias:"plan",week:"journee",plan:"plan",ctx:"plan",day:"journee",events:"journee",news:"news",net:"net"},E=C.espaces||{};
   Object.keys(DEF.modules).forEach(function(k){var on=(!C.modules||C.modules[k]!==false)&&!(ESPM[k]&&E[ESPM[k]]===false);document.querySelectorAll('[data-mod="'+k+'"]').forEach(function(el){el.hidden=!on;});});
   if(CK.layout)CK.layout.refresh();
 }
@@ -287,6 +287,7 @@ CK.evType=evType;CK.EV_TNAME=EV_TNAME;
 function renderCal(ok){
   var host=$("cal");if(!host)return;
   S.calFail=!ok;
+  if(CK.plan&&CK.plan.week)setTimeout(CK.plan.week,0);
   if(!ok){tvEvents(host);$("nextEvent").innerHTML="";S.nextEv=null;if(CK.day)CK.day.render();return;}
   var now=Date.now(),today=parisDay(new Date()),tom=parisDay(new Date(now+864e5));
   var L=S.cal.filter(function(e){var d=parisDay(new Date(e.ts));return d===today||d===tom;});
