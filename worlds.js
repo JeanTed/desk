@@ -119,7 +119,27 @@ ART.veille=function(d,tips){
     s+='<g class="hv"'+tt+'>'+(tips?'<circle class="hit" cx="'+x+'" cy="'+y+'" r="16"/>':'')+'<circle cx="'+x+'" cy="'+y+'" r="'+(4+(m.importance||1)*2)+'" style="fill:var(--wc);opacity:'+(m.importance>=2?1:.55)+'"/></g>';});
   if(!pts.length)s+='<text class="lb sm" x="'+cx+'" y="'+(cy+124)+'">'+(st.active?"Veille active":"Clé IA à ajouter")+'</text>';
   return s;};
-ART.plan=function(d,tips){return ART.journee(d,tips);};
+var ART_CLOCK=ART.journee;
+ART.plan=function(d,tips){return ART_CLOCK(d,tips);};
+/* Journée : une page de calendrier avec la date du jour et les annonces du jour (étoiles d'importance) */
+ART.journee=function(d,tips){
+  var s='',x0=70,y0=22,w=260,h=216,dt=new Date(d.now),
+    jour=dt.toLocaleDateString("fr-FR",{timeZone:"Europe/Paris",day:"numeric"}),
+    mois=dt.toLocaleDateString("fr-FR",{timeZone:"Europe/Paris",month:"long"}).toUpperCase(),
+    sem=dt.toLocaleDateString("fr-FR",{timeZone:"Europe/Paris",weekday:"long"}).toUpperCase();
+  s+='<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" rx="16" style="fill:var(--panel);stroke:var(--wc);stroke-width:2"/>';
+  s+='<path d="M'+x0+' '+(y0+16)+'a16 16 0 0 1 16-16h'+(w-32)+'a16 16 0 0 1 16 16v38h-'+w+'z" style="fill:var(--wc);opacity:.9"/>';
+  s+='<rect x="'+(x0+54)+'" y="'+(y0-8)+'" width="8" height="24" rx="4" style="fill:var(--text)"/><rect x="'+(x0+w-62)+'" y="'+(y0-8)+'" width="8" height="24" rx="4" style="fill:var(--text)"/>';
+  s+='<text class="lb" x="200" y="'+(y0+34)+'" style="fill:#111;font-weight:800;letter-spacing:.12em">'+esc(sem)+' · '+esc(mois)+'</text>';
+  s+='<text class="big" x="'+(x0+58)+'" y="'+(y0+112)+'" style="font-size:64px">'+esc(jour)+'</text>';
+  var ev=d.cal.filter(function(e){return new Date(e.ts).toDateString()===dt.toDateString();}).slice(0,4);
+  ev.forEach(function(e,i){var y=y0+82+i*30,n=e.imp==="hi"?3:e.imp==="md"?2:1,c=e.imp==="hi"?"var(--down)":e.imp==="md"?"var(--warn)":"var(--muted)";
+    var tt=tips?T(tipHead(e.fr||e.t,"importance "+n+" sur 3",c)+tipRow("Heure",u.parisTime(e.ts))+(e.ts>d.now?tipRow("Dans",cd(e.ts-d.now)):"")+(e.f?tipRow("Prévision",esc(e.f)):"")+(e.p?tipRow("Précédent",esc(e.p)):"")+(e.a?tipRow("Publié",esc(e.a),"up"):"")):"";
+    s+='<g class="hv"'+tt+'><text class="lb" x="'+(x0+150)+'" y="'+(y+4)+'" style="text-anchor:start">'+u.parisTime(e.ts)+'</text><text x="'+(x0+212)+'" y="'+(y+5)+'" style="fill:'+c+';font-size:14px;letter-spacing:1px">'+"★★★".slice(0,n)+'</text>'+(tips?'<rect class="hit" x="'+(x0+140)+'" y="'+(y-14)+'" width="112" height="26"/>':'')+'</g>';});
+  if(!ev.length)s+='<text class="lb sm" x="'+(x0+205)+'" y="'+(y0+122)+'">aucune annonce</text>';
+  s+='<line x1="'+(x0+16)+'" y1="'+(y0+168)+'" x2="'+(x0+w-16)+'" y2="'+(y0+168)+'" style="stroke:var(--line-2);stroke-width:1"/>';
+  s+='<text class="lb" x="200" y="'+(y0+194)+'">'+(d.sess.filter(function(q){return q.open;}).map(function(q){return q.n;}).join(" · ")||"marchés fermés")+'</text>';
+  return s;};
 ART.net=function(d,tips){
   var sm=CK.netSummary?CK.netSummary():{list:[]},C={ok:"var(--up)",warn:"var(--warn)",down:"var(--down)",idle:"var(--faint)"},s="";
   sm.list.forEach(function(x,i){var c=i%5,r=Math.floor(i/5),cx=40+c*80,cy=36+r*60,col=C[x.st.k];

@@ -17,7 +17,11 @@ SITE = os.environ.get("SITE_URL", "").rstrip("/")
 VALEURS = {"NVDA": ("Nvidia", "NVDA"), "MSFT": ("Microsoft", "MSFT"), "AAPL": ("Apple", "AAPL"), "AMZN": ("Amazon", "AMZN"),
            "META": ("Meta", "META"), "GOOGL": ("Alphabet", "GOOGL"), "AVGO": ("Broadcom", "AVGO"), "TSLA": ("Tesla", "TSLA"),
            "COST": ("Costco", "COST"), "NFLX": ("Netflix", "NFLX"), "BRK.B": ("Berkshire", "BRK-B"),
-           "JPM": ("JPMorgan", "JPM"), "LLY": ("Eli Lilly", "LLY")}
+           "JPM": ("JPMorgan", "JPM"), "LLY": ("Eli Lilly", "LLY"),
+           "AMD": ("AMD", "AMD"), "PLTR": ("Palantir", "PLTR"), "CSCO": ("Cisco", "CSCO"), "PEP": ("PepsiCo", "PEP"),
+           "ADBE": ("Adobe", "ADBE"), "QCOM": ("Qualcomm", "QCOM"), "INTC": ("Intel", "INTC"), "AMAT": ("Applied Materials", "AMAT"),
+           "INTU": ("Intuit", "INTU"), "TXN": ("Texas Instruments", "TXN"), "BKNG": ("Booking", "BKNG"), "TMUS": ("T-Mobile", "TMUS"),
+           "ASML": ("ASML", "ASML"), "ISRG": ("Intuitive Surgical", "ISRG")}
 
 
 def get_json(url, timeout=10):

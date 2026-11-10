@@ -115,7 +115,7 @@ function fetchText(url,ms,noStore){var ctl=typeof AbortController!=="undefined"?
   return fetch(url,op).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(x){netOk(url,t0);return x;},function(e){netErr(url,e);throw e;}).finally(function(){clearTimeout(tm);});}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 /* Données du robot GitHub (agenda, news crypto, FinancialJuice) : C.data = adresse du site, ex. https://pseudo.github.io/desk */
-var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json","/briefing":"/data/briefing.json","/sentiment":"/data/sentiment.json","/resultats":"/data/resultats.json","/marche":"/data/marche.json"};
+var DATA_FILE={"/calendar":"/data/calendar.json","/news":"/data/news.json","/fj":"/data/fj.json","/meta":"/data/meta.json","/options":"/data/options.json","/futures":"/data/futures.json","/futpx":"/data/futpx.json","/briefing":"/data/briefing.json","/sentiment":"/data/sentiment.json","/resultats":"/data/resultats.json","/marche":"/data/marche.json","/calendrier":"/data/calendrier.json"};
 function relay(path){if(C.data)return String(C.data).replace(/\/$/,"")+(DATA_FILE[path]||path);return C.relay?String(C.relay).replace(/\/$/,"")+path:null;}
 CK.relay=relay;
 function raf2(fn){requestAnimationFrame(function(){requestAnimationFrame(fn);});}
@@ -255,11 +255,39 @@ var FF_URL="https://nfs.faireconomy.media/ff_calendar_thisweek.json";
 function calSources(){var L=[];var r=relay("/calendar");if(r)L.push(r);L.push("https://api.allorigins.win/raw?url="+encodeURIComponent(FF_URL));return L;}
 function fetchFirst(urls){var i=0;function next(){if(i>=urls.length)return Promise.reject(new Error("aucune source"));var url=urls[i++];
   return fetchJSON(url,null,12000).then(function(a){if(!Array.isArray(a)||!a.length)throw 0;return a;}).catch(next);}return next();}
+/* Fusion avec le calendrier détaillé de TradingView (robot) : valeur publiée, prévision, précédent, description */
+var TVSYN={cpi:"inflation",ppi:"producer",nfp:"nonfarm",pmi:"pmi"};
+function tvTok(t){return String(t).toLowerCase().replace(/\b(m\/m|y\/y|q\/q|mom|yoy|qoq|prelim|final|flash|advance|adv|global|s&p)\b/g," ").replace(/[^a-z ]/g," ").split(/\s+/).filter(function(w){return w.length>=3;}).map(function(w){return TVSYN[w]||w;});}
+function tvMerge(cal,tv){
+  var by={};tv.forEach(function(x){var k=Math.round(x.ts/60000);(by[k]=by[k]||[]).push(x);});
+  cal.forEach(function(e){var k=Math.round(e.ts/60000),L=(by[k]||[]).filter(function(x){return !x.used;});if(!L.length)return;
+    var tk=tvTok(e.t),best=null,sc=0;L.forEach(function(x){var tt=tvTok(x.t),s=tk.filter(function(w){return tt.indexOf(w)>=0;}).length;if(s>sc){sc=s;best=x;}});
+    if(!best&&L.length===1&&cal.filter(function(o){return Math.round(o.ts/60000)===k;}).length===1)best=L[0];
+    if(best){best.used=1;e.tv=best;e.a=best.a||e.a;e.f=e.f||best.f;e.p=e.p||best.p;}});
+}
+var EV_WHY={inf:"L'inflation guide la politique de la Fed : plus forte que prévu, elle fait craindre des taux élevés plus longtemps, ce qui pèse sur le Nasdaq.",
+  emp:"Un emploi très solide peut retarder les baisses de taux ; un emploi faible nourrit les craintes de récession. Les deux font bouger l'indice.",
+  cb:"Les décisions et les mots de la Fed donnent la direction des taux. Le ton (ferme ou souple) compte autant que la décision.",
+  tre:"Une adjudication faible (demande insuffisante) fait monter les taux longs, ce qui pèse sur les valeurs de croissance.",
+  ene:"Stocks et production de pétrole influencent le baril, donc l'inflation et le secteur de l'énergie.",
+  imm:"L'immobilier est très sensible aux taux : il montre l'effet du coût de l'argent sur l'économie.",
+  con:"La consommation pèse environ 70 % de l'économie américaine : une surprise change les attentes de croissance.",
+  act:"Mesure de l'activité : plus fort que prévu = économie solide (mais taux plus hauts), plus faible = craintes de ralentissement.",
+  aut:"Annonce économique américaine : c'est l'écart avec la prévision qui fait bouger le marché."};
+function evStars(imp){var n=imp==="hi"?3:imp==="md"?2:1;return '<span class="stars" role="img" aria-label="Importance : '+n+' sur 3">'+[1,2,3].map(function(i){return '<i class="'+(i<=n?"on":"")+'">★</i>';}).join("")+'</span>';}
+function evBubble(e,ty){
+  var n=e.imp==="hi"?3:e.imp==="md"?2:1,r=function(k,v){return v?'<br>'+esc(k)+' : <b>'+esc(v)+'</b>':'';};
+  var b=esc(parisTime(e.ts))+' (Paris) · importance '+n+' sur 3'+(e.tv&&e.tv.per?' · période : '+esc(e.tv.per):'')+r("Actuel",e.a)+r("Prévision",e.f)+r("Précédent",e.p)+
+    '<br><br>'+esc(e.tv&&e.tv.c?e.tv.c:EV_WHY[ty])+'<br><br><em>Ce qui compte : l\'écart entre le chiffre publié et la prévision.</em>'+(e.t&&e.t!==e.fr?'<br><small>Titre d\'origine : '+esc(e.t)+'</small>':'');
+  return ' data-x="'+esc('<b>'+esc(e.fr)+'</b><span>'+b+'</span>')+'"';
+}
 function loadCalendar(){
   return fetchFirst(calSources()).then(function(arr){arr=arr.filter(function(e){return !e.country||e.country==="USD";});
     S.cal=arr.map(function(e){var imp=String(e.impact||"").toLowerCase();return {ts:Date.parse(e.date),t:e.title,fr:evName(e.title),imp:imp.indexOf("high")>=0?"hi":imp.indexOf("med")>=0?"md":"lo",a:e.actual,f:e.forecast,p:e.previous};})
       .filter(function(e){return !isNaN(e.ts)&&evKeep(e);}).sort(function(a,b){return a.ts-b.ts;});
-    var seen={};S.cal=S.cal.filter(function(e){var k=e.ts+"|"+e.fr;if(seen[k]){if(e.imp==="hi")seen[k].imp="hi";seen[k].n++;return false;}e.n=1;seen[k]=e;return true;});renderCal(true);})
+    var seen={};S.cal=S.cal.filter(function(e){var k=e.ts+"|"+e.fr;if(seen[k]){if(e.imp==="hi")seen[k].imp="hi";seen[k].n++;return false;}e.n=1;seen[k]=e;return true;});
+    var rc=relay("/calendrier");if(!rc){renderCal(true);return;}
+    return fetchJSON(rc+"?t="+Math.floor(Date.now()/60000),null,12000).then(function(tv){if(Array.isArray(tv))tvMerge(S.cal,tv);}).catch(function(){}).then(function(){renderCal(true);});})
     .catch(function(){renderCal(false);});
 }
 /* Secours : calendrier officiel TradingView (en direct, sans relais) */
@@ -297,9 +325,10 @@ function renderCal(ok){
   L.forEach(function(e){var d=parisDay(new Date(e.ts));if(d!==cur){cur=d;h+='<div class="cday">'+(d===today?"Aujourd'hui":"Demain")+'</div>';}
     var det=[e.a?"Réel "+e.a:"",e.f?"Prév. "+e.f:"",e.p?"Préc. "+e.p:""].filter(Boolean).join(" · ");
     var ty=evType(e);used[ty]=1;
-    h+='<div class="crow ty-'+ty+(e.ts<now?" past":"")+'"><span class="t">'+parisTime(e.ts)+'</span><span class="e" title="'+esc(e.t)+'">'+'<span class="ty-tag">'+EV_TNAME[ty]+'</span>'+esc(e.fr)+(e.n>1?'<small>'+e.n+' publications à la même heure</small>':'')+(det&&!(e.n>1)?'<small>'+esc(det)+'</small>':'')+'</span><span class="i '+e.imp+'">'+(e.imp==="hi"?"Fort":"Moyen")+'</span></div>';});
+    function cv(c,v){return '<span class="cv cv-'+c+'">'+(v?esc(v):"—")+'</span>';}
+    h+='<div class="crow ty-'+ty+(e.ts<now?" past":"")+'"'+evBubble(e,ty)+'><span class="t">'+parisTime(e.ts)+'</span><span class="e">'+'<span class="ty-tag">'+EV_TNAME[ty]+'</span>'+esc(e.fr)+(e.n>1?'<small>'+e.n+' publications à la même heure</small>':'')+(det&&!(e.n>1)?'<small class="det">'+esc(det)+'</small>':'')+'</span>'+evStars(e.imp)+cv("a",e.a)+cv("f",e.f)+cv("p",e.p)+'</div>';});
   var lg=Object.keys(EV_TNAME).filter(function(k){return used[k];}).map(function(k){return '<span class="ty-chip ty-'+k+'">'+EV_TNAME[k]+'</span>';}).join("");
-  if(h&&lg)h='<div class="ty-leg">'+lg+'</div>'+h;
+  if(h&&lg)h='<div class="ty-leg">'+lg+'</div><div class="crow-h"><span>Heure</span><span>Annonce</span><span>Importance</span><span>Actuel</span><span>Prévision</span><span>Précédent</span></div>'+h;
   host.innerHTML=h||'<div class="empty">Aucune annonce majeure aujourd\'hui ni demain.</div>';
   tickNext();if(CK.day)CK.day.render();
 }

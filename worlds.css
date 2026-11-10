@@ -1533,3 +1533,18 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 
 /* Plan Futures : Biais en haut ; Journée : plus de blocs étirés */
 .grid.flow[data-w="plan"] .mod[data-mod="bias"] .card,.grid.flow[data-w="journee"] .mod[data-mod="week"] .card{background:transparent;box-shadow:none;padding:0}
+
+/* Agenda éco : étoiles d'importance (1 à 3), colonnes Actuel / Prévision / Précédent, bulle de détail */
+.stars{display:inline-flex;gap:1px;font-size:15px;line-height:1;white-space:nowrap;justify-self:end}
+.stars i{font-style:normal;color:var(--line-2)}.stars i.on{color:var(--warn)}
+.crow .cv,.crow-h{display:none}
+.grid.flow[data-w="journee"] .crow,.grid.flow[data-w="journee"] .crow-h{grid-template-columns:62px minmax(0,1fr) 64px 92px 92px 92px;align-items:center}
+.grid.flow[data-w="journee"] .crow .cv{display:block;text-align:right;font:600 15px var(--mono)}
+.grid.flow[data-w="journee"] .crow .cv-a{color:var(--text);font-weight:800}
+.grid.flow[data-w="journee"] .crow .cv-f,.grid.flow[data-w="journee"] .crow .cv-p{color:var(--muted)}
+.grid.flow[data-w="journee"] .crow .stars{justify-self:center}
+.grid.flow[data-w="journee"] .crow small.det{display:none}
+.grid.flow[data-w="journee"] .crow-h{display:grid;gap:10px;padding:0 10px 6px 14px;font:600 11px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.grid.flow[data-w="journee"] .crow-h span:nth-child(n+3){text-align:right}.grid.flow[data-w="journee"] .crow-h span:nth-child(3){text-align:center}
+@media(max-width:760px){.grid.flow[data-w="journee"] .crow,.grid.flow[data-w="journee"] .crow-h{grid-template-columns:54px minmax(0,1fr) 64px}
+  .grid.flow[data-w="journee"] .crow .cv,.grid.flow[data-w="journee"] .crow-h{display:none}.grid.flow[data-w="journee"] .crow small.det{display:block}}

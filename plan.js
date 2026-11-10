@@ -373,7 +373,7 @@ function renderWeek(){
   if(!cal.length&&!R.length&&!A.length){host.innerHTML='<div class="empty">Chargement de la semaine…</div>';return;}
   var out='<div class="wk-g">'+days.map(function(ms){
     var k=dkey(ms),ev=cal.filter(function(e){return dkey(e.ts)===k&&(e.imp==="hi"||e.imp==="md");}).sort(function(a,b){return a.ts-b.ts;}),
-      rs=R.filter(function(r){return r.date===k&&keep[r.s];}),au=A.filter(function(r){return r.d===k;}),
+      rs=R.filter(function(r){return r.date===k;}),au=A.filter(function(r){return r.d===k;}),
       hi=ev.some(function(e){return e.imp==="hi";}),tone=hi?"warn":k===today?"up":"acc",
       nm=new Date(ms).toLocaleDateString("fr-FR",{timeZone:"Europe/Paris",weekday:"long",day:"numeric",month:"short"});
     var body=ev.slice(0,7).map(function(e){return '<div class="wk-e'+(e.ts<now?" past":"")+'"><span class="mono">'+hm(e.ts)+'</span><span class="plan-i '+(e.imp==="hi"?"hi":"md")+'" aria-hidden="true"></span><span>'+esc(e.fr||e.t)+'</span></div>';}).join("")+(ev.length>7?'<div class="wk-m">+ '+(ev.length-7)+' autres annonces</div>':'')+

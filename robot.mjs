@@ -13,10 +13,10 @@ const OUT = "site";
 const UA = { "User-Agent": "Mozilla/5.0 (DeskRobot; +https://github.com)" };
 const meta = { ts: Date.now(), sources: {} };
 
-async function get(url, type = "text", ms = 20000) {
+async function get(url, type = "text", ms = 20000, extra = {}) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
   try {
-    const r = await fetch(url, { headers: UA, signal: ctl.signal });
+    const r = await fetch(url, { headers: { ...UA, ...extra }, signal: ctl.signal });
     if (!r.ok) throw new Error("HTTP " + r.status);
     return type === "json" ? await r.json() : await r.text();
   } finally { clearTimeout(t); }
@@ -98,6 +98,31 @@ async function calendar() {
   } catch (e) { note("calendar", false, 0, e); return (await previous("calendar.json")) || []; }
 }
 
+/* ---------- 1 bis. Calendrier détaillé de TradingView : valeur publiée (actuel), prévision, précédent et description ---------- */
+function tvVal(v, x) {
+  if (v === null || v === undefined || v === "" || !isFinite(+v)) return "";
+  const n = Math.round(+v * 1000) / 1000, u = x.unit || "", sc = x.scale || "";
+  return String(n).replace(".", ",") + sc + (u === "%" ? " %" : u ? " " + u : "");
+}
+async function calendrierTV() {
+  try {
+    const from = new Date(Date.now() - 864e5).toISOString(), to = new Date(Date.now() + 9 * 864e5).toISOString();
+    const j = await get("https://economic-calendar.tradingview.com/events?from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to) + "&countries=US", "json", 20000, { Origin: "https://www.tradingview.com", Referer: "https://www.tradingview.com/" });
+    const R = (j && j.result) || [];
+    if (!R.length) throw new Error("calendrier TradingView vide");
+    const rows = R.filter(x => x.country === "US" && x.date && x.title).map(x => ({
+      ts: Date.parse(x.date), t: String(x.title), imp: x.importance, a: tvVal(x.actual, x), f: tvVal(x.forecast, x), p: tvVal(x.previous, x),
+      per: x.period || "", src: x.source || "", c: String(x.comment || "")
+    })).filter(x => !isNaN(x.ts));
+    /* description traduite en français (les annonces moyennes et fortes seulement, une phrase ou deux) */
+    const brut = c => { const s = c.replace(/\s+/g, " ").trim(); if (s.length <= 260) return s; const cut = s.slice(0, 260), k = cut.lastIndexOf(". "); return k > 80 ? cut.slice(0, k + 1) : cut; };
+    const want = [...new Set(rows.filter(x => x.imp >= 0 && x.c).map(x => brut(x.c)))].slice(0, 70);
+    const tr = want.length ? await translate(want) : {};
+    rows.forEach(x => { x.c = x.c && x.imp >= 0 ? (tr[brut(x.c)] || "") : ""; });
+    note("calendrier_tv", true, rows.length); return rows;
+  } catch (e) { note("calendrier_tv", false, 0, e); return (await previous("calendrier.json")) || []; }
+}
+
 /* ---------- 3. FinancialJuice ---------- */
 async function financialJuice() {
   try {
@@ -151,9 +176,11 @@ await mkdir(OUT + "/data", { recursive: true });
 await loadMemo();
 const [cal, fj] = await Promise.all([calendar(), financialJuice()]);
 const fut = await futuresNews();
+const calTV = await calendrierTV();
 meta.translate = TRS;
 await writeFile(OUT + "/data/calendar.json", JSON.stringify(cal));
 await writeFile(OUT + "/data/fj.json", JSON.stringify(fj));
+await writeFile(OUT + "/data/calendrier.json", JSON.stringify(calTV));
 await writeFile(OUT + "/data/futures.json", JSON.stringify(fut));
 await writeFile(OUT + "/data/meta.json", JSON.stringify(meta));
 await copyFile("index.html", OUT + "/index.html");
