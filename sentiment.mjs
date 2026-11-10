@@ -17,7 +17,7 @@ async function getJSON(url, opt = {}, ms = 20000) {
   finally { clearTimeout(t); }
 }
 async function local(name, def) { try { return JSON.parse(await readFile(`${OUT}/data/${name}`, "utf8")); } catch { return def; } }
-async function previous() { if (!SITE) return null; try { return await getJSON(`${SITE}/data/sentiment.json`, {}, 10000); } catch { return null; } }
+async function previous(name = "sentiment.json") { if (!SITE) return null; try { return await getJSON(`${SITE}/data/${name}`, {}, 10000); } catch { return null; } }
 async function meta(ok, n, err) {
   const m = await local("meta.json", { ts: Date.now(), sources: {} }); m.sources = m.sources || {};
   m.sources.sentiment = { ok, n, err: ok ? "" : String(err).slice(0, 140), ts: Date.now() };
@@ -48,8 +48,19 @@ ${liste}`;
   const corps = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
   const essai = m => getJSON(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps }, 45000);
   let j = null, derniere = "";
-  for (const m of [MODEL, "gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.5-flash-lite"].filter((m, i, a) => m && a.indexOf(m) === i)) {
-    try { j = await essai(m); break; } catch (e) { derniere = m + " : " + (e.message || e); console.log("Modèle refusé →", derniere.replace(KEY, "***")); }
+  /* modèle qui marche déjà pour la lecture du jour (briefing.json), puis les noms usuels */
+  const pb = await previous("briefing.json");
+  let candidats = [pb && pb.modele, MODEL, "gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.5-flash-lite"].filter((m, i, a) => m && a.indexOf(m) === i);
+  for (let pass = 0; pass < 2 && !j; pass++) {
+    for (const m of candidats) {
+      try { j = await essai(m); break; } catch (e) { derniere = m + " : " + (e.message || e); console.log("Modèle refusé →", derniere.replace(KEY, "***")); }
+    }
+    if (j || pass) break;
+    try { /* demande à Google les modèles disponibles pour cette clé */
+      const L = await getJSON(`https://generativelanguage.googleapis.com/v1beta/models?key=${KEY}&pageSize=100`, {}, 15000);
+      candidats = ((L && L.models) || []).filter(x => /generateContent/.test((x.supportedGenerationMethods || []).join()) && /gemini-.*flash/i.test(x.name) && !/image|tts|live|audio|thinking|exp/i.test(x.name)).map(x => x.name.replace(/^models\//, "")).slice(0, 6);
+      console.log("Modèles disponibles :", candidats.join(", "));
+    } catch (e) { console.log("Liste des modèles impossible :", String(e.message || e)); break; }
   }
   if (!j) throw new Error("aucun modèle Gemini accepté (" + derniere + ")");
   const txt = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts.map(p => p.text || "").join("");
