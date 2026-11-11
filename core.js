@@ -564,6 +564,8 @@ function openChart(sym,title){
   }).catch(function(){box.innerHTML='<div class="empty">Le graphique TradingView n\'a pas pu se charger. Utilise « Ouvrir sur TradingView ».</div>';});
 }
 CK.openChart=openChart;
+/* Mode application : enregistre le service worker (site en ligne uniquement, pas en fichier local) */
+try{if("serviceWorker" in navigator&&/^https:|^http:\/\/localhost/.test(location.href))navigator.serviceWorker.register("sw.js").catch(function(){});}catch(e){}
 
 /* ---------------- Câblage général ---------------- */
 var HELP={

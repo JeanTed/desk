@@ -185,7 +185,7 @@ await writeFile(OUT + "/data/futures.json", JSON.stringify(fut));
 await writeFile(OUT + "/data/meta.json", JSON.stringify(meta));
 await copyFile("index.html", OUT + "/index.html");
 /* Image d'aperçu quand on partage le lien (X, Discord, Telegram…) */
-for (const f of ["manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) { try { await copyFile(f, OUT + "/" + f); } catch {} }
+for (const f of ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) { try { await copyFile(f, OUT + "/" + f); } catch {} }
 try { await writeFile(OUT + "/.nojekyll", ""); } catch {}
 console.log("Agenda", cal.length, "· FinancialJuice", fj.length, "· news futures", fut.length);
 console.log(JSON.stringify(meta.sources, null, 1));
