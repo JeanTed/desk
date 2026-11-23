@@ -1,4 +1,4 @@
-# DAMOUR GLOBAL · Desk Nasdaq 100
+# Mon Desk de Trading · Nasdaq 100
 
 Tableau de bord de trading des futures **Nasdaq 100** : plan du jour, niveaux clés, options, contexte de marché (VIX, taux, dollar, poids lourds) et news en direct. Un seul fichier `index.html`, sans serveur ni clé API.
 

@@ -1572,3 +1572,6 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 .hm-c:hover,.hm-c:focus-visible{filter:brightness(1.25);outline:2px solid #fff;outline-offset:-2px;z-index:2}
 .hm-lg{display:flex;align-items:center;gap:6px;margin:10px 2px 0;font-size:12.5px;color:var(--muted);flex-wrap:wrap}.hm-lg i{width:26px;height:12px;border-radius:2px}.hm-lg em{margin-left:10px;font-style:normal}
 .grid.flow[data-w="plan"] .mod[data-mod="hmap"] .card{padding:clamp(12px,1.2vw,20px)}
+
+/* Logo « D » orange : carré arrondi (et non rond) */
+.brand.custom .mark img{border-radius:22%}

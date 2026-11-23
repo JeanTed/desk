@@ -5,7 +5,7 @@
    ================================================================ */
 window.COCKPIT_CONFIG = {
   id: "damour",                  // identifiant interne (sauvegardes du navigateur)
-  name: "DAMOUR GLOBAL",       // nom affiché en haut à gauche (texte tant qu'il n'y a pas de logo image)
+  name: "Mon Desk de Trading",       // nom affiché en haut à gauche (texte tant qu'il n'y a pas de logo image)
   tagline: "",                   // sous-titre sous le nom (vide = aucun)
   accent: "#FF8A3D",             // couleur d'accent (toute l'interface suit)
   theme: "dark",                 // affichage au premier lancement : "dark" ou "light"

@@ -1,7 +1,7 @@
 {
   "id": "./index.html",
-  "name": "DAMOUR GLOBAL",
-  "short_name": "DAMOUR",
+  "name": "Mon Desk de Trading",
+  "short_name": "Mon Desk",
   "description": "Desk de trading des futures Nasdaq 100 et S&P 500",
   "start_url": "./index.html",
   "scope": "./",

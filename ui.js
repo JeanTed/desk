@@ -30,7 +30,7 @@ function renderStudio(){
 function segVal(id){var b=document.querySelector("#"+id+' [aria-pressed="true"]');return b?b.getAttribute("data-v"):"";}
 function readStudio(){
   var C=CK.merge(CK.cfg(),{}),v=function(id){return $(id).value;};
-  C.name=v("sName").trim()||"DAMOUR GLOBAL";C.tagline=v("sTag").trim();
+  C.name=v("sName").trim()||"Mon Desk de Trading";C.tagline=v("sTag").trim();
   C.theme=segVal("sTheme")||"dark";C.newsLang=segVal("sLang")||"fr";C.beginner=$("sBeg").checked;
   C.watchlist=[];
   return C;
