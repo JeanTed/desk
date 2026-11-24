@@ -1575,3 +1575,6 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border-radius:5px;box-shadow:inset
 
 /* Logo « D » orange : carré arrondi (et non rond) */
 .brand.custom .mark img{border-radius:22%}
+/* Accueil : nom d'espace long (« Plan Futures ») dans les cartes, sans être coupé */
+.lc-t{min-width:0}
+.lc-foot b{font-size:clamp(14px,1.08vw,22px);letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis}

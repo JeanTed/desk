@@ -405,7 +405,19 @@ function renderCtx(){
   if(host._h!==out){host.innerHTML=out;host._h=out;}
 }
 
-CK.plan={week:function(){renderWeek();renderBias();},boot:function(){
+/* ---------------- 5. Résumé pour l'écran d'accueil (worlds.js) ---------------- */
+function homeSum(){
+  var now=Date.now(),sym=PL.sym,c=curLvl(),b=biasDay(),us=usSession(now),o={sym:sym,name:IDX[sym].n,us:us};
+  if(c){o.p=c.p;var L=c.L,ref=L.PDC>0?L.PDC:null;if(ref)o.chg=(c.p-ref)/ref*100;
+    var up=null,dn=null;Object.keys(L).forEach(function(k){var v=L[k];if(!(v>0)||!LBL[k])return;
+      if(v>c.p&&(!up||v<up.px))up={k:k,n:LBL[k],px:v};if(v<c.p&&(!dn||v>dn.px))dn={k:k,n:LBL[k],px:v};});
+    o.up=up;o.dn=dn;}
+  if(b)o.bias=b.lab;
+  o.ev=(S.cal||[]).filter(function(e){return e.imp==="hi"&&e.ts>now;}).sort(function(a,b2){return a.ts-b2.ts;})[0]||null;
+  return o;
+}
+
+CK.plan={home:homeSum,week:function(){renderWeek();renderBias();},boot:function(){
   var cx=u.$("ctx");if(cx)cx.addEventListener("click",function(e){var q=e.target.closest("[data-kq]");if(!q)return;var k=q.getAttribute("data-kq");KOPEN[k]=!KOPEN[k];var card=q.closest(".kc");if(card)card.classList.toggle("open",!!KOPEN[k]);q.setAttribute("aria-expanded",!!KOPEN[k]);cx._h=null;});
   ["plan","ctx"].forEach(function(id){var host=u.$(id);if(host)host.addEventListener("click",function(e){var b=e.target.closest("[data-pl]");if(!b)return;PL.sym=b.getAttribute("data-pl");CK.ls("plSym",PL.sym);var p=u.$("plan"),c=u.$("ctx");if(p)p._h=null;if(c)c._h=null;render();renderCtx();});});
   render();renderCtx();

@@ -153,6 +153,10 @@ function art(i,d,tips){return '<svg class="w-art" viewBox="0 0 400 260" preserve
 /* ---------- Chiffres clés + « À retenir » ---------- */
 function stats(i,d){
   var now=d.now;switch(W[i].v){
+    case "plan":var h=CK.plan&&CK.plan.home?CK.plan.home():null;if(!h)return [];
+      var ust=h.us?[cd(h.us.t-now),h.us.open?"avant la clôture US":"avant l'ouverture US",h.us.open?"up":(h.us.t-now<9e5?"warn":"")]:["—","séance US"];
+      return [[h.p>0?u.px(h.p):"—",h.name+(h.chg!=null?" · "+(h.chg>=0?"+":"−")+u.nf(Math.abs(h.chg),2)+" % vs hier":""),h.chg!=null?(h.chg>=0?"up":"down"):""],
+        [h.bias?h.bias[1]:"—","biais du jour",h.bias?(h.bias[0]==="up"?"up":h.bias[0]==="dn"?"down":""):""],ust];
     case "journee":var op=d.sess.filter(function(s){return s.open;}).map(function(s){return s.n;}),nx=agenda(d)[0];
       return [[u.parisTime(now),"heure de Paris"],[op.length?op.join(" + "):"Aucune","session ouverte"],nx?[cd(nx.ms),"avant "+nx.t,nx.hot?"down":""]:["—","prochain rendez-vous"]];
     case "macro":return [[String(d.fav),"favorables","up"],[String(d.def),"défavorables","down"],[String(d.neu),"neutres"]];
@@ -165,6 +169,12 @@ function stats(i,d){
 }
 function insights(i,d){
   var now=d.now;switch(W[i].v){
+    case "plan":var h=CK.plan&&CK.plan.home?CK.plan.home():null,L=[];if(!h)return L;
+      if(h.up)L.push(["▲","Résistance · <b>"+esc(h.up.n)+"</b> "+u.px(h.up.px)+" (+"+u.nf(h.up.px-h.p,2)+" pts)","up"]);
+      if(h.dn)L.push(["▼","Support · <b>"+esc(h.dn.n)+"</b> "+u.px(h.dn.px)+" (−"+u.nf(h.p-h.dn.px,2)+" pts)","down"]);
+      if(h.ev)L.push(["!","<b>"+cd(h.ev.ts-now)+"</b> · "+esc(h.ev.fr||h.ev.t)+" (impact fort)",h.ev.ts-now<9e5?"down":"warn"]);
+      else if(h.bias)L.push(["●","Biais <b>"+esc(h.bias[1])+"</b> · "+esc(h.bias[2]),h.bias[0]==="up"?"up":h.bias[0]==="dn"?"down":""]);
+      return L;
     case "journee":return agenda(d).slice(0,3).map(function(x){return [x.hot?"!":x.k==="hi"?"●":x.k==="md"?"●":"◷",'<b>'+cd(x.ms)+'</b> · '+esc(x.t),x.hot?"down":x.k==="hi"?"down":x.k==="md"?"warn":""];});
     case "macro":return d.F.filter(function(f){return !f.na&&f.impact;}).sort(function(a,b){return (b.str||0)-(a.str||0);}).slice(0,3).map(function(f){var c=CK.stClass(f);return [c==="fav"?"▲":"▼",'<b>'+esc(f.nm)+'</b> · '+esc(f.label||""),c==="fav"?"up":"down"];});
     case "screener":return d.rows.slice(0,3).map(function(x,k){return [String(k+1),'<b>'+esc(x.n)+'</b> · '+esc(x.px)+' · <span class="'+(x.up?"up":"down")+'">'+esc(x.ch)+'</span>',""];});
@@ -177,7 +187,7 @@ function insights(i,d){
   }return [];
 }
 function metric(i,d){var s=stats(i,d)[0];return s?s[0]+" · "+s[1]:"";}
-function hot(i,d){var nx=agenda(d)[0];if(W[i].v==="net")return CK.netSummary&&CK.netSummary().list.some(function(x){return x.st.k==="down"&&x.s.id!=="relay"&&x.s.id!=="ff";});return (W[i].v==="liq"&&d.hotLiq)||(W[i].v==="journee"&&nx&&nx.hot)||(W[i].v==="news"&&d.items[0]&&d.items[0].ts&&d.now-d.items[0].ts<300000);}
+function hot(i,d){var nx=agenda(d)[0];if(W[i].v==="plan"){var h=CK.plan&&CK.plan.home?CK.plan.home():null;return !!(h&&h.us&&!h.us.open&&h.us.t-d.now<9e5);}if(W[i].v==="net")return CK.netSummary&&CK.netSummary().list.some(function(x){return x.st.k==="down"&&x.s.id!=="relay"&&x.s.id!=="ff";});return (W[i].v==="liq"&&d.hotLiq)||(W[i].v==="journee"&&nx&&nx.hot)||(W[i].v==="news"&&d.items[0]&&d.items[0].ts&&d.now-d.items[0].ts<300000);}
 
 /* ---------- Construction : héros (titre + illustration) + rangée de cartes ---------- */
 CK.FLOW=true;
@@ -232,8 +242,8 @@ function build(){
   var br=document.querySelector(".brand");if(br){br.setAttribute("role","link");br.tabIndex=0;br.title="Accueil";br.addEventListener("click",function(){if(!isHome()&&CK.layout)CK.layout.show("home");});
     br.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();br.click();}});}
   var last=CK.ls("world");select(Math.max(0,idxOf(last)),true);
-  place();window.addEventListener("resize",function(){place();moveGlow();});
-  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moveGlow);
+  place();window.addEventListener("resize",function(){place();moveGlow();fitTitle();});
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){moveGlow();fitTitle();});
   refresh();setInterval(refresh,2000);
   if(isHome()&&CK.bg&&CK.bg.tint)CK.bg.tint(W[sel].col);
   if(!isHome()&&CK.bg&&CK.bg.slow)CK.bg.slow(true);
@@ -253,7 +263,7 @@ function act(a){
   if(!a)return;var k=a.slice(0,a.indexOf(":")),v=a.slice(a.indexOf(":")+1);
   if(k==="chart"&&CK.openChart)CK.openChart("OKX:"+v+"USDT.P",v);
   else if(k==="link")window.open(v,"_blank","noopener");
-  else if(k==="net"){enter(5);}
+  else if(k==="net"){var ni=idxOf("net");if(ni>=0)enter(ni);}
   else if(k==="sig"){enter(1);setTimeout(function(){var el=document.querySelector('#sigList .sg[data-k="'+v+'"]');if(el)el.click();},700);}
 }
 
@@ -274,7 +284,7 @@ function select(i,first){
   if(!changed)return;hideTip();swap(ln.querySelector(".ln-amb"));
   var h=u.$("lnTitle"),old=h.querySelector(".t:not(.out)"),nt=document.createElement("span");nt.className="t";nt.textContent=w.name;
   if(old&&!reduce&&!first){old.classList.add("out");setTimeout(function(){old.remove();},650);nt.classList.add("in");}else h.innerHTML="";
-  h.appendChild(nt);u.$("lnGoT").textContent="Ouvrir "+w.name;
+  h.appendChild(nt);fitTitle();u.$("lnGoT").textContent="Ouvrir "+w.name;
   var ds=u.$("lnDesc");ds.textContent=w.desc;swap(ds);
   paintStats(d,true);paintIns(d,true);
   TIPS=[];ACTS=[];
@@ -283,6 +293,9 @@ function select(i,first){
   if(prevL&&!reduce){prevL.classList.add("out");setTimeout(function(){prevL.remove();},600);}else if(prevL)prevL.remove();
   if(!reduce)lay.classList.add("in");
 }
+/* Titre long (« Plan Futures ») : réduit la taille pour qu'il ne soit pas coupé */
+function fitTitle(){var h=u.$("lnTitle");if(!h)return;var t=h.querySelector(".t:not(.out)");if(!t)return;h.style.fontSize="";
+  var cw=h.clientWidth,tw=t.scrollWidth;if(cw>0&&tw>cw)h.style.fontSize=Math.floor(parseFloat(getComputedStyle(h).fontSize)*cw/tw*0.97)+"px";}
 function swap(el){if(reduce)return;el.classList.remove("swap");void el.offsetWidth;el.classList.add("swap");}
 function paintStats(d,anim){
   var st=stats(sel,d),box=u.$("lnStats"),html=st.map(function(s,k){return '<div class="ls" style="--k:'+k+'"><b class="'+(s[2]||"")+'">'+esc(s[0])+'</b><span>'+esc(s[1])+'</span></div>';}).join("");
